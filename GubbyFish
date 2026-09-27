@@ -1,5 +1,5 @@
--- Загрузка библиотеки интерфейса Rayfield
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu'))()
+-- Загрузка библиотеки интерфейса Rayfield напрямую через GitHub RAW
+local Rayfield = loadstring(game:HttpGet('https://githubusercontent.com'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "Fisch | Auto-Catch Menu",
@@ -8,47 +8,38 @@ local Window = Rayfield:CreateWindow({
    ConfigurationSaving = { Enabled = false }
 })
 
-local Tab = Window:CreateTab("Авто-Рыбалка", 4483362458) -- Иконка вкладки
+local Tab = Window:CreateTab("Авто-Рыбалка", 4483362458)
 
 local AutoFishEnabled = false
 
--- Функция идеальной ловли
 task.spawn(function()
     while task.wait() do
         if AutoFishEnabled then
             pcall(function()
                 local localPlayer = game.Players.LocalPlayer
                 local character = localPlayer.Character
-                
-                -- Ищем мини-игру подсекания (Shake) и зажатия полоски (Reel)
                 local playerGui = localPlayer:WaitForChild("PlayerGui")
                 
-                -- 1. Автоматический клик по кругам (Auto Shake)
+                -- Auto Shake
                 local shakeUI = playerGui:FindFirstChild("ShakeUI")
                 if shakeUI and shakeUI.Enabled then
                     local safeButton = shakeUI:FindFirstChild("SafeZone")
                     if safeButton then
-                        -- Эмуляция клика по безопасной зоне
                         game:GetService("VirtualUser"):ClickButton1(Vector2.new(9999, 9999))
                     end
                 end
 
-                -- 2. Идеальный улов полоски (Auto Reel - Perfect Catch)
+                -- Auto Reel (Perfect Catch)
                 local reelUI = playerGui:FindFirstChild("ReelUI")
                 if reelUI and reelUI.Enabled then
-                    -- Находим саму полоску и ползунок рыбы
                     local bar = reelUI:FindFirstChild("Bar")
                     local fish = reelUI:FindFirstChild("Fish")
                     
                     if bar and fish then
-                        -- Взломанная логика: мгновенно перемещаем шкалу прогресса на 100%
-                        -- Либо удерживаем ползунок Bar на позиции Fish с нулевой задержкой
                         bar.Position = fish.Position
-                        
-                        -- Отправка серверу пакета об успешном удержании без промахов
                         local reelEvent = game:GetService("ReplicatedStorage"):FindFirstChild("ReelEvent")
                         if reelEvent then
-                            reelEvent:FireServer(100, true) -- 100% прогресс, true = Perfect
+                            reelEvent:FireServer(100, true)
                         end
                     end
                 end
@@ -57,7 +48,6 @@ task.spawn(function()
     end
 end)
 
--- Переключатель в меню
 Tab:CreateToggle({
    Name = "Идеальная ловля (Без промахов)",
    CurrentValue = false,
@@ -66,7 +56,7 @@ Tab:CreateToggle({
       AutoFishEnabled = Value
       Rayfield:Notify({
          Title = "Статус авторыбалки",
-         Content = Value and "Авторыбалка включена! Ловим без промахов." or "Авторыбалка выключена.",
+         Content = Value and "Авторыбалка включена!" or "Авторыбалка выключена.",
          Duration = 3,
          Image = 4483362458,
       })

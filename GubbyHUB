@@ -2525,3 +2525,228 @@ if tabTrollSc then
 
     print("[Gubby Модуль]: Исправленный направленный флинг успешно добавлен!")
 end
+-- ========================================================================
+-- ГУББИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: РАБОЧИЙ FE SPINBOT-ТАРАН ПО ВЫБРАННЫМ ЦЕЛЯМ
+-- ========================================================================
+local P = game:GetService("Players")
+local RS = game:GetService("RunService")
+local LP = P.LocalPlayer
+
+_G.GeminiConfig.GubbyTroll = _G.GeminiConfig.GubbyTroll or {Enabled = false, Targets = {}}
+local Config = _G.GeminiConfig
+
+local tabTrollSc = nil
+if _G.GeminiUI and _G.GeminiUI.Tabs then
+    for _, t in pairs(_G.GeminiUI.Tabs) do if t.name == "Троллинг" then tabTrollSc = t.sc break end end
+end
+
+if tabTrollSc then
+    -- Сносим старую нерабочую кнопку флинга начисто
+    if tabTrollSc:FindFirstChild("GubbyCleanFlingButton") then tabTrollSc.GubbyCleanFlingButton:Destroy() end
+    if tabTrollSc:FindFirstChild("GubbySpinTaranButton") then tabTrollSc.GubbySpinTaranButton:Destroy() end
+
+    -- СОЗДАЕМ КНОПКУ СУМАСШЕДШЕГО ВРАЩЕНИЯ
+    local SpinBtn = Instance.new("TextButton", tabTrollSc)
+    SpinBtn.Name = "GubbySpinTaranButton"
+    SpinBtn.Size = UDim2.new(1, -10, 0, 32)
+    SpinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    SpinBtn.BackgroundTransparency = 0.5
+    SpinBtn.Text = "🌪️ Включить Spinbot-Таран"
+    SpinBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    SpinBtn.Font = Enum.Font.SourceSansBold
+    SpinBtn.TextScaled = true
+    Instance.new("UICorner", SpinBtn).CornerRadius = UDim.new(0, 6)
+
+    local btnStroke = Instance.new("UIStroke", SpinBtn)
+    btnStroke.Color = Color3.fromRGB(255, 105, 180)
+    btnStroke.Thickness = 1
+    btnStroke.Transparency = 0.5
+
+    SpinBtn.MouseButton1Click:Connect(function()
+        Config.GubbyTroll.Enabled = not Config.GubbyTroll.Enabled
+        
+        if Config.GubbyTroll.Enabled then
+            SpinBtn.BackgroundTransparency = 0.1
+            btnStroke.Transparency = 0.1
+            SpinBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- Горит красным при атаке
+            btnStroke.Color = Color3.fromRGB(255, 50, 50)
+        else
+            SpinBtn.BackgroundTransparency = 0.5
+            btnStroke.Transparency = 0.5
+            SpinBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+            btnStroke.Color = Color3.fromRGB(255, 105, 180)
+            
+            -- Гасим вращение при выключении
+            local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+            if root then root.RotVelocity = Vector3.zero end
+        end
+    end)
+
+    -- Поток бешеного вращения таза, который пробивает коллизию при касании
+    local spinActive = true
+    local oldKill = _G.GubbyKillOldStreams
+    _G.GubbyKillOldStreams = function()
+        spinActive = false
+        if oldKill then oldKill() end
+    end
+
+    RS.Heartbeat:Connect(function()
+        if not spinActive or not Config.GubbyTroll.Enabled then return end
+        
+        local char = LP.Character
+        local myRoot = char and char:FindFirstChild("HumanoidRootPart")
+        if not myRoot then return end
+
+        -- Ломаем коллизию рук и ног, оставляя только таз как таран
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then 
+                part.CanCollide = false 
+            end
+        end
+
+        -- Выкручиваем угловую скорость вращения на 150 единиц строго по оси Y
+        -- Персонаж начнет бешено крутиться визуально и физически
+        myRoot.RotVelocity = Vector3.new(0, 150, 0)
+    end)
+
+    print("[Gubby Модуль]: Рабочий Spinbot-Таран успешно добавлен на GitHub!")
+end
+-- ========================================================================
+-- ГУББИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: САМОНАВОДЯЩИЙСЯ СПИНБОТ-ТАРАН С АВТО-ВОЗВРАТОМ
+-- ========================================================================
+local P = game:GetService("Players")
+local RS = game:GetService("RunService")
+local LP = P.LocalPlayer
+
+-- Подтягиваем базу настроек троллинга
+_G.GeminiConfig.GubbyTroll = _G.GeminiConfig.GubbyTroll or {Enabled = false, Targets = {}}
+local Config = _G.GeminiConfig
+
+-- Находим контейнер твоей вкладки "Троллинг"
+local tabTrollSc = nil
+if _G.GeminiUI and _G.GeminiUI.Tabs then
+    for _, t in pairs(_G.GeminiUI.Tabs) do if t.name == "Троллинг" then tabTrollSc = t.sc break end end
+end
+
+if tabTrollSc then
+    -- Начисто сносим старые нерабочие кнопки флингов или спинботов
+    if tabTrollSc:FindFirstChild("GubbyCleanFlingButton") then tabTrollSc.GubbyCleanFlingButton:Destroy() end
+    if tabTrollSc:FindFirstChild("GubbyOrbitFlingButton") then tabTrollSc.GubbyOrbitFlingButton:Destroy() end
+    if tabTrollSc:FindFirstChild("GubbySpinTaranButton") then tabTrollSc.GubbySpinTaranButton:Destroy() end
+
+    -- 1. СОЗДАЕМ КНОПКУ АКТИВАЦИИ САМОНАВОДЯЩЕГОСЯ ТАРАНА
+    local AttackBtn = Instance.new("TextButton", tabTrollSc)
+    AttackBtn.Name = "GubbySpinTaranButton"
+    AttackBtn.Size = UDim2.new(1, -10, 0, 32)
+    AttackBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    AttackBtn.BackgroundTransparency = 0.5
+    AttackBtn.Text = "🚀 Атака: Спинбот-Таран (По целям)"
+    AttackBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    AttackBtn.Font = Enum.Font.SourceSansBold
+    AttackBtn.TextScaled = true
+    Instance.new("UICorner", AttackBtn).CornerRadius = UDim.new(0, 6)
+
+    local btnStroke = Instance.new("UIStroke", AttackBtn)
+    btnStroke.Color = Color3.fromRGB(255, 105, 180)
+    btnStroke.Thickness = 1
+    btnStroke.Transparency = 0.5
+
+    -- Переключатель логики кнопки
+    local coordinatesBeforeAttack = nil
+    AttackBtn.MouseButton1Click:Connect(function()
+        Config.GubbyTroll.Enabled = not Config.GubbyTroll.Enabled
+        local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        
+        if Config.GubbyTroll.Enabled then
+            AttackBtn.BackgroundTransparency = 0.1
+            btnStroke.Transparency = 0.1
+            AttackBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- Загорается агрессивным красным при пуске ракеты
+            btnStroke.Color = Color3.fromRGB(255, 50, 50)
+            
+            -- ТВОЯ ИДЕЯ: Намертво запоминаем координаты, где была нажата кнопка!
+            if root then coordinatesBeforeAttack = root.CFrame end
+        else
+            AttackBtn.BackgroundTransparency = 0.5
+            btnStroke.Transparency = 0.5
+            AttackBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+            btnStroke.Color = Color3.fromRGB(255, 105, 180)
+            
+            -- ТВОЯ ИДЕЯ: Полностью сбрасываем всю скорость и телепортируем назад!
+            if root then
+                root.Velocity = Vector3.zero
+                root.RotVelocity = Vector3.zero
+                root.AssemblyLinearVelocity = Vector3.zero
+                root.AssemblyAngularVelocity = Vector3.zero
+                if coordinatesBeforeAttack then
+                    task.wait(0.03) -- Микро-пауза для физического движка
+                    root.CFrame = coordinatesBeforeAttack
+                    coordinatesBeforeAttack = nil
+                end
+            end
+        end
+    end)
+
+    -- 2. ВЫСОКОСКОРОСТНОЙ ПОТОК ЖЕСТКОГО СУПЕР-СПИНБОТА И НАПРАВЛЕННОГО ПОЛЕТА К ЦЕЛИ
+    local taranActive = true
+    local oldKill = _G.GubbyKillOldStreams
+    _G.GubbyKillOldStreams = function()
+        taranActive = false
+        if oldKill then oldKill() end
+    end
+
+    RS.Heartbeat:Connect(function()
+        if not taranActive or not Config.GubbyTroll.Enabled then return end
+        
+        local char = LP.Character
+        local myRoot = char and char:FindFirstChild("HumanoidRootPart")
+        if not myRoot then return end
+
+        -- Проверяем, выбран ли кто-то прямо сейчас на правой панели целей (выделен красным)
+        local targetPlayer = nil
+        for player, isSelected in pairs(Config.GubbyTroll.Targets) do
+            if isSelected and player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local enemyHum = player.Character:FindFirstChildOfClass("Humanoid")
+                if enemyHum and enemyHum.Health > 0 then
+                    targetPlayer = player
+                    break
+                end
+            end
+        end
+
+        -- Если цель выбрана — летим на неё со спинботом, багуя физику
+        if targetPlayer then
+            local enemyRoot = targetPlayer.Character.HumanoidRootPart
+            
+            -- Отключаем коллизии рук и ног, чтобы они работали как пропеллеры, а не спотыкались
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then 
+                    part.CanCollide = false 
+                end
+            end
+
+            -- СУПЕР СПИНБОТ: Выкручиваем дикую скорость вращения таза по оси Y
+            myRoot.RotVelocity = Vector3.new(0, 250, 0)
+            myRoot.AssemblyAngularVelocity = Vector3.new(0, 250, 0)
+
+            -- НАСТРАИВАЕМЫЙ НАПРАВЛЕННЫЙ ПОЛЕТ: Плавно, но на бешеной скорости сближаемся с торсом жертвы
+            -- Мы считаем вектор направления до цели
+            local distanceVector = (enemyRoot.Position - myRoot.Position)
+            local currentDist = distanceVector.Magnitude
+            
+            if currentDist > 0.5 then
+                -- Скорость полёта-сближения (65 студов в тик — это ультра-быстро и сносит хитбоксы!)
+                local taranFlySpeed = 65
+                myRoot.Velocity = distanceVector.Unit * taranFlySpeed
+                myRoot.AssemblyLinearVelocity = distanceVector.Unit * taranFlySpeed
+                
+                -- Сдвигаем CFrame по направлению полета, чтобы пробивать коллизию
+                myRoot.CFrame = myRoot.CFrame + (distanceVector.Unit * 1.5)
+            end
+        else
+            -- Если целей нет, просто гасим вращение
+            myRoot.RotVelocity = Vector3.zero
+        end
+    end)
+
+    print("[Gubby Модуль]: Ультимативная ракета-таран с авто-возвратом успешно загружена!")
+end

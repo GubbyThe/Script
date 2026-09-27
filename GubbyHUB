@@ -2750,3 +2750,242 @@ if tabTrollSc then
 
     print("[Gubby Модуль]: Ультимативная ракета-таран с авто-возвратом успешно загружена!")
 end
+-- ========================================================================
+-- ГУББИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: ОРИГИНАЛЬНЫЙ ОРБИТ ФЛИНГ ИЗ ТВОИХ АРХИВОВ
+-- ========================================================================
+local P = game:GetService("Players")
+local RS = game:GetService("RunService")
+local LP = P.LocalPlayer
+
+-- Намертво привязываемся к оригинальным именам твоей трофейной базы
+_G.GeminiConfig.Fling = _G.GeminiConfig.Fling or {Enabled = false, Targets = {}, Radius = 2.0, StartCFrame = nil}
+local Config = _G.GeminiConfig
+
+local tabTrollSc = nil
+if _G.GeminiUI and _G.GeminiUI.Tabs then
+    for _, t in pairs(_G.GeminiUI.Tabs) do if t.name == "Троллинг" then tabTrollSc = t.sc break end end
+end
+
+if tabTrollSc then
+    -- Начисто убираем старые забаговавшиеся тестовые кнопки
+    if tabTrollSc:FindFirstChild("GubbySpinTaranButton") then tabTrollSc.GubbySpinTaranButton:Destroy() end
+    if tabTrollSc:FindFirstChild("GubbyCleanFlingButton") then tabTrollSc.GubbyCleanFlingButton:Destroy() end
+    if tabTrollSc:FindFirstChild("GubbyOrbitFlingButton") then tabTrollSc.GubbyOrbitFlingButton:Destroy() end
+
+    -- 1. СОЗДАЕМ КНОПКУ АКТИВАЦИИ ОРИГИНАЛЬНОГО ФЛИНГА
+    local OrbitBtn = Instance.new("TextButton", tabTrollSc)
+    OrbitBtn.Name = "GubbyOrbitFlingButton"
+    OrbitBtn.Size = UDim2.new(1, -10, 0, 32)
+    OrbitBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    OrbitBtn.BackgroundTransparency = 0.5
+    OrbitBtn.Text = "☄️ Включить Orbit Fling (Из Архивов)"
+    OrbitBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    OrbitBtn.Font = Enum.Font.SourceSansBold
+    OrbitBtn.TextScaled = true
+    Instance.new("UICorner", OrbitBtn).CornerRadius = UDim.new(0, 6)
+
+    local btnStroke = Instance.new("UIStroke", OrbitBtn)
+    btnStroke.Color = Color3.fromRGB(255, 105, 180) -- Твой розовый неон
+    btnStroke.Thickness = 1
+    btnStroke.Transparency = 0.5
+
+    -- Логика переключения кнопки и фиксации координат
+    OrbitBtn.MouseButton1Click:Connect(function()
+        Config.Fling.Enabled = not Config.Fling.Enabled
+        local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        
+        if Config.Fling.Enabled then
+            OrbitBtn.BackgroundTransparency = 0.1
+            btnStroke.Transparency = 0.1
+            OrbitBtn.TextColor3 = Color3.fromRGB(255, 50, 50) -- Агрессивный красный при пуске
+            btnStroke.Color = Color3.fromRGB(255, 50, 50)
+            
+            -- Фиксируем точку старта в оригинальную переменную твоего архива
+            if root then Config.Fling.StartCFrame = root.CFrame end
+        else
+            OrbitBtn.BackgroundTransparency = 0.5
+            btnStroke.Transparency = 0.5
+            OrbitBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+            btnStroke.Color = Color3.fromRGB(255, 105, 180)
+            
+            -- ТВОЯ ИДЕЯ: Полное гашение скоростей и мгновенный ТП на точку старта!
+            if root then
+                root.Velocity = Vector3.zero
+                root.RotVelocity = Vector3.zero
+                root.AssemblyLinearVelocity = Vector3.zero
+                root.AssemblyAngularVelocity = Vector3.zero
+                if Config.Fling.StartCFrame then
+                    task.wait(0.02)
+                    root.CFrame = Config.Fling.StartCFrame
+                    Config.Fling.StartCFrame = nil
+                end
+            end
+        end
+    end)
+
+    -- 2. ТОТ САМЫЙ ОРИГИНАЛЬНЫЙ ПОТОК КРУЖЕНИЯ ВОКРУГ ЦЕЛИ С АВТО-НАВЕДЕНИЕМ
+    local orbitActive = true
+    local oldKill = _G.GubbyKillOldStreams
+    _G.GubbyKillOldStreams = function()
+        orbitActive = false
+        if oldKill then oldKill() end
+    end
+
+    local rotAngle = 0
+    RS.Heartbeat:Connect(function()
+        if not orbitActive or not Config.Fling.Enabled then return end
+        
+        local char = LP.Character
+        local myRoot = char and char:FindFirstChild("HumanoidRootPart")
+        if not myRoot then return end
+
+        -- Считываем цели, которые ты выделил КРАСНЫМ на правой панели ников
+        local targetPlayer = nil
+        if _G.GeminiConfig and _G.GeminiConfig.GubbyTroll and _G.GeminiConfig.GubbyTroll.Targets then
+            for player, isSelected in pairs(_G.GeminiConfig.GubbyTroll.Targets) do
+                if isSelected and player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    local enemyHum = player.Character:FindFirstChildOfClass("Humanoid")
+                    if enemyHum and enemyHum.Health > 0 then
+                        targetPlayer = player
+                        break
+                    end
+                end
+            end
+        end
+
+        -- Если цель выбрана, запускаем оригинальный алгоритм кружения из твоих трофеев
+        if targetPlayer then
+            local enemyRoot = targetPlayer.Character.HumanoidRootPart
+            
+            -- Ломаем коллизию своего кролика, чтобы пропеллер сработал сквозь текстуры
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+
+            -- Оригинальная математика кружения по радиусу
+            rotAngle = (rotAngle + 0.65) % (math.pi * 2)
+            local r = Config.Fling.Radius or 2.0
+            
+            -- Выкручиваем угловую скорость таза по классическому методу твоего чита
+            myRoot.Velocity = Vector3.new(450000, 450000, 450000)
+            myRoot.RotVelocity = Vector3.new(450000, 450000, 450000)
+            
+            -- Идеальное наведение на орбиту таза жертвы
+            myRoot.CFrame = enemyRoot.CFrame * CFrame.new(math.cos(rotAngle) * r, 0, math.sin(rotAngle) * r)
+        else
+            -- Если целей нет, держим скорость нулевой
+            myRoot.RotVelocity = Vector3.zero
+        end
+    end)
+
+    print("[Gubby Модуль]: Оригинальный рабочий Orbit Fling успешно вырезан и интегрирован!")
+end
+-- ========================================================================
+-- ГУББИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: ОРИГИНАЛЬНЫЙ АНТИ-ФЛИНГ ИЗ ТВОИХ АРХИВОВ
+-- ========================================================================
+local P = game:GetService("Players")
+local RS = game:GetService("RunService")
+local LP = P.LocalPlayer
+
+-- Намертво привязываемся к имени переменной из твоего оригинального архива
+_G.GeminiConfig.AntiFling = _G.GeminiConfig.AntiFling or {Enabled = false}
+local Config = _G.GeminiConfig
+
+-- Находим контейнер твоей вкладки "Троллинг"
+local tabTrollSc = nil
+if _G.GeminiUI and _G.GeminiUI.Tabs then
+    for _, t in pairs(_G.GeminiUI.Tabs) do if t.name == "Троллинг" then tabTrollSc = t.sc break end end
+end
+
+if tabTrollSc then
+    -- Зачищаем старые кнопки анти-флинга, если они создавались ранее
+    if tabTrollSc:FindFirstChild("GubbyAntiFlingButton") then tabTrollSc.GubbyAntiFlingButton:Destroy() end
+
+    -- 1. СОЗДАЕМ КНОПКУ АКТИВАЦИИ АНТИ-ФЛИГНА
+    local AntiFlingBtn = Instance.new("TextButton", tabTrollSc)
+    AntiFlingBtn.Name = "GubbyAntiFlingButton"
+    AntiFlingBtn.Size = UDim2.new(1, -10, 0, 32)
+    AntiFlingBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    AntiFlingBtn.BackgroundTransparency = 0.5
+    AntiFlingBtn.Text = "🛡️ Включить Анти-Флинг Щит"
+    AntiFlingBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    AntiFlingBtn.Font = Enum.Font.SourceSansBold
+    AntiFlingBtn.TextScaled = true -- Железная защита от выползания текста!
+    Instance.new("UICorner", AntiFlingBtn).CornerRadius = UDim.new(0, 6)
+
+    local btnStroke = Instance.new("UIStroke", AntiFlingBtn)
+    btnStroke.Color = Color3.fromRGB(255, 105, 180) -- Твой розовый неон
+    btnStroke.Thickness = 1
+    btnStroke.Transparency = 0.5
+
+    -- Логика переключения кнопки
+    AntiFlingBtn.MouseButton1Click:Connect(function()
+        Config.AntiFling.Enabled = not Config.AntiFling.Enabled
+        
+        if Config.AntiFling.Enabled then
+            AntiFlingBtn.BackgroundTransparency = 0.1
+            btnStroke.Transparency = 0.1
+            AntiFlingBtn.TextColor3 = Color3.fromRGB(255, 105, 180)
+        else
+            AntiFlingBtn.BackgroundTransparency = 0.5
+            btnStroke.Transparency = 0.5
+            AntiFlingBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+            
+            -- При выключении возвращаем нормальную коллизию конечностям
+            local char = LP.Character
+            if char then
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = true end
+                end
+            end
+        end
+    end)
+
+    -- 2. ВЫСОКОСКОРОСТНОЙ ПОТОК ЖЕСТКОЙ ДИНАМИЧЕСКОЙ ЗАЩИТЫ ОТ ЧИТЕРОВ
+    local antiFlingActive = true
+    local oldKill = _G.GubbyKillOldStreams
+    _G.GubbyKillOldStreams = function()
+        antiFlingActive = false -- Мгновенно тушим поток при перезапуске хаба, спасая память
+        if oldKill then oldKill() end
+    end
+
+    RS.Heartbeat:Connect(function()
+        if not antiFlingActive or not Config.AntiFling.Enabled then return end
+
+        local char = LP.Character
+        local myRoot = char and char:FindFirstChild("HumanoidRootPart")
+        if not myRoot then return end
+
+        pcall(function()
+            -- Проверяем всех игроков на сервере на наличие бешеной скорости
+            for _, player in ipairs(P:GetPlayers()) do
+                if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    local enemyRoot = player.Character.HumanoidRootPart
+                    local enemyHum = player.Character:FindFirstChildOfClass("Humanoid")
+
+                    -- Если чужой читер жив и находится в радиусе 25 студов от нас
+                    if enemyHum and enemyHum.Health > 0 and (myRoot.Position - enemyRoot.Position).Magnitude <= 25 then
+                        -- И если его скорость или угловое вращение превышает лимиты (он пытается флингануть)
+                        if enemyRoot.Velocity.Magnitude > 70 or enemyRoot.RotVelocity.Magnitude > 70 or enemyRoot.AssemblyLinearVelocity.Magnitude > 70 then
+                            
+                            -- Мгновенно врубаем режим призрака для нашего тела: враг пролетит насквозь!
+                            for _, part in ipairs(char:GetDescendants()) do
+                                if part:IsA("BasePart") then
+                                    part.CanCollide = false
+                                end
+                            end
+                            
+                            -- Принудительно гасим инерцию нашего таза, чтобы нас не зацепило ударной волной
+                            myRoot.Velocity = Vector3.zero
+                            myRoot.RotVelocity = Vector3.zero
+                        end
+                    end
+                end
+            end
+        end)
+    end)
+
+    print("[Gubby Модуль]: Тот самый оригинальный Анти-Флинг щит успешно врезан во вкладку 'Троллинг'!")
+else
+    print("[Gubby Ошибка]: Не удалось найти вкладку 'Троллинг'!")
+end

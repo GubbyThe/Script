@@ -455,3 +455,74 @@ end)
 task.spawn(refreshGubbyPlayerList)
 
 print("Gubby HUB V4 успешно исправлен и запущен!")
+-- ========================================================================
+-- НОВЫЕ ФУНКЦИИ ДЛЯ GUBBY HUB (СПАМЕР И КУРСОР)
+-- ========================================================================
+local VIM = game:GetService("VirtualInputManager")
+
+-- Текстовое поле для ввода клавиши спама
+local KeyInput = Instance.new("TextBox", tabKeys)
+KeyInput.Size = UDim2.new(1, -10, 0, 32)
+KeyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+KeyInput.Text = "E" -- Клавиша по умолчанию
+KeyInput.TextColor3 = Color3.fromRGB(240, 240, 240)
+KeyInput.Font = Enum.Font.SourceSansBold
+KeyInput.TextSize = 14
+Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 6)
+
+-- Кнопка включения спамера
+local SpamBtn, spamStr = buildGubbyButton("⌨️ Запустить спам клавиши", tabKeys)
+
+local spamming = false
+SpamBtn.MouseButton1Click:Connect(function()
+    spamming = not spamming
+    SpamBtn.BackgroundTransparency = spamming and 0.1 or 0.5
+    spamStr.Transparency = spamming and 0.1 or 0.5
+    SpamBtn.TextColor3 = spamming and Color3.fromRGB(255, 105, 180) or Color3.fromRGB(240, 240, 240)
+end)
+
+-- Поток для спама клавиши
+task.spawn(function()
+    while task.wait(0.01) do -- Скорость спама (каждые 10 миллисекунд)
+        if spamming and scriptActive then
+            pcall(function()
+                local char = KeyInput.Text:upper() -- Переводим в верхний регистр
+                local keyCode = Enum.KeyCode[char]
+                if keyCode then
+                    -- Имитируем нажатие и отпускание клавиши для сервера
+                    VIM:SendKeyEvent(true, keyCode, false, game)
+                    task.wait()
+                    VIM:SendKeyEvent(false, keyCode, false, game)
+                end
+            end)
+        end
+    end
+end)
+
+-- ------------------------------------------------------------------------
+-- ФУНКЦИЯ: КАСТОМНЫЙ КУРСОР ПО ID
+-- ------------------------------------------------------------------------
+local CursorInput = Instance.new("TextBox", tabKeys)
+CursorInput.Size = UDim2.new(1, -10, 0, 32)
+CursorInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+CursorInput.Text = "Введите Asset ID курсора"
+CursorInput.TextColor3 = Color3.fromRGB(150, 150, 150)
+CursorInput.Font = Enum.Font.SourceSansBold
+CursorInput.TextSize = 14
+Instance.new("UICorner", CursorInput).CornerRadius = UDim.new(0, 6)
+
+local ApplyCursorBtn, cursorStr = buildGubbyButton("🎯 Применить кастомный курсор", tabKeys)
+
+ApplyCursorBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local id = tonumber(CursorInput.Text)
+        if id then
+            -- Меняем иконку мыши через UserInputService
+            UIS.MouseIconEnabled = true
+            UIS.MouseIcon = "rbxassetid://" .. id
+        else
+            -- Если ввели текст или сбросили
+            UIS.MouseIcon = ""
+        end
+    end)
+end)

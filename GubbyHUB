@@ -282,7 +282,7 @@ _G.GubbyUI.CreateTab = function(tabName)
     
     return sc
 end
---[[ --- ЧАСТЬ 4 ИЗ 5 --- ]]--
+--[[ --- ЧАСТЬ 4 ИЗ 6 --- ]]--
 local tabPlayer = _G.GubbyUI.CreateTab("Игрок")
 local tabVisuals = _G.GubbyUI.CreateTab("Визуалы")
 local tabEmotes = _G.GubbyUI.CreateTab("Эмоции")
@@ -562,7 +562,7 @@ buildGubbyButton("🔫 Телепорт к Пистолету (MM2)", tabCombat,
         btn.TextColor3 = Color3.fromRGB(255, 50, 50); btn.Text = "❌ Пистолет не найден на карте!"; task.wait(1.5); btn.TextColor3 = Color3.fromRGB(240, 240, 240); btn.Text = "🔫 Телепорт к Пистолету (MM2)"
     end
 end)
-
+--[[ --- ЧАСТЬ 6 ИЗ 6 --- ]]--
 RS.Stepped:Connect(function()
     if not scriptActive then return end
     local char = LP.Character; local hum = char and char:FindFirstChildOfClass("Humanoid"); local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -597,51 +597,22 @@ end)
 local function refreshGubbyPlayerList()
     for _, item in ipairs(PlScroll:GetChildren()) do if item:IsA("TextButton") then item:Destroy() end end
     local i = 0
---[[ --- ЧАСТЬ 6 ИЗ 6 --- ]]--
-        for _, player in ipairs(P:GetPlayers()) do
-            if player ~= LP then
-                i = i + 1
-                local pBtn = Instance.new("TextButton", PlScroll)
-                pBtn.Name = "Target_" .. player.Name
-                pBtn.Size = UDim2.new(1, -6, 0, 25)
-                pBtn.BackgroundTransparency = 0.3
-                pBtn.Text = player.Name
-                pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                pBtn.Font = Enum.Font.SourceSansBold
-                pBtn.TextSize = 11
-                pBtn.TextScaled = true
-                Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
-                
-                local st = Instance.new("UIStroke", pBtn)
-                st.Thickness = 1
-                st.Transparency = 0.6
-                
-                local isSel = Config.GubbyTroll.Targets[player]
-                pBtn.BackgroundColor3 = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(40, 40, 45)
-                st.Color = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(240, 240, 240)
-                
-                pBtn.MouseButton1Click:Connect(function()
-                    if Config.GubbyTroll.Targets[player] then
-                        Config.GubbyTroll.Targets[player] = nil
-                        pBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-                        st.Color = Color3.fromRGB(240, 240, 240)
-                    else
-                        Config.GubbyTroll.Targets[player] = true
-                        pBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                        st.Color = Color3.fromRGB(200, 50, 50)
-                    end
-                end)
-            end
+    for _, player in ipairs(P:GetPlayers()) do
+        if player ~= LP then
+            i = i + 1; local pBtn = Instance.new("TextButton", PlScroll)
+            pBtn.Name = "Target_" .. player.Name; pBtn.Size = UDim2.new(1, -6, 0, 25); pBtn.BackgroundTransparency = 0.3; pBtn.Text = player.Name; pBtn.TextColor3 = Color3.fromRGB(255, 255, 255); pBtn.Font = Enum.Font.SourceSansBold; pBtn.TextSize = 11; pBtn.TextScaled = true; Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
+            local st = Instance.new("UIStroke", pBtn); st.Thickness = 1; st.Transparency = 0.6
+            local isSel = Config.GubbyTroll.Targets[player]; pBtn.BackgroundColor3 = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(40, 40, 45); st.Color = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(240, 240, 240)
+            pBtn.MouseButton1Click:Connect(function()
+                if Config.GubbyTroll.Targets[player] then Config.GubbyTroll.Targets[player] = nil; pBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45); st.Color = Color3.fromRGB(240, 240, 240) else Config.GubbyTroll.Targets[player] = true; pBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50); st.Color = Color3.fromRGB(200, 50, 50) end
+            end)
         end
-        PlScroll.CanvasSize = UDim2.new(0, 0, 0, i * 29)
-    end)
+    end
+    PlScroll.CanvasSize = UDim2.new(0, 0, 0, i * 29)
 end
 
 P.PlayerAdded:Connect(refreshGubbyPlayerList)
-P.PlayerRemoving:Connect(function(pl)
-    Config.GubbyTroll.Targets[pl] = nil
-    refreshGubbyPlayerList()
-end)
+P.PlayerRemoving:Connect(function(pl) Config.GubbyTroll.Targets[pl] = nil; refreshGubbyPlayerList() end)
 task.spawn(refreshGubbyPlayerList)
 
 print("Gubby HUB V4 успешно запущен!")

@@ -1,5 +1,5 @@
 -- ========================================================================
---                      GUBBY HUB V4 | ЦЕЛЬНЫЙ ИСПРАВЛЕННЫЙ КОД
+--                      GUBBY HUB V4 | ЦЕЛЬНЫЙ ОПТИМИЗИРОВАННЫЙ КОД
 -- ========================================================================
 local P = game:GetService("Players")
 local W = game:GetService("Workspace")
@@ -216,7 +216,6 @@ InfZoomBtn.MouseButton1Click:Connect(function() Config.GubbyKFC.Enabled = not Co
 ResetGravBtn.MouseButton1Click:Connect(function() Config.PlayerMods.Gravity = 196.2; W.Gravity = 196.2 end)
 JupBtn.MouseButton1Click:Connect(function() local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") if root then for _, p in ipairs(LP.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end; root.Velocity = Vector3.new(0, 1000000, 0) end end)
 
--- НАПОЛНЕНИЕ ВКЛАДКИ "ВИЗУАЛЫ"
 local BrightBtn, brtStr = buildGubbyButton("💡 Убрать темноту (FullBright)", tabVisuals)
 local EspBtn, espStr = buildGubbyButton("👁️ Включить ESP (Видеть сквозь стены)", tabVisuals)
 
@@ -227,101 +226,32 @@ local function applyESP(player)
     if player == LP then return end
     local function createVisuals(char)
         if char:FindFirstChild("GubbyHighlight") then char.GubbyHighlight:Destroy() end
-        local highlight = Instance.new("Highlight", char)
-        highlight.Name = "GubbyHighlight"
-        highlight.FillColor = Color3.fromRGB(240, 240, 240) -- Только белый геометрический бокс
-        highlight.FillTransparency = 0.7
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.OutlineTransparency = 0.1
-        highlight.Adornee = char
+        local highlight = Instance.new("Highlight", char); highlight.Name = "GubbyHighlight"; highlight.FillColor = Color3.fromRGB(240, 240, 240); highlight.FillTransparency = 0.7; highlight.OutlineColor = Color3.fromRGB(255, 255, 255); highlight.OutlineTransparency = 0.1; highlight.Adornee = char
     end
     if player.Character then createVisuals(player.Character) end
     player.CharacterAdded:Connect(createVisuals)
 end
 
-RS.RenderStepped:Connect(function() 
-    if not scriptActive then return end
-    for _, player in ipairs(P:GetPlayers()) do 
-        local char = player.Character 
-        if char then 
-            local highlight = char:FindFirstChild("GubbyHighlight") 
-            if Config.GubbyESP.Enabled then 
-                if not highlight then applyESP(player) else highlight.Enabled = true end 
-            else 
-                if highlight then highlight.Enabled = false end 
-            end 
-        end 
-    end 
-end)
+RS.RenderStepped:Connect(function() if not scriptActive then return end; for _, player in ipairs(P:GetPlayers()) do local char = player.Character if char then local highlight = char:FindFirstChild("GubbyHighlight") if Config.GubbyESP.Enabled then if not highlight then applyESP(player) else highlight.Enabled = true end else if highlight then highlight.Enabled = false end end end end end)
 -- НАПОЛНЕНИЕ ВКЛАДКИ "КЛАВИШИ"
-local KeyInput = Instance.new("TextBox", tabKeys)
-KeyInput.Size = UDim2.new(1, -10, 0, 32)
-KeyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-KeyInput.Text = "E"
-KeyInput.TextColor3 = Color3.fromRGB(240, 240, 240)
-KeyInput.Font = Enum.Font.SourceSansBold
-KeyInput.TextSize = 14
-Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 6)
-
+local KeyInput = Instance.new("TextBox", tabKeys); KeyInput.Size = UDim2.new(1, -10, 0, 32); KeyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40); KeyInput.Text = "E"; KeyInput.TextColor3 = Color3.fromRGB(240, 240, 240); KeyInput.Font = Enum.Font.SourceSansBold; KeyInput.TextSize = 14; Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 6)
 local SpamBtn, spamStr = buildGubbyButton("⌨️ Запустить спам клавиши", tabKeys)
 local spamming = false
 SpamBtn.MouseButton1Click:Connect(function() spamming = not spamming; SpamBtn.BackgroundTransparency = spamming and 0.1 or 0.5; spamStr.Transparency = spamming and 0.1 or 0.5 end)
 
 task.spawn(function()
     local VIM = game:GetService("VirtualInputManager")
-    while task.wait(0.01) do 
-        if spamming and scriptActive then 
-            pcall(function() 
-                local keyCode = Enum.KeyCode[KeyInput.Text:upper()] 
-                if keyCode then 
-                    VIM:SendKeyEvent(true, keyCode, false, game) 
-                    task.wait() 
-                    VIM:SendKeyEvent(false, keyCode, false, game) 
-                end 
-            end) 
-        end 
-    end
+    while task.wait(0.01) do if spamming and scriptActive then pcall(function() local keyCode = Enum.KeyCode[KeyInput.Text:upper()] if keyCode then VIM:SendKeyEvent(true, keyCode, false, game) task.wait() VIM:SendKeyEvent(false, keyCode, false, game) end end) end end
 end)
 
-local CursorInput = Instance.new("TextBox", tabKeys)
-CursorInput.Size = UDim2.new(1, -10, 0, 32)
-CursorInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-CursorInput.Text = "Введите Asset ID курсора"
-CursorInput.TextColor3 = Color3.fromRGB(150, 150, 150)
-CursorInput.Font = Enum.Font.SourceSansBold
-CursorInput.TextSize = 14
-Instance.new("UICorner", CursorInput).CornerRadius = UDim.new(0, 6)
-
+local CursorInput = Instance.new("TextBox", tabKeys); CursorInput.Size = UDim2.new(1, -10, 0, 32); CursorInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40); CursorInput.Text = "Введите Asset ID курсора"; CursorInput.TextColor3 = Color3.fromRGB(150, 150, 150); CursorInput.Font = Enum.Font.SourceSansBold; CursorInput.TextSize = 14; Instance.new("UICorner", CursorInput).CornerRadius = UDim.new(0, 6)
 local ApplyCursorBtn, cursorStr = buildGubbyButton("🎯 Применить кастомный курсор", tabKeys)
 ApplyCursorBtn.MouseButton1Click:Connect(function() pcall(function() local id = tonumber(CursorInput.Text) if id then UIS.MouseIconEnabled = true UIS.MouseIcon = "rbxassetid://" .. id else UIS.MouseIcon = "" end end) end)
 
 local BindBtn, bndStr = buildGubbyButton("⌨️ Бинд меню: " .. Config.GubbyUIBind.Key.Name, tabKeys)
 BindBtn.MouseButton1Click:Connect(function() if not Config.GubbyUIBind.Listening then Config.GubbyUIBind.Listening = true; BindBtn.BackgroundTransparency = 0.1; bndStr.Transparency = 0.1; BindBtn.Text = "⏳ Нажми любую клавишу..." end end)
 
--- СИСТЕМНЫЕ ЦИКЛЫ ДВИЖЕНИЯ
-RS.Stepped:Connect(function() 
-    if not scriptActive then return end
-    local char = LP.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    local root = char and char:FindFirstChild("HumanoidRootPart") 
-    
-    if hum and root then 
-        if not Config.GubbyFly.Enabled then hum.WalkSpeed = Config.PlayerMods.Speed; hum.JumpPower = Config.PlayerMods.Jump end
-        if Config.GubbyNoclip.Enabled then for _, part in pairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end end
-        if Config.GubbyFly.Enabled then 
-            hum.PlatformStand = true
-            local moveDir = hum.MoveDirection
-            local cameraCFrame = Cam.CFrame
-            local flyVelocity = Vector3.zero
-            if moveDir.Magnitude > 0 then flyVelocity = cameraCFrame:VectorToWorldSpace(Vector3.new(moveDir.X, 0, moveDir.Z).Unit * Config.GubbyFly.Speed) end
-            if UIS:IsKeyDown(Enum.KeyCode.Space) then flyVelocity = flyVelocity + Vector3.new(0, Config.GubbyFly.Speed, 0) elseif UIS:IsKeyDown(Enum.KeyCode.LeftShift) then flyVelocity = flyVelocity - Vector3.new(0, Config.GubbyFly.Speed, 0) end
-            root.Velocity = flyVelocity 
-        else 
-            if hum.PlatformStand then hum.PlatformStand = false end 
-        end 
-    end 
-end)
-
+RS.Stepped:Connect(function() if not scriptActive then return end; local char = LP.Character; local hum = char and char:FindFirstChildOfClass("Humanoid"); local root = char and char:FindFirstChild("HumanoidRootPart") if hum and root then if not Config.GubbyFly.Enabled then hum.WalkSpeed = Config.PlayerMods.Speed; hum.JumpPower = Config.PlayerMods.Jump end; if Config.GubbyNoclip.Enabled then for _, part in pairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end end; if Config.GubbyFly.Enabled then hum.PlatformStand = true; local moveDir = hum.MoveDirection; local cameraCFrame = Cam.CFrame; local flyVelocity = Vector3.zero; if moveDir.Magnitude > 0 then flyVelocity = cameraCFrame:VectorToWorldSpace(Vector3.new(moveDir.X, 0, moveDir.Z).Unit * Config.GubbyFly.Speed) end; if UIS:IsKeyDown(Enum.KeyCode.Space) then flyVelocity = flyVelocity + Vector3.new(0, Config.GubbyFly.Speed, 0) elseif UIS:IsKeyDown(Enum.KeyCode.LeftShift) then flyVelocity = flyVelocity - Vector3.new(0, Config.GubbyFly.Speed, 0) end; root.Velocity = flyVelocity else if hum.PlatformStand then hum.PlatformStand = false end end end end)
 UIS.JumpRequest:Connect(function() if scriptActive and Config.InfJump.Enabled and LP.Character then local hum = LP.Character:FindFirstChildOfClass("Humanoid") if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end end end)
 
 UIS.InputBegan:Connect(function(input, gpe)
@@ -334,42 +264,9 @@ end)
 
 local function refreshGubbyPlayerList()
     for _, item in ipairs(PlScroll:GetChildren()) do if item:IsA("TextButton") then item:Destroy() end end; local i = 0
-    for _, player in ipairs(P:GetPlayers()) do 
-        if player ~= LP then 
-            i = i + 1
-            local pBtn = Instance.new("TextButton", PlScroll)
-            pBtn.Name = "Target_" .. player.Name
-            pBtn.Size = UDim2.new(1, -6, 0, 25)
-            pBtn.BackgroundTransparency = 0.3
-            pBtn.Text = player.Name
-            pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            pBtn.Font = Enum.Font.SourceSansBold
-            pBtn.TextSize = 11
-            pBtn.TextScaled = true
-            Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4) 
-            
-            local st = Instance.new("UIStroke", pBtn)
-            st.Thickness = 1
-            st.Transparency = 0.6
-            
-            local isSel = Config.Fling.Targets[player]
-            pBtn.BackgroundColor3 = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(40, 40, 45)
-            st.Color = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(240, 240, 240) 
-            
-            pBtn.MouseButton1Click:Connect(function() 
-                if Config.Fling.Targets[player] then 
-                    Config.Fling.Targets[player] = nil; pBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45); st.Color = Color3.fromRGB(240, 240, 240) 
-                else 
-                    Config.Fling.Targets[player] = true; pBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50); st.Color = Color3.fromRGB(200, 50, 50) 
-                end 
-            end) 
-        end 
-    end 
-    PlScroll.CanvasSize = UDim2.new(0, 0, 0, i * 29)
+    for _, player in ipairs(P:GetPlayers()) do if player ~= LP then i = i + 1; local pBtn = Instance.new("TextButton", PlScroll); pBtn.Name = "Target_" .. player.Name; pBtn.Size = UDim2.new(1, -6, 0, 25); pBtn.BackgroundTransparency = 0.3; pBtn.Text = player.Name; pBtn.TextColor3 = Color3.fromRGB(255, 255, 255); pBtn.Font = Enum.Font.SourceSansBold; pBtn.TextSize = 11; pBtn.TextScaled = true; Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4) local st = Instance.new("UIStroke", pBtn); st.Thickness = 1; st.Transparency = 0.6; local isSel = Config.Fling.Targets[player]; pBtn.BackgroundColor3 = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(40, 40, 45); st.Color = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(240, 240, 240) pBtn.MouseButton1Click:Connect(function() if Config.Fling.Targets[player] then Config.Fling.Targets[player] = nil; pBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45); st.Color = Color3.fromRGB(240, 240, 240) else Config.Fling.Targets[player] = true; pBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50); st.Color = Color3.fromRGB(200, 50, 50) end end) end end PlScroll.CanvasSize = UDim2.new(0, 0, 0, i * 29)
 end
-
-P.PlayerAdded:Connect(refreshGubbyPlayerList)
-P.PlayerRemoving:Connect(function(pl) Config.Fling.Targets[pl] = nil; refreshGubbyPlayerList() end)
+P.PlayerAdded:Connect(refreshGubbyPlayerList); P.PlayerRemoving:Connect(function(pl) Config.Fling.Targets[pl] = nil; refreshGubbyPlayerList() end)
 task.spawn(refreshGubbyPlayerList)
 
 print("Gubby HUB V4 успешно запущен!")

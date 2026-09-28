@@ -411,22 +411,38 @@ buildGubbyButton("🔍 Infinity Zoom (Отдаление)", tabPlayer, function(
     LP.CameraMaxZoomDistance = Config.GubbyKFC.Enabled and 999999 or 128
 end)
 
--- НОВАЯ ФУНКЦИЯ: БЛОКИРОВКА АНИМАЦИИ (Т-ПОЗА GODMODE)
-buildGubbyButton("🛡️ Блокировать урон (Т-Поза GodMode)", tabPlayer, function(btn, stroke)
+-- ИСПРАВЛЕННЫЙ МЕТОД: ЛОМАЕМ СЕРВЕРНЫЙ ХИТБОКС БЕЗ ПОТЕРИ ДВИЖЕНИЯ
+buildGubbyButton("🛡️ Блокировать урон (GodMode)", tabPlayer, function(btn, stroke)
     local char = LP.Character
-    if char then
-        local animateScript = char:FindFirstChild("Animate")
-        if animateScript then
-            animateScript:Destroy() -- Ломаем скрипт анимаций, персонаж встает в Т-позу
-            btn.Text = "🛡️ Т-Поза Активна! (До респавна)"
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local torso = char and (char:FindFirstChild("Torso") or char:FindFirstChild("LowerTorso"))
+    
+    if char and root and torso then
+        -- Находим мотор, соединяющий тело и хитбокс движения
+        local joint = root:FindFirstChild("RootJoint") or torso:FindFirstChild("RootJoint")
+        if joint then
+            joint:Destroy() -- Уничтожаем мотор. Для сервера ты мёртв/распался, урон не идёт
+            
+            btn.Text = "🛡️ Режим Бога Активен! (До респавна)"
             btn.BackgroundTransparency = 0.1
             stroke.Transparency = 0.1
             btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-            print("[Gubby Hub]: Скрипт Animate успешно удален, хитбоксы сломаны.")
+            
+            -- Чиним локальное движение персонажа, чтобы ты мог ходить
+            task.spawn(function()
+                while char and char.Parent and scriptActive do
+                    RS.Heartbeat:Wait()
+                    if torso and root then
+                        torso.Velocity = root.Velocity
+                        torso.RotVelocity = root.RotVelocity
+                    end
+                end
+            end)
+            print("[Gubby Hub]: Хитбокс успешно сломан. Урон заблокирован.")
         else
-            btn.Text = "❌ Анимация уже удалена / Не найдена"
+            btn.Text = "❌ Хитбокс уже сломан / Не найден"
             task.wait(1.5)
-            btn.Text = "🛡️ Блокировать урон (Т-Поза GodMode)"
+            btn.Text = "🛡️ Блокировать урон (GodMode)"
         end
     end
 end)
@@ -469,6 +485,13 @@ local function applyTracers(player)
         local root = char:WaitForChild("HumanoidRootPart", 5)
         local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
         if not root or not myRoot then return end
+--[[ --- ЧАСТЬ 4.1 ИЗ 5 --- ]]--
+local function applyTracers(player)
+    if player == LP then return end
+    local function createBeam(char)
+        local root = char:WaitForChild("HumanoidRootPart", 5)
+        local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        if not root or not myRoot then return end
         if char:FindFirstChild("GubbyTracerBeam") then char.GubbyTracerBeam:Destroy() end
         local myAtt = myRoot:FindFirstChild("GubbyAttachment") or Instance.new("Attachment", myRoot)
         myAtt.Name = "GubbyAttachment"
@@ -480,7 +503,7 @@ local function applyTracers(player)
     if player.Character then createBeam(player.Character) end
     player.CharacterAdded:Connect(createBeam)
 end
---[[ --- ЧАСТЬ 4.1 ИЗ 5 --- ]]--
+
 RS.RenderStepped:Connect(function()
     if not scriptActive then return end
     for _, player in ipairs(P:GetPlayers()) do
@@ -488,16 +511,8 @@ RS.RenderStepped:Connect(function()
         if char then
             local highlight = char:FindFirstChild("GubbyHighlight")
             local beam = char:FindFirstChild("GubbyTracerBeam")
-            if Config.GubbyESP.Enabled then 
-                if not highlight then applyESP(player) else highlight.Enabled = true end 
-            else 
-                if highlight then highlight.Enabled = false end 
-            end
-            if Config.GubbyTracers.Enabled then 
-                if not beam then applyTracers(player) else beam.Enabled = true end 
-            else 
-                if beam then beam.Enabled = false end 
-            end
+            if Config.GubbyESP.Enabled then if not highlight then applyESP(player) else highlight.Enabled = true end else if highlight then highlight.Enabled = false end end
+            if Config.GubbyTracers.Enabled then if not beam then applyTracers(player) else beam.Enabled = true end else if beam then beam.Enabled = false end end
         end
     end
 end)

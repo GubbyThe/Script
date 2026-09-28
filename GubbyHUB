@@ -538,3 +538,204 @@ end)
 task.spawn(refreshGubbyPlayerList)
 
 print("Gubby HUB V4 успешно запущен!")
+-- ========================================================================
+--                      GUBBY HUB V4 | ВКЛАДКА "ЭМОЦИИ" (DROPKICK)
+-- ========================================================================
+
+local dropkickActive = false
+local currentTrack = nil
+
+buildGubbyButton("💥 Активировать Dropkick (Расталкивание)", tabEmotes, function(btn, stroke)
+    local char = LP.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if not hum or not root then return end
+    
+    dropkickActive = not dropkickActive
+    
+    if dropkickActive then
+        btn.BackgroundTransparency = 0.1
+        stroke.Transparency = 0.1
+        btn.TextColor3 = Color3.fromRGB(255, 105, 180) -- Розовый акцент при ударе
+        
+        -- Загружаем ID анимации дропкика (Dropkick Animation ID)
+        local anim = Instance.new("Animation")
+        anim.AnimationId = "rbxassetid://15243391783" -- FE Дропкик хитбокс
+        currentTrack = hum:LoadAnimation(anim)
+        currentTrack:Play()
+        currentTrack.Speed = 1.2
+        
+        -- Даем жесткий пинок вперед по направлению взгляда
+        task.spawn(function()
+            while dropkickActive and scriptActive do
+                task.wait(0.1)
+                pcall(function()
+                    for _, part in ipairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then part.CanCollide = false end
+                    end
+                    -- Импульс движения вперед для сбивания игроков
+                    root.Velocity = root.CFrame.LookVector * 120 + Vector3.new(0, 15, 0)
+                end)
+            end
+        end)
+    else
+        btn.BackgroundTransparency = 0.5
+        stroke.Transparency = 0.5
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        
+        if currentTrack then 
+            currentTrack:Stop() 
+            currentTrack:Destroy()
+            currentTrack = nil
+        end
+        
+        if root then root.Velocity = Vector3.zero end
+    end
+end)
+-- ========================================================================
+--                      GUBBY HUB V4 | ЧАСТЬ 1 (АВТОСОХРАНЕНИЕ)
+-- ========================================================================
+local P = game:GetService("Players")
+local W = game:GetService("Workspace")
+local LP = P.LocalPlayer or P.PlayerAdded:Wait()
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local L = game:GetService("Lighting")
+local Cam = W.CurrentCamera
+
+-- Полное обнуление старых окон перед запуском
+local oldGui = LP:WaitForChild("PlayerGui"):FindFirstChild("REDIT_41_Gubby_Hub")
+if oldGui then oldGui:Destroy() end
+if _G.GubbyKillOldStreams then _G.GubbyKillOldStreams() end
+
+-- Дефолтная конфигурация хаба
+_G.GubbyConfig = {
+    PlayerMods = {Speed = 16, Jump = 50, Gravity = W.Gravity},
+    GubbyFly = {Enabled = false, Speed = 50, OriginalGravity = W.Gravity},
+    GubbyNoclip = {Enabled = false},
+    InfJump = {Enabled = false},
+    ClickTp = {Enabled = false},
+    GubbyESP = {Enabled = false},
+    GubbyTracers = {Enabled = false},
+    GubbyFullBright = {Enabled = false, OrigAmbient = L.Ambient, OrigBrightness = L.Brightness, OrigShadows = L.GlobalShadows, OrigClockTime = L.ClockTime},
+    GubbyKFC = {Enabled = false, Size = 12},
+    GubbyTroll = {Enabled = false, Targets = {}},
+    GubbyUIBind = {Key = Enum.KeyCode.RightControl, Listening = false}
+}
+local Config = _G.GubbyConfig
+_G.GubbyUI = {Tabs = {}}
+local scriptActive = true
+
+_G.GubbyKillOldStreams = function()
+    scriptActive = false
+end
+
+-- ИМЯ ФАЙЛА КОНФИГА НА ТВОЕМ КОМПЬЮТЕРЕ
+local CONFIG_FILE = "GubbyHub_Config.txt"
+local HttpService = game:GetService("HttpService")
+
+-- ФУНКЦИЯ СОХРАНЕНИЯ НАСТРОЕК В ФАЙЛ
+_G.SaveGubbyConfig = function()
+    pcall(function()
+        if writefile then
+            local dataToSave = {
+                Speed = Config.PlayerMods.Speed,
+                Jump = Config.PlayerMods.Jump,
+                FlySpeed = Config.GubbyFly.Speed,
+                BindKey = Config.GubbyUIBind.Key.Name
+            }
+            -- Переводим таблицу в текст JSON формат
+            local jsonText = HttpService:JSONEncode(dataToSave)
+            writefile(CONFIG_FILE, jsonText)
+            print("[Gubby Save]: Настройки успешно сохранены!")
+        end
+    end)
+end
+
+-- ФУНКЦИЯ ЗАГРУЗКИ НАСТРОЕК ИЗ ФАЙЛА
+local function loadGubbyConfig()
+    pcall(function()
+        if readfile and isfile and isfile(CONFIG_FILE) then
+            local jsonText = readfile(CONFIG_FILE)
+            local loadedData = HttpService:JSONDecode(jsonText)
+            
+            if loadedData then
+                if loadedData.Speed then Config.PlayerMods.Speed = loadedData.Speed end
+                if loadedData.Jump then Config.PlayerMods.Jump = loadedData.Jump end
+                if loadedData.FlySpeed then Config.GubbyFly.Speed = loadedData.FlySpeed end
+                if loadedData.BindKey then Config.GubbyUIBind.Key = Enum.KeyCode[loadedData.BindKey] end
+                print("[Gubby Load]: Конфиг успешно загружен!")
+            end
+        end
+    end)
+end
+
+-- Моментально читаем файл при запуске чита
+loadGubbyConfig()
+-- ========================================================================
+--                      GUBBY HUB V4 | ЧАСТЬ 2 (АВТОСОХРАНЕНИЕ)
+-- ========================================================================
+
+-- Слайдеры теперь автоматически сохраняют настройки при каждом движении ползунка
+buildGubbySlider("Скорость полёта", 20, 300, Config.GubbyFly.Speed, tabPlayer, function(v) 
+    Config.GubbyFly.Speed = v 
+    _G.SaveGubbyConfig() -- Автосохранение скорости полёта
+end)
+
+buildGubbySlider("Скорость ходьбы", 16, 150, Config.PlayerMods.Speed, tabPlayer, function(v) 
+    Config.PlayerMods.Speed = v 
+    _G.SaveGubbyConfig() -- Автосохранение WalkSpeed
+end)
+
+buildGubbySlider("Высота прыжка", 50, 300, Config.PlayerMods.Jump, tabPlayer, function(v) 
+    Config.PlayerMods.Jump = v 
+    _G.SaveGubbyConfig() -- Автосохранение JumpPower
+end)
+
+buildGubbySlider("Гравитация мира", 0, 400, math.floor(Config.PlayerMods.Gravity), tabPlayer, function(v) 
+    Config.PlayerMods.Gravity = v 
+    W.Gravity = v 
+end)
+
+-- Обновленный блок бинда меню на вкладке "Клавиши" с автосохранением кнопки
+local BindBtn, bndStr
+BindBtn, bndStr = buildGubbyButton("⌨️ Бинд меню: " .. Config.GubbyUIBind.Key.Name, tabKeys, function() 
+    if not Config.GubbyUIBind.Listening then 
+        Config.GubbyUIBind.Listening = true 
+        BindBtn.BackgroundTransparency = 0.1 
+        bndStr.Transparency = 0.1 
+        BindBtn.Text = "⏳ Нажми любую клавишу..." 
+    end 
+end)
+
+-- Внутри InputBegan, где ловится нажатие новой клавиши бинда, добавляем вызов сохранения
+UIS.InputBegan:Connect(function(input, gpe)
+    if not scriptActive then return end
+    if Config.GubbyUIBind.Listening and input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode ~= Enum.KeyCode.Escape then 
+            Config.GubbyUIBind.Key = input.KeyCode 
+            BindBtn.Text = "⌨️ Бинд меню: " .. input.KeyCode.Name 
+            _G.SaveGubbyConfig() -- Автосохранение нового бинда меню
+        end
+        Config.GubbyUIBind.Listening = false 
+        BindBtn.BackgroundTransparency = 0.5 
+        bndStr.Transparency = 0.5 
+        return
+    end
+    if gpe then return end
+    if input.KeyCode == Config.GubbyUIBind.Key then 
+        MainFrame.Visible = not MainFrame.Visible 
+        UIStroke.Enabled = MainFrame.Visible 
+    end
+    if Config.ClickTp.Enabled and input.UserInputType == Enum.UserInputType.MouseButton1 and (UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)) then
+        local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        local mousePos = UIS:GetMouseLocation() 
+        local ray = Cam:ViewportPointToRay(mousePos.X, mousePos.Y) 
+        local res = W:Raycast(ray.Origin, ray.Direction * 1000)
+        if root and res then 
+            root.CFrame = CFrame.new(res.Position + Vector3.new(0, 3, 0)) 
+            root.Velocity = Vector3.zero 
+        end
+    end
+end)

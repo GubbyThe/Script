@@ -1,6 +1,3 @@
--- ========================================================================
---                      GUBBY HUB V4 | ЧАСТЬ 1 (БАЗА МЕНЮ)
--- ========================================================================
 local P = game:GetService("Players")
 local W = game:GetService("Workspace")
 local LP = P.LocalPlayer or P.PlayerAdded:Wait()
@@ -9,21 +6,14 @@ local RS = game:GetService("RunService")
 local L = game:GetService("Lighting")
 local Cam = W.CurrentCamera
 
--- Полная очистка старых окон
 local oldGui = LP:WaitForChild("PlayerGui"):FindFirstChild("REDIT_41_Gubby_Hub")
-if oldGui then 
-    oldGui:Destroy() 
-end
+if oldGui then oldGui:Destroy() end
+if _G.GubbyKillOldStreams then _G.GubbyKillOldStreams() end
 
-if _G.GubbyKillOldStreams then 
-    _G.GubbyKillOldStreams() 
-end
-
--- Конфигурация
 _G.GubbyConfig = {
     Fling = {Enabled = false, Targets = {}, Radius = 2.0}, 
     GubbyESP = {Enabled = false},
-    GubbyTracers = {Enabled = false}, -- Белые тросы
+    GubbyTracers = {Enabled = false},
     GubbyFullBright = {Enabled = false, OrigAmbient = L.Ambient, OrigBrightness = L.Brightness, OrigShadows = L.GlobalShadows, OrigClockTime = L.ClockTime},
     GubbyKFC = {Enabled = false},
     GubbyFly = {Enabled = false, Speed = 50}, 
@@ -45,7 +35,6 @@ local ScreenGui = Instance.new("ScreenGui", LP:WaitForChild("PlayerGui"))
 ScreenGui.Name = "REDIT_41_Gubby_Hub"
 ScreenGui.ResetOnSpawn = false
 
--- Классическое простое окно 480x360
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 480, 0, 360)
 MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
@@ -74,7 +63,6 @@ Title.TextColor3 = Color3.fromRGB(240, 240, 240)
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- ИСПРАВЛЕНО: Геометрическая фигура строго по центру верха экрана с текстом Gubby
 local OpenBtn = Instance.new("TextButton", ScreenGui)
 OpenBtn.Name = "GubbyOpenButton"
 OpenBtn.Size = UDim2.new(0, 100, 0, 30)
@@ -123,13 +111,11 @@ CloseBtn.TextSize = 14
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
 CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() if _G.GubbyKillOldStreams then _G.GubbyKillOldStreams() end end)
 
--- Логика перетаскивания окна
 local dragging, dragInput, dragStart, startPos
 TopBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true dragStart = i.Position startPos = MainFrame.Position i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then dragging = false end end) end end)
 TopBar.InputChanged:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseMovement then dragInput = i end end)
 UIS.InputChanged:Connect(function(i) if i == dragInput and dragging then local d = i.Position - dragStart MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y) end end)
 
--- Панели
 local SidebarScroll = Instance.new("ScrollingFrame", MainFrame)
 SidebarScroll.Size = UDim2.new(0, 115, 1, -45)
 SidebarScroll.Position = UDim2.new(0, 5, 0, 40)
@@ -310,7 +296,7 @@ buildGubbyButton("🔍 Infinity Zoom (Отдаление)", tabPlayer, function(
     LP.CameraMaxZoomDistance = Config.GubbyKFC.Enabled and 999999 or 128
 end)
 
--- Слайдеры
+-- Слайдеры встают строго под свои кнопки
 buildGubbySlider("Скорость полёта", 20, 300, Config.GubbyFly.Speed, tabPlayer, function(v) Config.GubbyFly.Speed = v end)
 buildGubbySlider("Скорость ходьбы", 16, 150, Config.PlayerMods.Speed, tabPlayer, function(v) Config.PlayerMods.Speed = v end)
 buildGubbySlider("Высота прыжка", 50, 300, Config.PlayerMods.Jump, tabPlayer, function(v) Config.PlayerMods.Jump = v end)
@@ -373,56 +359,61 @@ local function applyESP(player)
     player.CharacterAdded:Connect(createVisuals)
 end
 
--- Логика создания Белых Тросов (Tracers) через Drawing API (стандарт эксплоитов)
-local tracers = {}
-local function createTracer(player)
+-- ПОЧИНЕНО: Логика Белых Тросов через Beam (без использования вырезанного Drawing API)
+local function applyTracers(player)
     if player == LP then return end
-    local line = Drawing.new("Line")
-    line.Color = Color3.fromRGB(255, 255, 255)
-    line.Thickness = 1
-    line.Transparency = 0.8
-    tracers[player] = line
+    
+    local function createBeam(char)
+        local root = char:WaitForChild("HumanoidRootPart", 5)
+        local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        if not root or not myRoot then return end
+        
+        if char:FindFirstChild("GubbyTracerBeam") then char.GubbyTracerBeam:Destroy() end
+        if myRoot:FindFirstChild("GubbyAttachment") then myRoot.GubbyAttachment:Destroy() end
+        
+        local myAtt = Instance.new("Attachment", myRoot)
+        myAtt.Name = "GubbyAttachment"
+        
+        local targetAtt = Instance.new("Attachment", root)
+        targetAtt.Name = "GubbyTargetAttachment"
+        
+        local beam = Instance.new("Beam", char)
+        beam.Name = "GubbyTracerBeam"
+        beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+        beam.Width0 = 0.05
+        beam.Width1 = 0.05
+        beam.FaceCamera = true
+        beam.Attachment0 = myAtt
+        beam.Attachment1 = targetAtt
+        beam.Enabled = false
+    end
+    
+    if player.Character then createBeam(player.Character) end
+    player.CharacterAdded:Connect(createBeam)
 end
-
-for _, p in ipairs(P:GetPlayers()) do createTracer(p) end
-P.PlayerAdded:Connect(createTracer)
-P.PlayerRemoving:Connect(function(p) if tracers[p] then tracers[p]:Destroy() tracers[p] = nil end end)
 
 -- Цикл обновлений Визуалов
 RS.RenderStepped:Connect(function()
-    if not scriptActive then 
-        for _, line in pairs(tracers) do line:Destroy() end 
-        return 
-    end
+    if not scriptActive then return end
     
     for _, player in ipairs(P:GetPlayers()) do
         local char = player.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        local line = tracers[player]
-        
-        -- Обновление Боксов
         if char then
             local highlight = char:FindFirstChild("GubbyHighlight")
+            local beam = char:FindFirstChild("GubbyTracerBeam")
+            
+            -- Проверка боксов
             if Config.GubbyESP.Enabled then
                 if not highlight then applyESP(player) else highlight.Enabled = true end
             else
                 if highlight then highlight.Enabled = false end
             end
-        end
-        
-        -- Обновление Тросов
-        if line then
-            if Config.GubbyTracers.Enabled and root then
-                local screenPos, onScreen = Cam:WorldToViewportPoint(root.Position)
-                if onScreen then
-                    line.From = Vector2.new(Cam.ViewportSize.X / 2, Cam.ViewportSize.Y) -- Из низа экрана
-                    line.To = Vector2.new(screenPos.X, screenPos.Y)
-                    line.Visible = true
-                else
-                    line.Visible = false
-                end
+            
+            -- Проверка тросов
+            if Config.GubbyTracers.Enabled then
+                if not beam then applyTracers(player) else beam.Enabled = true end
             else
-                line.Visible = false
+                if beam then beam.Enabled = false end
             end
         end
     end
@@ -464,7 +455,7 @@ BindBtn, bndStr = buildGubbyButton("⌨️ Бинд меню: " .. Config.GubbyU
     if not Config.GubbyUIBind.Listening then Config.GubbyUIBind.Listening = true BindBtn.BackgroundTransparency = 0.1 bndStr.Transparency = 0.1 BindBtn.Text = "⏳ Нажми любую клавишу..." end
 end)
 
--- РАБОЧИЕ ЦИКЛЫ КЛАССИЧЕСКОГО ДВИЖЕНИЯ И ПОЛЁТА
+-- РАБОЧИЕ ЦИКЛЫ КЛАССИЧЕСКОГО ДВИЖЕНИЯ И ПОЛЁТА (БЕЗ ЗАНОСОВ КАМЕРЫ)
 RS.Stepped:Connect(function()
     if not scriptActive then return end
     local char = LP.Character
@@ -475,7 +466,7 @@ RS.Stepped:Connect(function()
         if not Config.GubbyFly.Enabled then hum.WalkSpeed = Config.PlayerMods.Speed hum.JumpPower = Config.PlayerMods.Jump end
         if Config.GubbyNoclip.Enabled then for _, part in pairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end end
         
-        -- Классический Fly без заносов и камерных привязок (двигается по кнопкам WASD)
+        -- Движение строго кнопками WASD
         if Config.GubbyFly.Enabled then
             local moveDir = hum.MoveDirection
             local flyVelocity = moveDir * Config.GubbyFly.Speed
@@ -500,7 +491,7 @@ UIS.InputBegan:Connect(function(input, gpe)
     end
     if gpe then return end
     if input.KeyCode == Config.GubbyUIBind.Key then MainFrame.Visible = not MainFrame.Visible UIStroke.Enabled = MainFrame.Visible end
-    if Config.ClickTp.Enabled and input.UserInputType == Enum.UserInputType.MouseButton1 and (UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)) then
+    if Config.ClickTp.Enabled and input.UserInputType == Enum.MouseButton1 and (UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)) then
         local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
         local mousePos = UIS:GetMouseLocation() local ray = Cam:ViewportPointToRay(mousePos.X, mousePos.Y) local res = W:Raycast(ray.Origin, ray.Direction * 1000)
         if root and res then root.CFrame = CFrame.new(res.Position + Vector3.new(0, 3, 0)) root.Velocity = Vector3.zero end
@@ -518,59 +509,30 @@ local function refreshGubbyPlayerList()
             pBtn.Name = "Target_" .. player.Name pBtn.Size = UDim2.new(1, -6, 0, 25) pBtn.BackgroundTransparency = 0.3 pBtn.Text = player.Name pBtn.TextColor3 = Color3.fromRGB(255, 255, 255) pBtn.Font = Enum.Font.SourceSansBold pBtn.TextSize = 11 pBtn.TextScaled = true Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
             local st = Instance.new("UIStroke", pBtn) st.Thickness = 1 st.Transparency = 0.6
             local isSel = Config.Fling.Targets[player]
-            pBtn.BackgroundColor3 = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(40, 40, 45)
-            st.Color = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(240, 240, 240)
+-- ========================================================================
+--                      GUBBY HUB V4 | ЧАСТЬ 4 (КОНЕЦ ФАЙЛА)
+-- ========================================================================
+
             pBtn.MouseButton1Click:Connect(function()
                 if Config.Fling.Targets[player] then
-local function refreshGubbyPlayerList()
-    for _, item in ipairs(PlScroll:GetChildren()) do 
-        if item:IsA("TextButton") then 
-            item:Destroy() 
-        end 
+                    Config.Fling.Targets[player] = nil 
+                    pBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45) 
+                    st.Color = Color3.fromRGB(240, 240, 240)
+                else
+                    Config.Fling.Targets[player] = true 
+                    pBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) 
+                    st.Color = Color3.fromRGB(200, 50, 50)
+                end
+            end)
+        end
     end
-    
-    local i = 0
-    for _, player in ipairs(P:GetPlayers()) do 
-        if player ~= LP then 
-            i = i + 1
-            local pBtn = Instance.new("TextButton", PlScroll)
-            pBtn.Name = "Target_" .. player.Name
-            pBtn.Size = UDim2.new(1, -6, 0, 25)
-            pBtn.BackgroundTransparency = 0.3
-            pBtn.Text = player.Name
-            pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            pBtn.Font = Enum.Font.SourceSansBold
-            pBtn.TextSize = 11
-            pBtn.TextScaled = true
-            Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4) 
-            
-            local st = Instance.new("UIStroke", pBtn)
-            st.Thickness = 1
-            st.Transparency = 0.6
-            
-            local isSel = Config.Fling.Targets[player]
-            pBtn.BackgroundColor3 = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(40, 40, 45)
-            st.Color = isSel and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(240, 240, 240) 
-            
-            pBtn.MouseButton1Click:Connect(function() 
-                if Config.Fling.Targets[player] then 
-                    Config.Fling.Targets[player] = nil
-                    pBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-                    st.Color = Color3.fromRGB(240, 240, 240) 
-                else 
-                    Config.Fling.Targets[player] = true
-                    pBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                    st.Color = Color3.fromRGB(200, 50, 50) 
-                end 
-            end) 
-        end 
-    end 
     PlScroll.CanvasSize = UDim2.new(0, 0, 0, i * 29)
 end
+
 P.PlayerAdded:Connect(refreshGubbyPlayerList)
 
 P.PlayerRemoving:Connect(function(pl) 
-    Config.Fling.Targets[pl] = nil
+    Config.Fling.Targets[pl] = nil 
     refreshGubbyPlayerList() 
 end)
 

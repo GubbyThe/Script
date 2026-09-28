@@ -25,7 +25,13 @@ _G.GubbyConfig = {
     GubbyFullBright = {Enabled = false, OrigAmbient = L.Ambient, OrigBrightness = L.Brightness, OrigShadows = L.GlobalShadows, OrigClockTime = L.ClockTime},
     GubbyKFC = {Enabled = false, Size = 12},
     GubbyTroll = {Enabled = false, Targets = {}},
-    GubbyUIBind = {Key = Enum.KeyCode.RightControl, Listening = false}
+    GubbyUIBind = {Key = Enum.KeyCode.RightControl, Listening = false},
+    -- Новые настройки клавиш для быстрых функций
+    KeyBinds = {
+        Fly = {Key = "F", Enabled = false},
+        Noclip = {Key = "V", Enabled = false},
+        InfJump = {Key = "B", Enabled = false}
+    }
 }
 local Config = _G.GubbyConfig
 _G.GubbyUI = {Tabs = {}}
@@ -42,7 +48,14 @@ _G.SaveGubbyConfig = function()
                 Speed = Config.PlayerMods.Speed,
                 Jump = Config.PlayerMods.Jump,
                 FlySpeed = Config.GubbyFly.Speed,
-                BindKey = Config.GubbyUIBind.Key.Name
+                BindKey = Config.GubbyUIBind.Key.Name,
+                -- Сохранение новых биндов
+                FlyKey = Config.KeyBinds.Fly.Key,
+                FlyKeyToggle = Config.KeyBinds.Fly.Enabled,
+                NoclipKey = Config.KeyBinds.Noclip.Key,
+                NoclipKeyToggle = Config.KeyBinds.Noclip.Enabled,
+                InfJumpKey = Config.KeyBinds.InfJump.Key,
+                InfJumpKeyToggle = Config.KeyBinds.InfJump.Enabled
             }
             writefile(CONFIG_FILE, HttpService:JSONEncode(dataToSave))
             print("[Gubby Hub]: Настройки сохранены!")
@@ -64,6 +77,13 @@ local function loadGubbyConfig()
             if result.Jump then Config.PlayerMods.Jump = result.Jump end
             if result.FlySpeed then Config.GubbyFly.Speed = result.FlySpeed end
             if result.BindKey then Config.GubbyUIBind.Key = Enum.KeyCode[result.BindKey] end
+            -- Загрузка новых биндов
+            if result.FlyKey then Config.KeyBinds.Fly.Key = result.FlyKey end
+            if result.FlyKeyToggle ~= nil then Config.KeyBinds.Fly.Enabled = result.FlyKeyToggle end
+            if result.NoclipKey then Config.KeyBinds.Noclip.Key = result.NoclipKey end
+            if result.NoclipKeyToggle ~= nil then Config.KeyBinds.Noclip.Enabled = result.NoclipKeyToggle end
+            if result.InfJumpKey then Config.KeyBinds.InfJump.Key = result.InfJumpKey end
+            if result.InfJumpKeyToggle ~= nil then Config.KeyBinds.InfJump.Enabled = result.InfJumpKeyToggle end
             print("[Gubby Hub]: Конфиг успешно загружен!")
         else
             _G.SaveGubbyConfig()
@@ -503,6 +523,7 @@ buildGubbyButton("💥 Активировать Dropkick (Расталкиван
     end
 end)
 
+-- СИСТЕМА СПАМА КЛАВИШИ (СТАРАЯ ФУНКЦИЯ)
 local KeyInput = Instance.new("TextBox", tabKeys)
 KeyInput.Size = UDim2.new(1, -10, 0, 32); KeyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40); KeyInput.Text = "E"; KeyInput.TextColor3 = Color3.fromRGB(240, 240, 240); KeyInput.Font = Enum.Font.SourceSansBold; KeyInput.TextSize = 14; Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 6)
 
@@ -521,6 +542,7 @@ task.spawn(function()
     end
 end)
 
+-- КУРСОР И СТАРЫЙ БИНД МЕНЮ
 local CursorInput = Instance.new("TextBox", tabKeys)
 CursorInput.Size = UDim2.new(1, -10, 0, 32); CursorInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40); CursorInput.Text = "Введите Asset ID курсора"; CursorInput.TextColor3 = Color3.fromRGB(150, 150, 150); CursorInput.Font = Enum.Font.SourceSansBold; CursorInput.TextSize = 14; Instance.new("UICorner", CursorInput).CornerRadius = UDim.new(0, 6)
 
@@ -529,6 +551,80 @@ buildGubbyButton("🎯 Применить кастомный курсор", tabK
 local BindBtn, bndStr
 BindBtn, bndStr = buildGubbyButton("⌨️ Бинд меню: " .. Config.GubbyUIBind.Key.Name, tabKeys, function() if not Config.GubbyUIBind.Listening then Config.GubbyUIBind.Listening = true; BindBtn.BackgroundTransparency = 0.1; bndStr.Transparency = 0.1; BindBtn.Text = "⏳ Нажми любую клавишу..." end end)
 
+-- ====================================================
+-- НОВАЯ НАСТРОЙКА БИНДОВ ДЛЯ ФУНКЦИЙ (FLY, NOCLIP, INFJUMP)
+-- ====================================================
+
+local function buildHotkeySetting(name, configData, parent)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Size = UDim2.new(1, -10, 0, 35)
+    Frame.BackgroundTransparency = 1
+    
+    local Label = Instance.new("TextLabel", Frame)
+    Label.Size = UDim2.new(0.4, 0, 1, 0)
+    Label.Text = name
+    Label.Font = Enum.Font.SourceSansBold; Label.TextSize = 13; Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+    Label.TextXAlignment = Enum.TextXAlignment.Left; Label.BackgroundTransparency = 1
+    
+    local Input = Instance.new("TextBox", Frame)
+    Input.Size = UDim2.new(0.2, -5, 0, 28); Input.Position = UDim2.new(0.4, 0, 0.1, 0)
+    Input.BackgroundColor3 = Color3.fromRGB(45, 45, 50); Input.Text = configData.Key
+    Input.TextColor3 = Color3.fromRGB(255, 255, 255); Input.Font = Enum.Font.SourceSansBold; Input.TextSize = 13
+    Instance.new("UICorner", Input).CornerRadius = UDim.new(0, 4)
+    
+    Input.FocusLost:Connect(function()
+        local txt = Input.Text:sub(1,1):upper()
+        if txt ~= "" then
+            configData.Key = txt
+            Input.Text = txt
+            _G.SaveGubbyConfig()
+        end
+    end)
+    
+    local ToggleBtn, toggleStroke = buildGubbyButton(configData.Enabled and "✅ БИНД: ОН" or "❌ БИНД: ОФФ", Frame, function(btn, stroke)
+        configData.Enabled = not configData.Enabled
+        btn.Text = configData.Enabled and "✅ БИНД: ОН" or "❌ БИНД: ОФФ"
+        btn.BackgroundTransparency = configData.Enabled and 0.1 or 0.5
+        stroke.Transparency = configData.Enabled and 0.1 or 0.5
+        _G.SaveGubbyConfig()
+    end)
+    ToggleBtn.Size = UDim2.new(0.4, 0, 0.8, 0); ToggleBtn.Position = UDim2.new(0.6, 0, 0.1, 0)
+    ToggleBtn.TextSize = 12
+    ToggleBtn.BackgroundTransparency = configData.Enabled and 0.1 or 0.5
+    toggleStroke.Transparency = configData.Enabled and 0.1 or 0.5
+end
+
+buildHotkeySetting("✈️ Клавиша Полёта:", Config.KeyBinds.Fly, tabKeys)
+buildHotkeySetting("🧱 Клавиша NoClip:", Config.KeyBinds.Noclip, tabKeys)
+buildHotkeySetting("🦘 Клавиша InfJump:", Config.KeyBinds.InfJump, tabKeys)
+
+-- ЛОГИКА ОТСЛЕЖИВАНИЯ БИНДОВ ФУНКЦИЙ НА КЛАВИАТУРЕ
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe or not scriptActive then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        local pressedKey = input.KeyCode.Name
+        
+        -- Fly бинд
+        if Config.KeyBinds.Fly.Enabled and pressedKey == Config.KeyBinds.Fly.Key:upper() then
+            Config.GubbyFly.Enabled = not Config.GubbyFly.Enabled
+            print("[Gubby Hub]: Fly переключен через бинд:", Config.GubbyFly.Enabled)
+        end
+        
+        -- Noclip бинд
+        if Config.KeyBinds.Noclip.Enabled and pressedKey == Config.KeyBinds.Noclip.Key:upper() then
+            Config.GubbyNoclip.Enabled = not Config.GubbyNoclip.Enabled
+            print("[Gubby Hub]: Noclip переключен через бинд:", Config.GubbyNoclip.Enabled)
+        end
+        
+        -- InfJump бинд
+        if Config.KeyBinds.InfJump.Enabled and pressedKey == Config.KeyBinds.InfJump.Key:upper() then
+            Config.InfJump.Enabled = not Config.InfJump.Enabled
+            print("[Gubby Hub]: InfJump переключен через бинд:", Config.InfJump.Enabled)
+        end
+    end
+end)
+
+-- ОСТАЛЬНЫЕ СИСТЕМЫ (ТРОЛЛИНГ, АВТОКЛИКЕР, ПИСТОЛЕТ)
 local preFlingCFrame = nil
 buildGubbyButton("🚀 Включить чистый Fling (По целям)", tabTroll, function(btn, stroke)
     Config.GubbyTroll.Enabled = not Config.GubbyTroll.Enabled
@@ -575,6 +671,7 @@ buildGubbyButton("🔫 Телепорт к Пистолету (MM2)", tabCombat,
     local char = LP.Character; local root = char and char:FindFirstChild("HumanoidRootPart") if not root then return end
     local gunDrop = W:FindFirstChild("GunDrop", true) or W:FindFirstChild("Luger", true) or W:FindFirstChild("Grip", true)
     if gunDrop then
+--[[ --- ЧАСТЬ 5.1 ИЗ 5 --- ]]--
         btn.BackgroundTransparency = 0.1; stroke.Transparency = 0.1; btn.TextColor3 = Color3.fromRGB(50, 150, 255); stroke.Color = Color3.fromRGB(50, 150, 255)
         pcall(function() local targetCFrame = gunDrop:IsA("BasePart") and gunDrop.CFrame or gunDrop.Parent.CFrame; local oldCFrame = root.CFrame; root.CFrame = targetCFrame + Vector3.new(0, 1, 0); task.wait(0.2); root.Velocity = Vector3.zero; root.CFrame = oldCFrame end)
         task.wait(0.5); btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5; btn.TextColor3 = Color3.fromRGB(240, 240, 240); stroke.Color = Color3.fromRGB(240, 240, 240)

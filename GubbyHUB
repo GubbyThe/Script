@@ -687,7 +687,6 @@ local TposeBtn, tposeStroke = buildGubbyButton("🧍 Включить Т-Поз�
     stroke.Transparency = tposeActive and 0.1 or 0.5
     btn.Text = tposeActive and "✅ Т-Поза: АКТИВНА" or "🧍 Включить Т-Позу (Убрать анимации)"
     
-    -- Если включили прямо сейчас, мгновенно убираем анимацию у текущего персонажа
     if tposeActive and LP.Character then
         local animate = LP.Character:FindFirstChild("Animate")
         if animate then animate:Destroy() end
@@ -708,7 +707,6 @@ RS.Heartbeat:Connect(function()
     local char = LP.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     
-    -- Логика Анти-флинга (работает только если кнопка нажата)
     if root and antiflingActive then
         local currentVelocity = root.Velocity.Magnitude
         if currentVelocity > 300 and not Config.GubbyFly.Enabled then
@@ -739,6 +737,7 @@ end)
 
 UIS.JumpRequest:Connect(function() if scriptActive and Config.InfJump.Enabled and LP.Character then local hum = LP.Character:FindFirstChildOfClass("Humanoid") if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end end end)
 
+-- ИСПРАВЛЕННЫЙ ВВОД КЛИК-ТЕЛЕПОРТА (Полностью убрана ошибка Enum)
 UIS.InputBegan:Connect(function(input, gpe)
     if not scriptActive then return end
     if Config.GubbyUIBind.Listening and input.UserInputType == Enum.UserInputType.Keyboard then
@@ -748,8 +747,13 @@ UIS.InputBegan:Connect(function(input, gpe)
     end
     if gpe then return end
     if input.KeyCode == Config.GubbyUIBind.Key then MainFrame.Visible = not MainFrame.Visible; UIStroke.Enabled = MainFrame.Visible end
-    if Config.ClickTp.Enabled and input.UserInputType == Enum.MouseButton1 and (UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)) then
-        local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart"); local mousePos = UIS:GetMouseLocation(); local ray = Cam:ViewportPointToRay(mousePos.X, mousePos.Y); local res = W:Raycast(ray.Origin, ray.Direction * 1000)
+    
+    -- Исправленная строка проверки клика мыши
+    if Config.ClickTp.Enabled and input.UserInputType == Enum.UserInputType.MouseButton1 and (UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)) then
+        local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        local mousePos = UIS:GetMouseLocation()
+        local ray = Cam:ViewportPointToRay(mousePos.X, mousePos.Y)
+        local res = W:Raycast(ray.Origin, ray.Direction * 1000)
         if root and res then root.CFrame = CFrame.new(res.Position + Vector3.new(0, 3, 0)); root.Velocity = Vector3.zero end
     end
 end)
@@ -775,7 +779,6 @@ P.PlayerAdded:Connect(refreshGubbyPlayerList)
 P.PlayerRemoving:Connect(function(pl) Config.GubbyTroll.Targets[pl] = nil; refreshGubbyPlayerList() end)
 task.spawn(refreshGubbyPlayerList)
 
--- Логика Т-позы при возрождении персонажа (работает только если кнопка нажата)
 LP.CharacterAdded:Connect(function(char)
     if scriptActive and tposeActive then
         local animate = char:WaitForChild("Animate", 5)

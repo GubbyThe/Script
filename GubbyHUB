@@ -26,7 +26,6 @@ _G.GubbyConfig = {
     GubbyKFC = {Enabled = false, Size = 12},
     GubbyTroll = {Enabled = false, Targets = {}},
     GubbyUIBind = {Key = Enum.KeyCode.RightControl, Listening = false},
-    -- Новые настройки клавиш для быстрых функций
     KeyBinds = {
         Fly = {Key = "F", Enabled = false},
         Noclip = {Key = "V", Enabled = false},
@@ -49,7 +48,6 @@ _G.SaveGubbyConfig = function()
                 Jump = Config.PlayerMods.Jump,
                 FlySpeed = Config.GubbyFly.Speed,
                 BindKey = Config.GubbyUIBind.Key.Name,
-                -- Сохранение новых биндов
                 FlyKey = Config.KeyBinds.Fly.Key,
                 FlyKeyToggle = Config.KeyBinds.Fly.Enabled,
                 NoclipKey = Config.KeyBinds.Noclip.Key,
@@ -77,7 +75,6 @@ local function loadGubbyConfig()
             if result.Jump then Config.PlayerMods.Jump = result.Jump end
             if result.FlySpeed then Config.GubbyFly.Speed = result.FlySpeed end
             if result.BindKey then Config.GubbyUIBind.Key = Enum.KeyCode[result.BindKey] end
-            -- Загрузка новых биндов
             if result.FlyKey then Config.KeyBinds.Fly.Key = result.FlyKey end
             if result.FlyKeyToggle ~= nil then Config.KeyBinds.Fly.Enabled = result.FlyKeyToggle end
             if result.NoclipKey then Config.KeyBinds.Noclip.Key = result.NoclipKey end
@@ -575,7 +572,7 @@ local BindBtn, bndStr
 BindBtn, bndStr = buildGubbyButton("⌨️ Бинд меню: " .. Config.GubbyUIBind.Key.Name, tabKeys, function() if not Config.GubbyUIBind.Listening then Config.GubbyUIBind.Listening = true; BindBtn.BackgroundTransparency = 0.1; bndStr.Transparency = 0.1; BindBtn.Text = "⏳ Нажми любую клавишу..." end end)
 
 -- ====================================================
--- НОВАЯ НАСТРОЙКА БИНДОВ ДЛЯ ФУНКЦИЙ (FLY, NOCLIP, INFJUMP)
+-- НАСТРОЙКА БИНДОВ ДЛЯ ФУНКЦИЙ (FLY, NOCLIP, INFJUMP)
 -- ====================================================
 
 local function buildHotkeySetting(name, configData, parent)
@@ -627,19 +624,16 @@ UIS.InputBegan:Connect(function(input, gpe)
     if input.UserInputType == Enum.UserInputType.Keyboard then
         local pressedKey = input.KeyCode.Name
         
-        -- Fly бинд
         if Config.KeyBinds.Fly.Enabled and pressedKey == Config.KeyBinds.Fly.Key:upper() then
             Config.GubbyFly.Enabled = not Config.GubbyFly.Enabled
             print("[Gubby Hub]: Fly переключен через бинд:", Config.GubbyFly.Enabled)
         end
         
-        -- Noclip бинд
         if Config.KeyBinds.Noclip.Enabled and pressedKey == Config.KeyBinds.Noclip.Key:upper() then
             Config.GubbyNoclip.Enabled = not Config.GubbyNoclip.Enabled
             print("[Gubby Hub]: Noclip переключен через бинд:", Config.GubbyNoclip.Enabled)
         end
         
-        -- InfJump бинд
         if Config.KeyBinds.InfJump.Enabled and pressedKey == Config.KeyBinds.InfJump.Key:upper() then
             Config.InfJump.Enabled = not Config.InfJump.Enabled
             print("[Gubby Hub]: InfJump переключен через бинд:", Config.InfJump.Enabled)
@@ -647,7 +641,6 @@ UIS.InputBegan:Connect(function(input, gpe)
     end
 end)
 
--- ОСТАЛЬНЫЕ СИСТЕМЫ (ТРОЛЛИНГ, АВТОКЛИКЕР, ПИСТОЛЕТ)
 local preFlingCFrame = nil
 buildGubbyButton("🚀 Включить чистый Fling (По целям)", tabTroll, function(btn, stroke)
     Config.GubbyTroll.Enabled = not Config.GubbyTroll.Enabled
@@ -756,3 +749,4 @@ P.PlayerRemoving:Connect(function(pl) Config.GubbyTroll.Targets[pl] = nil; refre
 task.spawn(refreshGubbyPlayerList)
 
 print("Gubby HUB V4 успешно запущен!")
+

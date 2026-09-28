@@ -408,24 +408,20 @@ buildGubbyButton("🔍 Infinity Zoom (Отдаление)", tabPlayer, function(
     LP.CameraMaxZoomDistance = Config.GubbyKFC.Enabled and 999999 or 128
 end)
 
--- ИСПРАВЛЕННЫЙ МЕТОД: ЛОМАЕМ СЕРВЕРНЫЙ ХИТБОКС БЕЗ ПОТЕРИ ДВИЖЕНИЯ
 buildGubbyButton("🛡️ Блокировать урон (GodMode)", tabPlayer, function(btn, stroke)
     local char = LP.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local torso = char and (char:FindFirstChild("Torso") or char:FindFirstChild("LowerTorso"))
     
     if char and root and torso then
-        -- Находим мотор, соединяющий тело и хитбокс движения
         local joint = root:FindFirstChild("RootJoint") or torso:FindFirstChild("RootJoint")
         if joint then
-            joint:Destroy() -- Уничтожаем мотор. Для сервера ты мёртв/распался, урон не идёт
-            
+            joint:Destroy()
             btn.Text = "🛡️ Режим Бога Активен! (До респавна)"
             btn.BackgroundTransparency = 0.1
             stroke.Transparency = 0.1
             btn.TextColor3 = Color3.fromRGB(50, 255, 150)
             
-            -- Чиним локальное движение персонажа, чтобы ты мог ходить
             task.spawn(function()
                 while char and char.Parent and scriptActive do
                     RS.Heartbeat:Wait()
@@ -475,13 +471,6 @@ local function applyESP(player)
     if player.Character then createVisuals(player.Character) end
     player.CharacterAdded:Connect(createVisuals)
 end
-
-local function applyTracers(player)
-    if player == LP then return end
-    local function createBeam(char)
-        local root = char:WaitForChild("HumanoidRootPart", 5)
-        local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-        if not root or not myRoot then return end
 --[[ --- ЧАСТЬ 4.1 ИЗ 5 --- ]]--
 local function applyTracers(player)
     if player == LP then return end
@@ -543,7 +532,6 @@ buildGubbyButton("💥 Активировать Dropkick (Расталкиван
     end
 end)
 
--- СИСТЕМА СПАМА КЛАВИШИ (СТАРАЯ ФУНКЦИЯ)
 local KeyInput = Instance.new("TextBox", tabKeys)
 KeyInput.Size = UDim2.new(1, -10, 0, 32); KeyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40); KeyInput.Text = "E"; KeyInput.TextColor3 = Color3.fromRGB(240, 240, 240); KeyInput.Font = Enum.Font.SourceSansBold; KeyInput.TextSize = 14; Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 6)
 
@@ -562,7 +550,6 @@ task.spawn(function()
     end
 end)
 
--- КУРСОР И СТАРЫЙ БИНД МЕНЮ
 local CursorInput = Instance.new("TextBox", tabKeys)
 CursorInput.Size = UDim2.new(1, -10, 0, 32); CursorInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40); CursorInput.Text = "Введите Asset ID курсора"; CursorInput.TextColor3 = Color3.fromRGB(150, 150, 150); CursorInput.Font = Enum.Font.SourceSansBold; CursorInput.TextSize = 14; Instance.new("UICorner", CursorInput).CornerRadius = UDim.new(0, 6)
 
@@ -570,10 +557,6 @@ buildGubbyButton("🎯 Применить кастомный курсор", tabK
 
 local BindBtn, bndStr
 BindBtn, bndStr = buildGubbyButton("⌨️ Бинд меню: " .. Config.GubbyUIBind.Key.Name, tabKeys, function() if not Config.GubbyUIBind.Listening then Config.GubbyUIBind.Listening = true; BindBtn.BackgroundTransparency = 0.1; bndStr.Transparency = 0.1; BindBtn.Text = "⏳ Нажми любую клавишу..." end end)
-
--- ====================================================
--- НАСТРОЙКА БИНДОВ ДЛЯ ФУНКЦИЙ (FLY, NOCLIP, INFJUMP)
--- ====================================================
 
 local function buildHotkeySetting(name, configData, parent)
     local Frame = Instance.new("Frame", parent)
@@ -618,22 +601,18 @@ buildHotkeySetting("✈️ Клавиша Полёта:", Config.KeyBinds.Fly, t
 buildHotkeySetting("🧱 Клавиша NoClip:", Config.KeyBinds.Noclip, tabKeys)
 buildHotkeySetting("🦘 Клавиша InfJump:", Config.KeyBinds.InfJump, tabKeys)
 
--- ЛОГИКА ОТСЛЕЖИВАНИЯ БИНДОВ ФУНКЦИЙ НА КЛАВИАТУРЕ
 UIS.InputBegan:Connect(function(input, gpe)
     if gpe or not scriptActive then return end
     if input.UserInputType == Enum.UserInputType.Keyboard then
         local pressedKey = input.KeyCode.Name
-        
         if Config.KeyBinds.Fly.Enabled and pressedKey == Config.KeyBinds.Fly.Key:upper() then
             Config.GubbyFly.Enabled = not Config.GubbyFly.Enabled
             print("[Gubby Hub]: Fly переключен через бинд:", Config.GubbyFly.Enabled)
         end
-        
         if Config.KeyBinds.Noclip.Enabled and pressedKey == Config.KeyBinds.Noclip.Key:upper() then
             Config.GubbyNoclip.Enabled = not Config.GubbyNoclip.Enabled
             print("[Gubby Hub]: Noclip переключен через бинд:", Config.GubbyNoclip.Enabled)
         end
-        
         if Config.KeyBinds.InfJump.Enabled and pressedKey == Config.KeyBinds.InfJump.Key:upper() then
             Config.InfJump.Enabled = not Config.InfJump.Enabled
             print("[Gubby Hub]: InfJump переключен через бинд:", Config.InfJump.Enabled)
@@ -749,4 +728,3 @@ P.PlayerRemoving:Connect(function(pl) Config.GubbyTroll.Targets[pl] = nil; refre
 task.spawn(refreshGubbyPlayerList)
 
 print("Gubby HUB V4 успешно запущен!")
-

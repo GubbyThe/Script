@@ -339,15 +339,19 @@ local function buildGubbySlider(text, min, max, default, parent, callback)
     Trigger.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
     Trigger.Text = ""
     Instance.new("UICorner", Trigger).CornerRadius = UDim.new(1, 0)
+    
     local sliding = false
+    
     local function updateSlider(input)
         local percentage = math.clamp((input.Position.X - SliderBG.AbsolutePosition.X) / SliderBG.AbsoluteSize.X, 0, 1)
         SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
         Trigger.Position = UDim2.new(percentage, -6, 0, -3)
         local value = math.floor(min + (percentage * (max - min)))
         Label.Text = text .. ": " .. tostring(value)
-        pcall(callback, value)
+        -- Передаем true, чтобы callback знал, что слайдер двигают руками
+        pcall(callback, value, true)
     end
+    
     Trigger.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true end
     end)
@@ -391,10 +395,26 @@ buildGubbyButton("🔍 Infinity Zoom (Отдаление)", tabPlayer, function(
     LP.CameraMaxZoomDistance = Config.GubbyKFC.Enabled and 999999 or 128
 end)
 
-buildGubbySlider("Скорость полёта", 20, 300, Config.GubbyFly.Speed, tabPlayer, function(v) Config.GubbyFly.Speed = v _G.SaveGubbyConfig() end)
-buildGubbySlider("Скорость ходьбы", 16, 150, Config.PlayerMods.Speed, tabPlayer, function(v) Config.PlayerMods.Speed = v _G.SaveGubbyConfig() end)
-buildGubbySlider("Высота прыжка", 50, 300, Config.PlayerMods.Jump, tabPlayer, function(v) Config.PlayerMods.Jump = v _G.SaveGubbyConfig() end)
-buildGubbySlider("Гравитация мира", 0, 400, math.floor(Config.PlayerMods.Gravity), tabPlayer, function(v) Config.PlayerMods.Gravity = v W.Gravity = v end)
+-- Сохраняем ТОЛЬКО если слайдер изменили вручную (isManual == true)
+buildGubbySlider("Скорость полёта", 20, 300, Config.GubbyFly.Speed, tabPlayer, function(v, isManual) 
+    Config.GubbyFly.Speed = v 
+    if isManual then _G.SaveGubbyConfig() end 
+end)
+
+buildGubbySlider("Скорость ходьбы", 16, 150, Config.PlayerMods.Speed, tabPlayer, function(v, isManual) 
+    Config.PlayerMods.Speed = v 
+    if isManual then _G.SaveGubbyConfig() end 
+end)
+
+buildGubbySlider("Высота прыжка", 50, 300, Config.PlayerMods.Jump, tabPlayer, function(v, isManual) 
+    Config.PlayerMods.Jump = v 
+    if isManual then _G.SaveGubbyConfig() end 
+end)
+
+buildGubbySlider("Гравитация мира", 0, 400, math.floor(Config.PlayerMods.Gravity), tabPlayer, function(v) 
+    Config.PlayerMods.Gravity = v 
+    W.Gravity = v 
+end)
 
 buildGubbyButton("🔄 Сбросить гравитацию в дефолт", tabPlayer, function() Config.PlayerMods.Gravity = 196.2 W.Gravity = 196.2 end)
 buildGubbyButton("🪐 На Юпитер (Экстренный самофлинг)", tabPlayer, function() local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") if root then for _, part in ipairs(LP.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end root.Velocity = Vector3.new(0, 1000000, 0) end end)

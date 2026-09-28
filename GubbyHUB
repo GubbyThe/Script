@@ -359,19 +359,15 @@ local function buildGubbySlider(text, min, max, default, parent, callback)
     Trigger.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
     Trigger.Text = ""
     Instance.new("UICorner", Trigger).CornerRadius = UDim.new(1, 0)
-    
     local sliding = false
-    
     local function updateSlider(input)
         local percentage = math.clamp((input.Position.X - SliderBG.AbsolutePosition.X) / SliderBG.AbsoluteSize.X, 0, 1)
         SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
         Trigger.Position = UDim2.new(percentage, -6, 0, -3)
         local value = math.floor(min + (percentage * (max - min)))
         Label.Text = text .. ": " .. tostring(value)
-        -- Передаем true, чтобы callback знал, что слайдер двигают руками
         pcall(callback, value, true)
     end
-    
     Trigger.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true end
     end)
@@ -415,26 +411,30 @@ buildGubbyButton("🔍 Infinity Zoom (Отдаление)", tabPlayer, function(
     LP.CameraMaxZoomDistance = Config.GubbyKFC.Enabled and 999999 or 128
 end)
 
--- Сохраняем ТОЛЬКО если слайдер изменили вручную (isManual == true)
-buildGubbySlider("Скорость полёта", 20, 300, Config.GubbyFly.Speed, tabPlayer, function(v, isManual) 
-    Config.GubbyFly.Speed = v 
-    if isManual then _G.SaveGubbyConfig() end 
+-- НОВАЯ ФУНКЦИЯ: БЛОКИРОВКА АНИМАЦИИ (Т-ПОЗА GODMODE)
+buildGubbyButton("🛡️ Блокировать урон (Т-Поза GodMode)", tabPlayer, function(btn, stroke)
+    local char = LP.Character
+    if char then
+        local animateScript = char:FindFirstChild("Animate")
+        if animateScript then
+            animateScript:Destroy() -- Ломаем скрипт анимаций, персонаж встает в Т-позу
+            btn.Text = "🛡️ Т-Поза Активна! (До респавна)"
+            btn.BackgroundTransparency = 0.1
+            stroke.Transparency = 0.1
+            btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+            print("[Gubby Hub]: Скрипт Animate успешно удален, хитбоксы сломаны.")
+        else
+            btn.Text = "❌ Анимация уже удалена / Не найдена"
+            task.wait(1.5)
+            btn.Text = "🛡️ Блокировать урон (Т-Поза GodMode)"
+        end
+    end
 end)
 
-buildGubbySlider("Скорость ходьбы", 16, 150, Config.PlayerMods.Speed, tabPlayer, function(v, isManual) 
-    Config.PlayerMods.Speed = v 
-    if isManual then _G.SaveGubbyConfig() end 
-end)
-
-buildGubbySlider("Высота прыжка", 50, 300, Config.PlayerMods.Jump, tabPlayer, function(v, isManual) 
-    Config.PlayerMods.Jump = v 
-    if isManual then _G.SaveGubbyConfig() end 
-end)
-
-buildGubbySlider("Гравитация мира", 0, 400, math.floor(Config.PlayerMods.Gravity), tabPlayer, function(v) 
-    Config.PlayerMods.Gravity = v 
-    W.Gravity = v 
-end)
+buildGubbySlider("Скорость полёта", 20, 300, Config.GubbyFly.Speed, tabPlayer, function(v, isManual) Config.GubbyFly.Speed = v if isManual then _G.SaveGubbyConfig() end end)
+buildGubbySlider("Скорость ходьбы", 16, 150, Config.PlayerMods.Speed, tabPlayer, function(v, isManual) Config.PlayerMods.Speed = v if isManual then _G.SaveGubbyConfig() end end)
+buildGubbySlider("Высота прыжка", 50, 300, Config.PlayerMods.Jump, tabPlayer, function(v, isManual) Config.PlayerMods.Jump = v if isManual then _G.SaveGubbyConfig() end end)
+buildGubbySlider("Гравитация мира", 0, 400, math.floor(Config.PlayerMods.Gravity), tabPlayer, function(v) Config.PlayerMods.Gravity = v W.Gravity = v end)
 
 buildGubbyButton("🔄 Сбросить гравитацию в дефолт", tabPlayer, function() Config.PlayerMods.Gravity = 196.2 W.Gravity = 196.2 end)
 buildGubbyButton("🪐 На Юпитер (Экстренный самофлинг)", tabPlayer, function() local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") if root then for _, part in ipairs(LP.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end root.Velocity = Vector3.new(0, 1000000, 0) end end)
@@ -480,7 +480,7 @@ local function applyTracers(player)
     if player.Character then createBeam(player.Character) end
     player.CharacterAdded:Connect(createBeam)
 end
-
+--[[ --- ЧАСТЬ 4.1 ИЗ 5 --- ]]--
 RS.RenderStepped:Connect(function()
     if not scriptActive then return end
     for _, player in ipairs(P:GetPlayers()) do
@@ -488,8 +488,16 @@ RS.RenderStepped:Connect(function()
         if char then
             local highlight = char:FindFirstChild("GubbyHighlight")
             local beam = char:FindFirstChild("GubbyTracerBeam")
-            if Config.GubbyESP.Enabled then if not highlight then applyESP(player) else highlight.Enabled = true end else if highlight then highlight.Enabled = false end end
-            if Config.GubbyTracers.Enabled then if not beam then applyTracers(player) else beam.Enabled = true end else if beam then beam.Enabled = false end end
+            if Config.GubbyESP.Enabled then 
+                if not highlight then applyESP(player) else highlight.Enabled = true end 
+            else 
+                if highlight then highlight.Enabled = false end 
+            end
+            if Config.GubbyTracers.Enabled then 
+                if not beam then applyTracers(player) else beam.Enabled = true end 
+            else 
+                if beam then beam.Enabled = false end 
+            end
         end
     end
 end)

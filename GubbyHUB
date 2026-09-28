@@ -787,3 +787,98 @@ LP.CharacterAdded:Connect(function(char)
 end)
 
 print("Gubby HUB V4 успешно запущен!")
+--[[ --- ЧАСТЬ 7 ИЗ 7 --- ]]--
+-- Функция для определения роли игрока по его инвентарю
+local function getMM2Color(player)
+    local char = player.Character
+    local backpack = player:FindFirstChild("Backpack")
+    
+    -- Проверка на Убийцу (Красный)
+    if (char and char:FindFirstChild("Knife")) or (backpack and backpack:FindFirstChild("Knife")) then
+        return Color3.fromRGB(255, 50, 50)
+    end
+    
+    -- Проверка на Шерифа (Синий)
+    if (char and (char:FindFirstChild("Gun") or char:FindFirstChild("GunDrop"))) or 
+       (backpack and (backpack:FindFirstChild("Gun") or backpack:FindFirstChild("GunDrop"))) then
+        return Color3.fromRGB(50, 150, 255)
+    end
+    
+    -- Обычный игрок (Белый)
+    return Color3.fromRGB(240, 240, 240)
+end
+
+-- Постоянный цикл, который на лету меняет цвет ESP в зависимости от роли
+RS.Heartbeat:Connect(function()
+    if not scriptActive or not Config.GubbyESP.Enabled then return end
+    
+    for _, player in ipairs(P:GetPlayers()) do
+        if player ~= LP and player.Character then
+            local highlight = player.Character:FindFirstChild("GubbyHighlight")
+            local beam = player.Character:FindFirstChild("GubbyTracerBeam")
+            
+            if highlight and highlight.Enabled then
+                local roleColor = getMM2Color(player)
+                
+                -- Динамически меняем цвета силуэта и обводки под роль
+                highlight.FillColor = roleColor
+                highlight.OutlineColor = roleColor
+                
+                -- Если включены трейсеры (лучи), их тоже красим под роль игрока
+                if beam and beam.Enabled then
+                    beam.Color = ColorSequence.new(roleColor)
+                end
+            end
+        end
+    end
+end)
+--[[ --- ЧАСТЬ 8 ИЗ 8 --- ]]--
+-- Переменная для отслеживания состояния Спинбота
+local spinbotActive = false
+local spinSpeed = 50 -- Скорость вращения
+
+-- 1. Добавляем кнопку Спинбота прямо во вкладку "Игрок" (tabPlayer) из конца файла
+local SpinBtn, spinStroke = buildGubbyButton("🌀 Включить SpinBot (Крутилка)", tabPlayer, function(btn, stroke)
+    spinbotActive = not spinbotActive
+    btn.BackgroundTransparency = spinbotActive and 0.1 or 0.5
+    stroke.Transparency = spinbotActive and 0.1 or 0.5
+    btn.Text = spinbotActive and "✅ SpinBot: АКТИВЕН" or "🌀 Включить SpinBot (Крутилка)"
+end)
+
+-- 2. Добавляем визуальную строчку-информацию во вкладку "Клавиши" (tabKeys)
+local SpinKeyLabel = Instance.new("TextLabel", tabKeys)
+SpinKeyLabel.Size = UDim2.new(1, -10, 0, 30)
+SpinKeyLabel.BackgroundTransparency = 1
+SpinKeyLabel.Text = "⚙️ Быстрый SpinBot привязан на клавишу: [ C ]"
+SpinKeyLabel.Font = Enum.Font.SourceSansBold
+SpinKeyLabel.TextSize = 13
+SpinKeyLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
+SpinKeyLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 3. Цикл Heartbeat для физического вращения персонажа (работает без лагов)
+RS.Heartbeat:Connect(function()
+    if not scriptActive or not spinbotActive then return end
+    local char = LP.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if root then
+        -- Намертво закручиваем CFrame торса по оси Y каждую миллисекунду
+        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+    end
+end)
+
+-- 4. Отслеживание нажатия клавиши "C" на клавиатуре для быстрого переключения
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe or not scriptActive then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.C then
+        spinbotActive = not spinbotActive
+        
+        -- Синхронизируем состояние с кнопкой в меню, если оно открыто
+        if SpinBtn and spinStroke then
+            SpinBtn.BackgroundTransparency = spinbotActive and 0.1 or 0.5
+            spinStroke.Transparency = spinbotActive and 0.1 or 0.5
+            SpinBtn.Text = spinbotActive and "✅ SpinBot: АКТИВЕН" or "🌀 Включить SpinBot (Крутилка)"
+        end
+        print("[Gubby Hub]: SpinBot переключен через клавишу C:", spinbotActive)
+    end
+end)

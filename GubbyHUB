@@ -675,27 +675,49 @@ buildGubbyButton("🔫 Телепорт к Пистолету (MM2)", tabCombat,
     end
 end)
 --[[ --- ЧАСТЬ 6 ИЗ 6 --- ]]--
--- Переменная для хранения последней безопасной позиции
+-- Переменные для переключателей функций
+local tposeActive = false
+local antiflingActive = false
 local lastSafePosition = nil
 
+-- Создаем кнопки прямо из конца скрипта во вкладку "Игрок"
+local TposeBtn, tposeStroke = buildGubbyButton("🧍 Включить Т-Позу (Убрать анимации)", tabPlayer, function(btn, stroke)
+    tposeActive = not tposeActive
+    btn.BackgroundTransparency = tposeActive and 0.1 or 0.5
+    stroke.Transparency = tposeActive and 0.1 or 0.5
+    btn.Text = tposeActive and "✅ Т-Поза: АКТИВНА" or "🧍 Включить Т-Позу (Убрать анимации)"
+    
+    -- Если включили прямо сейчас, мгновенно убираем анимацию у текущего персонажа
+    if tposeActive and LP.Character then
+        local animate = LP.Character:FindFirstChild("Animate")
+        if animate then animate:Destroy() end
+    end
+end)
+
+local AntiflingBtn, antiflingStroke = buildGubbyButton("🛡️ Включить Анти-Флинг (Возврат координат)", tabPlayer, function(btn, stroke)
+    antiflingActive = not antiflingActive
+    btn.BackgroundTransparency = antiflingActive and 0.1 or 0.5
+    stroke.Transparency = antiflingActive and 0.1 or 0.5
+    btn.Text = antiflingActive and "✅ Анти-Флинг: АКТИВЕН" or "🛡️ Включить Анти-Флинг (Возврат координат)"
+    if not antiflingActive then lastSafePosition = nil end
+end)
+
+-- Постоянный цикл физики персонажа
 RS.Heartbeat:Connect(function()
     if not scriptActive then return end
     local char = LP.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     
-    if root then
+    -- Логика Анти-флинга (работает только если кнопка нажата)
+    if root and antiflingActive then
         local currentVelocity = root.Velocity.Magnitude
-        
-        -- Если скорость аномально высокая (больше 300), значит нас флинганули
         if currentVelocity > 300 and not Config.GubbyFly.Enabled then
-            -- Мгновенно обнуляем бешеную скорость и возвращаем в последнюю безопасную точку
             root.Velocity = Vector3.zero
             root.RotVelocity = Vector3.zero
             if lastSafePosition then
                 root.CFrame = lastSafePosition
             end
         else
-            -- Если скорость в норме, просто запоминаем эту позицию как безопасную
             lastSafePosition = root.CFrame
         end
     end
@@ -726,7 +748,7 @@ UIS.InputBegan:Connect(function(input, gpe)
     end
     if gpe then return end
     if input.KeyCode == Config.GubbyUIBind.Key then MainFrame.Visible = not MainFrame.Visible; UIStroke.Enabled = MainFrame.Visible end
-    if Config.ClickTp.Enabled and input.UserInputType == Enum.UserInputType.MouseButton1 and (UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)) then
+    if Config.ClickTp.Enabled and input.UserInputType == Enum.MouseButton1 and (UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)) then
         local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart"); local mousePos = UIS:GetMouseLocation(); local ray = Cam:ViewportPointToRay(mousePos.X, mousePos.Y); local res = W:Raycast(ray.Origin, ray.Direction * 1000)
         if root and res then root.CFrame = CFrame.new(res.Position + Vector3.new(0, 3, 0)); root.Velocity = Vector3.zero end
     end
@@ -753,13 +775,12 @@ P.PlayerAdded:Connect(refreshGubbyPlayerList)
 P.PlayerRemoving:Connect(function(pl) Config.GubbyTroll.Targets[pl] = nil; refreshGubbyPlayerList() end)
 task.spawn(refreshGubbyPlayerList)
 
-local function disableAnimations(char)
-    local animate = char:WaitForChild("Animate", 5)
-    if animate then animate:Destroy() end
-end
-if LP.Character then task.spawn(disableAnimations, LP.Character) end
+-- Логика Т-позы при возрождении персонажа (работает только если кнопка нажата)
 LP.CharacterAdded:Connect(function(char)
-    if scriptActive then task.spawn(disableAnimations, char) end
+    if scriptActive and tposeActive then
+        local animate = char:WaitForChild("Animate", 5)
+        if animate then animate:Destroy() end
+    end
 end)
 
 print("Gubby HUB V4 успешно запущен!")

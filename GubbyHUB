@@ -882,3 +882,57 @@ UIS.InputBegan:Connect(function(input, gpe)
         print("[Gubby Hub]: SpinBot переключен через клавишу C:", spinbotActive)
     end
 end)
+--[[ --- ЧАСТЬ 10 ИЗ 10 --- ]]--
+-- Переменная для отслеживания состояния заморозки
+local serverFreezeActive = false
+local originalArmSize = nil
+
+-- Создаем кнопку заморозки во вкладку "Троллинг" (tabTroll) из конца файла
+local FreezeBtn, freezeStroke = buildGubbyButton("❄️ Включить Заморозку Сервера (KFC Рука)", tabTroll, function(btn, stroke)
+    serverFreezeActive = not serverFreezeActive
+    btn.BackgroundTransparency = serverFreezeActive and 0.1 or 0.5
+    stroke.Transparency = serverFreezeActive and 0.1 or 0.5
+    btn.Text = serverFreezeActive and "✅ Заморозка: АКТИВНА (Сервер Лагает)" or "❄️ Включить Заморозку Сервера (KFC Рука)"
+    
+    local char = LP.Character
+    -- Ищем правую руку персонажа (работает и для старых R6, и для новых R15 аватаров)
+    local arm = char and (char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm"))
+    
+    if arm and arm:IsA("BasePart") then
+        if serverFreezeActive then
+            -- Сохраняем оригинальный размер руки, если еще не сохранили
+            if not originalArmSize then originalArmSize = arm.Size end
+            
+            -- Вздуваем руку до колоссальных размеров, ломая физику рендера вокруг
+            arm.Size = Vector3.new(10000, 10000, 10000)
+            arm.CanCollide = false -- Чтобы тебя самого не унесло в космос от коллизии
+            print("[Gubby Hub]: KFC Заморозка запущена! Сервер перегружен.")
+        else
+            -- Возвращаем руку в нормальное состояние
+            if originalArmSize then
+                arm.Size = originalArmSize
+            else
+                arm.Size = Vector3.new(1, 2, 1) -- Дефолтный размер на случай сбоя
+            end
+            arm.CanCollide = true
+            print("[Gubby Hub]: Сервер оттаял, размеры возвращены.")
+        end
+    else
+        btn.Text = "❌ Рука персонажа не найдена!"
+        task.wait(1.5)
+        btn.Text = serverFreezeActive and "✅ Заморозка: АКТИВНА" or "❄️ Включить Заморозку Сервера (KFC Рука)"
+    end
+end)
+
+-- Авто-сброс размеров при респавне, чтобы ты не заспавнился с гигантской рукой
+LP.CharacterAdded:Connect(function(char)
+    if scriptActive then
+        serverFreezeActive = false
+        originalArmSize = nil
+        if FreezeBtn and freezeStroke then
+            FreezeBtn.BackgroundTransparency = 0.5
+            freezeStroke.Transparency = 0.5
+            FreezeBtn.Text = "❄️ Включить Заморозку Сервера (KFC Рука)"
+        end
+    end
+end)

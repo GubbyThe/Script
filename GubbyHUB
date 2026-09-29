@@ -936,3 +936,88 @@ LP.CharacterAdded:Connect(function(char)
         end
     end
 end)
+--[[ --- ЧАСТЬ 11 ИЗ 11 --- ]]--
+-- База ID официальных походок Roblox (меняет ходьбу, бег, прыжок и стойку)
+local AnimationPacks = {
+    ["Стандартная"]  = {idle = "rbxassetid://507766388", walk = "rbxassetid://507777826", run = "rbxassetid://507767714", jump = "rbxassetid://507768790"},
+    ["Ниндзя"]       = {idle = "rbxassetid://616111812", walk = "rbxassetid://616122287", run = "rbxassetid://616119332", jump = "rbxassetid://616115804"},
+    ["Зомби"]        = {idle = "rbxassetid://616156100", walk = "rbxassetid://616168050", run = "rbxassetid://616163617", jump = "rbxassetid://616157456"},
+    ["Маг / Заклинатель"] = {idle = "rbxassetid://707742142", walk = "rbxassetid://707829716", run = "rbxassetid://707826532", jump = "rbxassetid://707812851"},
+    ["Космонавт"]    = {idle = "rbxassetid://616095330", walk = "rbxassetid://616104748", run = "rbxassetid://616101944", jump = "rbxassetid://616097148"},
+    ["Игрушка"]      = {idle = "rbxassetid://782841498", walk = "rbxassetid://782845347", run = "rbxassetid://782843345", jump = "rbxassetid://782842708"}
+}
+
+-- Функция для применения анимации на персонажа (подменяет ID в скрипте Animate)
+local currentPackName = "Стандартная"
+local function applyWalkAnim(char)
+    local animate = char:WaitForChild("Animate", 5)
+    local pack = AnimationPacks[currentPackName]
+    if animate and pack then
+        pcall(function()
+            -- Меняем ID в контейнерах скрипта анимаций
+            if animate:FindFirstChild("idle") then animate.idle.Animation1.AnimationId = pack.idle end
+            if animate:FindFirstChild("walk") then animate.walk.WalkAnim.AnimationId = pack.walk end
+            if animate:FindFirstChild("run") then animate.run.RunAnim.AnimationId = pack.run end
+            if animate:FindFirstChild("jump") then animate.jump.JumpAnim.AnimationId = pack.jump end
+            
+            -- Перезапускаем humanoid, чтобы игра обновила анимации персонажа
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then hum:ChangeState(Enum.HumanoidStateType.Landed) end
+        end)
+    end
+end
+
+-- Сливаем это с респавном
+LP.CharacterAdded:Connect(function(char)
+    if scriptActive and currentPackName ~= "Стандартная" then
+        task.wait(0.5)
+        applyWalkAnim(char)
+    end
+end)
+
+-- Создаем мини-меню для выбора походок
+local WalkMenu = Instance.new("Frame", ScreenGui)
+WalkMenu.Size = UDim2.new(0, 180, 0, 220)
+WalkMenu.Position = UDim2.new(0.5, 250, 0.3, 0) -- Будет открываться справа от основного хаба
+WalkMenu.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+WalkMenu.Visible = false
+Instance.new("UICorner", WalkMenu).CornerRadius = UDim.new(0, 8)
+local menuStroke = Instance.new("UIStroke", WalkMenu)
+menuStroke.Color = Color3.fromRGB(240, 240, 240); menuStroke.Thickness = 1; menuStroke.Transparency = 0.5
+
+local MenuTitle = Instance.new("TextLabel", WalkMenu)
+MenuTitle.Size = UDim2.new(1, 0, 0, 25); MenuTitle.Text = "🎭 ВЫБОР ПОХОДКИ"
+MenuTitle.Font = Enum.Font.SourceSansBold; MenuTitle.TextSize = 13; MenuTitle.TextColor3 = Color3.fromRGB(240, 240, 240); MenuTitle.BackgroundTransparency = 1
+
+local ScrollPack = Instance.new("ScrollingFrame", WalkMenu)
+ScrollPack.Size = UDim2.new(1, -10, 1, -35); ScrollPack.Position = UDim2.new(0, 5, 0, 30)
+ScrollPack.BackgroundTransparency = 1; ScrollPack.ScrollBarThickness = 2; ScrollPack.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local PackLayout = Instance.new("UIListLayout", ScrollPack); PackLayout.Padding = UDim.new(0, 4)
+
+-- Создаем кнопки для каждой походки из базы
+for packName, _ in pairs(AnimationPacks) do
+    local pBtn = Instance.new("TextButton", ScrollPack)
+    pBtn.Size = UDim2.new(1, -4, 0, 26); pBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    pBtn.Text = packName; pBtn.TextColor3 = Color3.fromRGB(220, 220, 220); pBtn.Font = Enum.Font.SourceSansBold; pBtn.TextSize = 12
+    Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
+    local pStroke = Instance.new("UIStroke", pBtn); pStroke.Color = Color3.fromRGB(240, 240, 240); pStroke.Thickness = 1; pStroke.Transparency = 0.7
+    
+    pBtn.MouseButton1Click:Connect(function()
+        currentPackName = packName
+        if LP.Character then applyWalkAnim(LP.Character) end
+        print("[Gubby Hub]: Походка изменена на:", packName)
+        
+        -- Светим выбранную кнопку
+        for _, btn in ipairs(ScrollPack:GetChildren()) do
+            if btn:IsA("TextButton") then btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) end
+        end
+        pBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
+    end)
+end
+
+-- Добавляем кнопку вызова этого меню во вкладку "Эмоции" (tabEmotes)
+buildGubbyButton("🏃‍♂️ Открыть меню Походок (Анимаций)", tabEmotes, function(btn, stroke)
+    WalkMenu.Visible = not WalkMenu.Visible
+    btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
+    stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
+end)

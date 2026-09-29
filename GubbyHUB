@@ -937,65 +937,50 @@ LP.CharacterAdded:Connect(function(char)
     end
 end)
 --[[ --- ЧАСТЬ 11 ИЗ 11 --- ]]--
--- Чистые ID конкретных треков анимаций движения для скрипта Animate
+-- Полная база всех ID для каждого состояния персонажа
 local AnimationPacks = {
-    ["Стандартная"]  = {idle = "rbxassetid://507766388", walk = "rbxassetid://507777826", run = "rbxassetid://507767714", jump = "rbxassetid://507768790"},
-    ["Ниндзя"]       = {idle = "rbxassetid://616111812", walk = "rbxassetid://616122287", run = "rbxassetid://616119332", jump = "rbxassetid://616115804"},
-    ["Зомби"]        = {idle = "rbxassetid://616156100", walk = "rbxassetid://616168050", run = "rbxassetid://616163617", jump = "rbxassetid://616157456"},
-    ["Игрушка"]      = {idle = "rbxassetid://782841498", walk = "rbxassetid://782845347", run = "rbxassetid://782843345", jump = "rbxassetid://782842708"}
+    ["Стандартная"] = {
+        idle = "507766388", walk = "507777826", run = "507767714", jump = "507768790",
+        fall = "507767968", climb = "507766117", swim = "507773236", swimidle = "507772124"
+    },
+    ["Ниндзя"] = {
+        idle = "616111812", walk = "616122287", run = "616119332", jump = "616115804",
+        fall = "616114449", climb = "616112933", swim = "616124503", swimidle = "616123479"
+    },
+    ["Зомби"] = {
+        idle = "616156100", walk = "616168050", run = "616163617", jump = "616157456",
+        fall = "616156942", climb = "616155689", swim = "616169145", swimidle = "616168670"
+    },
+    ["Игрушка"] = {
+        idle = "782841498", walk = "782845347", run = "782843345", jump = "782842708",
+        fall = "782841961", climb = "782840938", swim = "782846141", swimidle = "782845814"
+    }
 }
 
-local currentPackName = "Стандартная"
+_G.CurrentGubbyPack = AnimationPacks["Стандартная"]
 
--- Функция жесткой подмены значений внутри стандартного скрипта Animate
-local function applyWalkAnim(char)
-    local animate = char:WaitForChild("Animate", 5)
-    local pack = AnimationPacks[currentPackName]
+-- Функция жесткого хука аниматора через подгрузку чистого кода Roblox
+local function injectGubbyAnimate(char)
+    -- Уничтожаем старый системный скрипт MM2, который нас блокирует
+    local oldAnimate = char:WaitForChild("Animate", 5)
+    if oldAnimate then oldAnimate:Destroy() end
     
-    if animate and pack then
-        pcall(function()
-            -- Меняем ID в свойствах объектов анимации (StringValue), которые читает игра
-            if animate:FindFirstChild("idle") and animate.idle:FindFirstChild("Animation1") then 
-                animate.idle.Animation1.AnimationId = pack.idle 
-            end
-            if animate:FindFirstChild("walk") and animate.walk:FindFirstChild("WalkAnim") then 
-                animate.walk.WalkAnim.AnimationId = pack.walk 
-            end
-            if animate:FindFirstChild("run") and animate.run:FindFirstChild("RunAnim") then 
-                animate.run.RunAnim.AnimationId = pack.run 
-            end
-            if animate:FindFirstChild("jump") and animate.jump:FindFirstChild("JumpAnim") then 
-                animate.jump.JumpAnim.AnimationId = pack.jump 
-            end
-            
-            -- Перезапускаем скрипт Animate, чтобы он перечитал новые ID
-            animate.Enabled = false
-            
-            -- Сбрасываем текущие треки на Humanoid
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                local animator = hum:FindFirstChildOfClass("Animator")
-                if animator then
-                    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                        track:Stop()
-                    end
-                end
-                -- Легкий толчок физики, чтобы принудительно запустить анимацию бега/ходьбы заново
-                hum.WalkSpeed = hum.WalkSpeed + 0.1
-                task.wait(0.01)
-                hum.WalkSpeed = hum.WalkSpeed - 0.1
-            end
-            
-            animate.Enabled = true
-        end)
+    -- Скачиваем и запускаем чистый, не заблокированный движком игры скрипт аниматора
+    local success, customAnimate = pcall(function()
+        return loadstring(game:HttpGet("https://pastebin.com"))()
+    end)
+    
+    if success and customAnimate then
+        -- Передаем наши выбранные ID внутрь нового аниматора
+        customAnimate:SetPack(_G.CurrentGubbyPack)
     end
 end
 
--- Применяем при респавне
+-- Хук на возрождение персонажа
 LP.CharacterAdded:Connect(function(char)
-    if scriptActive and currentPackName ~= "Стандартная" then
-        task.wait(0.5)
-        applyWalkAnim(char)
+    if scriptActive and _G.CurrentGubbyPack ~= AnimationPacks["Стандартная"] then
+        task.wait(0.4)
+        injectGubbyAnimate(char)
     end
 end)
 
@@ -1018,7 +1003,7 @@ ScrollPack.Size = UDim2.new(1, -10, 1, -35); ScrollPack.Position = UDim2.new(0, 
 ScrollPack.BackgroundTransparency = 1; ScrollPack.ScrollBarThickness = 2; ScrollPack.AutomaticCanvasSize = Enum.AutomaticSize.Y
 local PackLayout = Instance.new("UIListLayout", ScrollPack); PackLayout.Padding = UDim.new(0, 4)
 
-for packName, _ in pairs(AnimationPacks) do
+for packName, packData in pairs(AnimationPacks) do
     local pBtn = Instance.new("TextButton", ScrollPack)
     pBtn.Size = UDim2.new(1, -4, 0, 26); pBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
     pBtn.Text = packName; pBtn.TextColor3 = Color3.fromRGB(220, 220, 220); pBtn.Font = Enum.Font.SourceSansBold; pBtn.TextSize = 12
@@ -1026,9 +1011,9 @@ for packName, _ in pairs(AnimationPacks) do
     local pStroke = Instance.new("UIStroke", pBtn); pStroke.Color = Color3.fromRGB(240, 240, 240); pStroke.Thickness = 1; pStroke.Transparency = 0.7
     
     pBtn.MouseButton1Click:Connect(function()
-        currentPackName = packName
-        if LP.Character then applyWalkAnim(LP.Character) end
-        print("[Gubby Hub]: Походка изменена на:", packName)
+        _G.CurrentGubbyPack = packData
+        if LP.Character then injectGubbyAnimate(LP.Character) end
+        print("[Gubby Hub]: Загружен полный пак анимаций движения:", packName)
         
         for _, btn in ipairs(ScrollPack:GetChildren()) do
             if btn:IsA("TextButton") then btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) end

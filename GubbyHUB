@@ -937,55 +937,55 @@ LP.CharacterAdded:Connect(function(char)
     end
 end)
 --[[ --- ЧАСТЬ 11 ИЗ 11 --- ]]--
--- База ID официальных походок Roblox (меняет ходьбу, бег, прыжок и стойку)
+-- Официальные ID паков анимаций из каталога Roblox
 local AnimationPacks = {
-    ["Стандартная"]  = {idle = "rbxassetid://507766388", walk = "rbxassetid://507777826", run = "rbxassetid://507767714", jump = "rbxassetid://507768790"},
-    ["Ниндзя"]       = {idle = "rbxassetid://616111812", walk = "rbxassetid://616122287", run = "rbxassetid://616119332", jump = "rbxassetid://616115804"},
-    ["Зомби"]        = {idle = "rbxassetid://616156100", walk = "rbxassetid://616168050", run = "rbxassetid://616163617", jump = "rbxassetid://616157456"},
-    ["Маг / Заклинатель"] = {idle = "rbxassetid://707742142", walk = "rbxassetid://707829716", run = "rbxassetid://707826532", jump = "rbxassetid://707812851"},
-    ["Космонавт"]    = {idle = "rbxassetid://616095330", walk = "rbxassetid://616104748", run = "rbxassetid://616101944", jump = "rbxassetid://616097148"},
-    ["Игрушка"]      = {idle = "rbxassetid://782841498", walk = "rbxassetid://782845347", run = "rbxassetid://782843345", jump = "rbxassetid://782842708"}
+    ["Стандартная"]  = 0,
+    ["Ниндзя"]       = 4,
+    ["Зомби"]        = 3,
+    ["Маг / Заклинатель"] = 8,
+    ["Космонавт"]    = 5,
+    ["Игрушка"]      = 7
 }
 
 local currentPackName = "Стандартная"
 
--- Полностью переписанная функция жесткой перезагрузки скрипта Animate
+-- Профессиональная функция смены походки через HumanoidDescription
 local function applyWalkAnim(char)
-    local animate = char:WaitForChild("Animate", 5)
-    local pack = AnimationPacks[currentPackName]
+    local hum = char:WaitForChild("Humanoid", 5)
+    local packId = AnimationPacks[currentPackName]
     
-    if animate and pack then
+    if hum and packId then
         pcall(function()
-            -- 1. Подменяем ID во всех нужных папках
-            if animate:FindFirstChild("idle") then animate.idle.Animation1.AnimationId = pack.idle end
-            if animate:FindFirstChild("walk") then animate.walk.WalkAnim.AnimationId = pack.walk end
-            if animate:FindFirstChild("run") then animate.run.RunAnim.AnimationId = pack.run end
-            if animate:FindFirstChild("jump") then animate.jump.JumpAnim.AnimationId = pack.jump end
+            -- Получаем текущее описание внешности персонажа
+            local desc = hum:GetAppliedDescription() or Instance.new("HumanoidDescription")
             
-            -- 2. СЕКРЕТНЫЙ ТРЮК: выключаем и включаем скрипт, чтобы обновить кэш Roblox
-            animate.Enabled = false
-            
-            -- Останавливаем текущие запущенные анимации на гуманоиде
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                local animator = hum:FindFirstChildOfClass("Animator")
-                if animator then
-                    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                        track:Stop()
-                    end
-                end
+            if currentPackName == "Стандартная" then
+                -- Сбрасываем на дефолт
+                desc.IdleAnimation = 0
+                desc.WalkAnimation = 0
+                desc.RunAnimation = 0
+                desc.JumpAnimation = 0
+            else
+                -- Принудительно выставляем ID анимационного пака
+                desc.IdleAnimation = packId
+                desc.WalkAnimation = packId
+                desc.RunAnimation = packId
+                desc.JumpAnimation = packId
             end
             
-            task.wait(0.05)
-            animate.Enabled = true -- Включаем обратно уже с новыми ID!
+            -- Жестко перезаписываем анимации персонажа через движок игры
+            hum:ApplyDescription(desc)
+            
+            -- Делаем микро-прыжок на месте, чтобы обновить физику движения
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
         end)
     end
 end
 
--- Сливаем с респавном
+-- Авто-применение при каждом респавне
 LP.CharacterAdded:Connect(function(char)
     if scriptActive and currentPackName ~= "Стандартная" then
-        task.wait(0.5)
+        task.wait(0.6)
         applyWalkAnim(char)
     end
 end)
@@ -1019,7 +1019,7 @@ for packName, _ in pairs(AnimationPacks) do
     pBtn.MouseButton1Click:Connect(function()
         currentPackName = packName
         if LP.Character then applyWalkAnim(LP.Character) end
-        print("[Gubby Hub]: Походка изменена на:", packName)
+        print("[Gubby Hub]: Походка изменена через каталог на:", packName)
         
         for _, btn in ipairs(ScrollPack:GetChildren()) do
             if btn:IsA("TextButton") then btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) end
@@ -1033,3 +1033,4 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
+

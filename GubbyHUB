@@ -947,27 +947,42 @@ local AnimationPacks = {
     ["Игрушка"]      = {idle = "rbxassetid://782841498", walk = "rbxassetid://782845347", run = "rbxassetid://782843345", jump = "rbxassetid://782842708"}
 }
 
--- Функция для применения анимации на персонажа (подменяет ID в скрипте Animate)
 local currentPackName = "Стандартная"
+
+-- Полностью переписанная функция жесткой перезагрузки скрипта Animate
 local function applyWalkAnim(char)
     local animate = char:WaitForChild("Animate", 5)
     local pack = AnimationPacks[currentPackName]
+    
     if animate and pack then
         pcall(function()
-            -- Меняем ID в контейнерах скрипта анимаций
+            -- 1. Подменяем ID во всех нужных папках
             if animate:FindFirstChild("idle") then animate.idle.Animation1.AnimationId = pack.idle end
             if animate:FindFirstChild("walk") then animate.walk.WalkAnim.AnimationId = pack.walk end
             if animate:FindFirstChild("run") then animate.run.RunAnim.AnimationId = pack.run end
             if animate:FindFirstChild("jump") then animate.jump.JumpAnim.AnimationId = pack.jump end
             
-            -- Перезапускаем humanoid, чтобы игра обновила анимации персонажа
+            -- 2. СЕКРЕТНЫЙ ТРЮК: выключаем и включаем скрипт, чтобы обновить кэш Roblox
+            animate.Enabled = false
+            
+            -- Останавливаем текущие запущенные анимации на гуманоиде
             local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then hum:ChangeState(Enum.HumanoidStateType.Landed) end
+            if hum then
+                local animator = hum:FindFirstChildOfClass("Animator")
+                if animator then
+                    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                        track:Stop()
+                    end
+                end
+            end
+            
+            task.wait(0.05)
+            animate.Enabled = true -- Включаем обратно уже с новыми ID!
         end)
     end
 end
 
--- Сливаем это с респавном
+-- Сливаем с респавном
 LP.CharacterAdded:Connect(function(char)
     if scriptActive and currentPackName ~= "Стандартная" then
         task.wait(0.5)
@@ -978,7 +993,7 @@ end)
 -- Создаем мини-меню для выбора походок
 local WalkMenu = Instance.new("Frame", ScreenGui)
 WalkMenu.Size = UDim2.new(0, 180, 0, 220)
-WalkMenu.Position = UDim2.new(0.5, 250, 0.3, 0) -- Будет открываться справа от основного хаба
+WalkMenu.Position = UDim2.new(0.5, 250, 0.3, 0)
 WalkMenu.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 WalkMenu.Visible = false
 Instance.new("UICorner", WalkMenu).CornerRadius = UDim.new(0, 8)
@@ -994,7 +1009,6 @@ ScrollPack.Size = UDim2.new(1, -10, 1, -35); ScrollPack.Position = UDim2.new(0, 
 ScrollPack.BackgroundTransparency = 1; ScrollPack.ScrollBarThickness = 2; ScrollPack.AutomaticCanvasSize = Enum.AutomaticSize.Y
 local PackLayout = Instance.new("UIListLayout", ScrollPack); PackLayout.Padding = UDim.new(0, 4)
 
--- Создаем кнопки для каждой походки из базы
 for packName, _ in pairs(AnimationPacks) do
     local pBtn = Instance.new("TextButton", ScrollPack)
     pBtn.Size = UDim2.new(1, -4, 0, 26); pBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
@@ -1007,7 +1021,6 @@ for packName, _ in pairs(AnimationPacks) do
         if LP.Character then applyWalkAnim(LP.Character) end
         print("[Gubby Hub]: Походка изменена на:", packName)
         
-        -- Светим выбранную кнопку
         for _, btn in ipairs(ScrollPack:GetChildren()) do
             if btn:IsA("TextButton") then btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) end
         end
@@ -1015,7 +1028,6 @@ for packName, _ in pairs(AnimationPacks) do
     end)
 end
 
--- Добавляем кнопку вызова этого меню во вкладку "Эмоции" (tabEmotes)
 buildGubbyButton("🏃‍♂️ Открыть меню Походок (Анимаций)", tabEmotes, function(btn, stroke)
     WalkMenu.Visible = not WalkMenu.Visible
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5

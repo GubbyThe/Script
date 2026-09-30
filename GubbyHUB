@@ -1027,3 +1027,78 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
+--[[ --- ЧАСТЬ 12 ИЗ 12 --- ]]--
+-- Переменные для контроля нового безопасного тач-флинга
+local stutterFlingActive = false
+local flingSafeCFrame = nil
+
+-- Создаем кнопку во вкладке "Троллинг" (tabTroll) из конца файла
+local StutterBtn, stutterStroke = buildGubbyButton("🔨 Включить Stutter-Fling (Тач-Молоток)", tabTroll, function(btn, stroke)
+    stutterFlingActive = not stutterFlingActive
+    btn.BackgroundTransparency = stutterFlingActive and 0.1 or 0.5
+    stroke.Transparency = stutterFlingActive and 0.1 or 0.5
+    btn.Text = stutterFlingActive and "✅ Тач-Молоток: АКТИВЕН" or "🔨 Включить Stutter-Fling (Тач-Молоток)"
+    
+    if not stutterFlingActive then 
+        flingSafeCFrame = nil 
+        -- Возвращаем коллизию в норму при выключении
+        local char = LP.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = true end
+            end
+        end
+    end
+end)
+
+-- Основной оптимизированный цикл кастомной физики
+RS.Heartbeat:Connect(function()
+    if not scriptActive or not stutterFlingActive then return end
+    
+    local char = LP.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if root then
+        local currentVelocity = root.Velocity.Magnitude
+        
+        -- 1. СИСТЕМА ЗАЩИТЫ (Если нас пытается выкинуть сервер из-за коллизии)
+        if currentVelocity > 250 and not Config.GubbyFly.Enabled then
+            root.Velocity = Vector3.zero
+            root.RotVelocity = Vector3.zero
+            if flingSafeCFrame then
+                root.CFrame = flingSafeCFrame
+            end
+        else
+            -- Если все ок, запоминаем текущую координату до микро-телепорта
+            flingSafeCFrame = root.CFrame
+        end
+        
+        -- 2. ЛОГИКА ОТБОЙНОГО МОЛОТКА (Микро-телепорты по оси Y на 3 студа вверх-вниз)
+        pcall(function()
+            -- Выключаем коллизию деталей, чтобы не застревать и передавать энергию чище
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+            
+            -- Чередуем смещение вверх и вниз каждую миллисекунду
+            local offset = (tick() % 0.02 > 0.01) and 3 or -3
+            root.CFrame = root.CFrame * CFrame.new(0, offset, 0)
+            
+            -- Даем легкий искусственный пинок по векторам, чтобы игра регистрировала жесткое касание
+            root.Velocity = Vector3.new(0, offset * 50, 0)
+        end)
+    end
+end)
+
+-- Авто-выключение при смерти, чтобы не баговать спавн
+LP.CharacterAdded:Connect(function()
+    if scriptActive then
+        stutterFlingActive = false
+        flingSafeCFrame = nil
+        if StutterBtn and stutterStroke then
+            StutterBtn.BackgroundTransparency = 0.5
+            stutterStroke.Transparency = 0.5
+            StutterBtn.Text = "🔨 Включить Stutter-Fling (Тач-Молоток)"
+        end
+    end
+end)

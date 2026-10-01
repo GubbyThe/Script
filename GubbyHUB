@@ -1167,3 +1167,52 @@ LP.CharacterAdded:Connect(function()
         resetMyCollision()
     end
 end)
+-- Переменная для контроля очистки ТОЛЬКО СВОЕЙ одежды
+local antiLagMyClothesActive = false
+
+-- Создаем кнопку во вкладке "Игрок" (tabPlayer)
+local MyClothesBtn, myClothesStroke = buildGubbyButton("👕 Удалить МОЮ одежду (FPS BOOST)", tabPlayer, function(btn, stroke)
+    antiLagMyClothesActive = not antiLagMyClothesActive
+    btn.BackgroundTransparency = antiLagMyClothesActive and 0.1 or 0.5
+    stroke.Transparency = antiLagMyClothesActive and 0.1 or 0.5
+    btn.Text = antiLagMyClothesActive and "✅ Моя одежда удалена" or "👕 Удалить МОЮ одежду (FPS BOOST)"
+    
+    if antiLagMyClothesActive then
+        pcall(function()
+            local char = LP.Character
+            if char then
+                -- 1. Удаляем только твою 2D одежду
+                for _, clothing in ipairs(char:GetChildren()) do
+                    if clothing:IsA("Shirt") or clothing:IsA("Pants") or clothing:IsA("ShirtGraphic") or clothing:IsA("BodyColors") then
+                        clothing:Destroy()
+                    end
+                end
+                -- 2. Удаляем все твои 3D аксессуары и тяжёлые меши (волосы, шляпы, куртки)
+                for _, obj in ipairs(char:GetChildren()) do
+                    if obj:IsA("Accessory") then
+                        obj:Destroy()
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- Проверка при каждом твоём респавне (чтобы одежда убиралась заново после смерти)
+LP.CharacterAdded:Connect(function(char)
+    if scriptActive and antiLagMyClothesActive then
+        task.wait(0.5) -- Небольшая пауза, чтобы одежда успела прогрузиться перед удалением
+        pcall(function()
+            for _, clothing in ipairs(char:GetChildren()) do
+                if clothing:IsA("Shirt") or clothing:IsA("Pants") or clothing:IsA("ShirtGraphic") or clothing:IsA("BodyColors") then
+                    clothing:Destroy()
+                end
+            end
+            for _, obj in ipairs(char:GetChildren()) do
+                if obj:IsA("Accessory") then
+                    obj:Destroy()
+                end
+            end
+        end)
+    end
+end)

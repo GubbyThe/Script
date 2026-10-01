@@ -1027,7 +1027,7 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
--- Переменные для двух режимов сэндвича
+-- Переменные для двух режимов сэндвича (ФИКСАЦИЯ СКОРОСТИ И КОЛЛИЗИИ)
 local spushBugActive = false
 local spushCleanActive = false
 local faceTrollTarget = nil
@@ -1052,7 +1052,7 @@ local function findTarget()
     return nil
 end
 
--- КНОПКА 1: Тот самый угарный баг с отправкой в космос (как на скриншоте!)
+-- КНОПКА 1: Тот самый угарный баг с отправкой в космос
 local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)", tabTroll, function(btn, stroke)
     spushBugActive = not spushBugActive
     if spushBugActive then
@@ -1062,7 +1062,6 @@ local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Та
         if not faceTrollTarget then
             spushBugActive = false
             btn.Text = "🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)"; btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
-            print("[Gubby Hub]: Сначала выбери цель справа!")
         else
             btn.Text = "✅ Тач-Сэндвич: АКТИВЕН"
             btn.BackgroundTransparency = 0.1; stroke.Transparency = 0.1
@@ -1075,7 +1074,7 @@ local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Та
     end
 end)
 
--- КНОПКА 2: Новая правильная кнопка, которая просто аккуратно двигает персонажа
+-- КНОПКА 2: Новая переписанная кнопка без какого-либо флинга
 local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэндвич (Без Флинга)", tabTroll, function(btn, stroke)
     spushCleanActive = not spushCleanActive
     if spushCleanActive then
@@ -1085,7 +1084,6 @@ local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэнд
         if not faceTrollTarget then
             spushCleanActive = false
             btn.Text = "🥪 Спокойный Сэндвич (Без Флинга)"; btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
-            print("[Gubby Hub]: Сначала выбери цель справа!")
         else
             btn.Text = "✅ Спокойный Сэндвич: АКТИВЕН"
             btn.BackgroundTransparency = 0.1; stroke.Transparency = 0.1
@@ -1098,7 +1096,7 @@ local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэнд
     end
 end)
 
--- Единый поток обработки для обоих режимов
+-- Единый поток обработки
 RS.Heartbeat:Connect(function()
     if not scriptActive or (not spushBugActive and not spushCleanActive) or not faceTrollTarget then return end
     
@@ -1109,30 +1107,31 @@ RS.Heartbeat:Connect(function()
     
     if myRoot and tHead then
         pcall(function()
-            -- Выключаем коллизию деталей, чтобы не крашило игру
+            -- Полностью выключаем коллизию, чтобы пройти сквозь текстуры челика
             for _, part in ipairs(myChar:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
             
             if spushBugActive then
-                -- РЕЖИМ БАГА (Улёт в космос): Жесткий lookAt со смещением
+                -- РЕЖИМ БАГА (Молоток-Флинг)
                 local targetPos = tHead.Position + Vector3.new(0, 1.5, 0)
                 local waveZ = math.sin(tick() * 45) * 1.2 - 2.2
                 myRoot.CFrame = CFrame.lookAt(targetPos, tHead.Position) * CFrame.new(0, 0, waveZ)
-                myRoot.Velocity = Vector3.zero
-                myRoot.RotVelocity = Vector3.zero
+                myRoot.Velocity = Vector3.new(0, 0, waveZ * 50) -- Даем импульс
                 
-            -- КОРРЕКТИРУЮЩИЙ РЕЖИМ (Правильный, без бешеного флинга):
             elseif spushCleanActive then
-                -- Берём чистую позицию головы, приподнимаем на уровень рта (Y = -0.5)
-                -- Смещаем строго по горизонтали перед лицом чела на 2 студа (Z = -2)
-                local targetCFrame = tHead.CFrame * CFrame.new(0, -0.5, -2) * CFrame.Angles(0, math.rad(180), 0)
+                -- ЧИСТЫЙ РЕЖИМ (Как в оригинальных хабах):
+                -- Встаём строго лицом к лицу, приподнимаем на уровень рта (Y = -0.5)
+                -- Но фиксируем позицию на месте (на расстоянии 1.8 студа перед ним)
+                local targetCFrame = tHead.CFrame * CFrame.new(0, -0.5, -1.8) * CFrame.Angles(0, math.rad(180), 0)
                 
-                -- Легкая, аккуратная микро-вибрация вперед-назад чисто для вида
-                local gentleWave = math.sin(tick() * 20) * 0.3
+                -- Движение делаем ОЧЕНЬ медленным и плавным, чисто декоративным (амплитуда 0.2 студа)
+                local gentleWave = math.sin(tick() * 15) * 0.2
                 myRoot.CFrame = targetCFrame * CFrame.new(0, 0, gentleWave)
                 
-                -- Полностью замораживаем физические силы, чтобы никого не пинало
+                -- ЖЕСТКО принудительно обнуляем все силы физики Windows/Roblox в каждом кадре
+                myRoot.AssemblyLinearVelocity = Vector3.zero
+                myRoot.AssemblyAngularVelocity = Vector3.zero
                 myRoot.Velocity = Vector3.zero
                 myRoot.RotVelocity = Vector3.zero
             end

@@ -1027,7 +1027,7 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
--- Переменные для контроля фиксации перед лицом (ФИКСИРОВАННАЯ ВЕРСИЯ)
+-- Переменные для контроля фиксации перед лицом (ВЕРСИЯ LOOKAT + ВЫШЕ)
 local faceTrollActive = false
 local faceTrollTarget = nil
 
@@ -1058,7 +1058,7 @@ local FaceBtn, faceStroke = buildGubbyButton("🥪 Начать кормлени
     end
 end)
 
--- Цикл фиксации и движения
+-- Цикл фиксации lookAt перед лицом
 RS.Heartbeat:Connect(function()
     if not scriptActive or not faceTrollActive or not faceTrollTarget then return end
     
@@ -1070,21 +1070,23 @@ RS.Heartbeat:Connect(function()
     
     if myRoot and tHead then
         pcall(function()
-            -- Выключаем коллизию, чтобы не улететь от удара хитбоксов
+            -- Выключаем коллизию деталей
             for _, part in ipairs(myChar:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
             
-            -- Скорость и амплитуда движения вперёд-назад перед лицом
-            local waveZ = math.sin(tick() * 45) * 1.5 - 1.5
+            -- Скорость и амплитуда движения вперёд-назад
+            local waveZ = math.sin(tick() * 45) * 1.5 - 2.5
             
-            -- КОРРЕКЦИЯ: Поднимаем выше (Y = -1.2 студа от головы вместо -2.5)
-            -- Разворачиваем лицом к цели (Angles по оси Y на 180 градусов)
-            myRoot.CFrame = tHead.CFrame * CFrame.new(0, -1.2, waveZ) * CFrame.Angles(0, math.rad(180), 0)
+            -- Находим точку прямо перед лицом врага (смещаем по Z вперёд и по Y приподнимаем выше)
+            local targetPosition = (tHead.CFrame * CFrame.new(0, 1.0, waveZ)).Position
             
-            -- Обнуляем скорость для защиты от античита Byfron
-            root.Velocity = Vector3.zero
-            root.RotVelocity = Vector3.zero
+            -- Жестко заставляем нашего персонажа стоять в этой точке и смотреть прямо в лицо цели
+            myRoot.CFrame = CFrame.lookAt(targetPosition, tHead.Position)
+            
+            -- Сбрасываем скорости, чтобы Byfron не ругался
+            myRoot.Velocity = Vector3.zero
+            myRoot.RotVelocity = Vector3.zero
         end)
     else
         faceTrollActive = false

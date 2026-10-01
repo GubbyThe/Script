@@ -1027,22 +1027,26 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
--- Переменные для двух режимов сэндвича (ФИКСАЦИЯ СКОРОСТИ И КОЛЛИЗИИ)
+-- Переменные для двух режимов сэндвича (ОПТИМИЗИРОВАННАЯ ВЕРСИЯ THUNDER)
 local spushBugActive = false
 local spushCleanActive = false
 local faceTrollTarget = nil
 
--- Функция возврата коллизии
+-- Функция полного сброса и возврата коллизии
 local function resetMyCollision()
     local char = LP.Character
     if char then
         for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = true end
+            if part:IsA("BasePart") then 
+                part.CanCollide = true 
+            end
         end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then root.Anchored = false end
     end
 end
 
--- Функция поиска цели в списке
+-- Поиск выбранной цели
 local function findTarget()
     for pl, selected in pairs(Config.GubbyTroll.Targets) do
         if selected and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
@@ -1052,7 +1056,7 @@ local function findTarget()
     return nil
 end
 
--- КНОПКА 1: Тот самый угарный баг с отправкой в космос
+-- КНОПКА 1: Твой угарный баг с отправкой в космос (как на скриншоте)
 local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)", tabTroll, function(btn, stroke)
     spushBugActive = not spushBugActive
     if spushBugActive then
@@ -1074,7 +1078,7 @@ local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Та
     end
 end)
 
--- КНОПКА 2: Новая переписанная кнопка без какого-либо флинга
+-- КНОПКА 2: Истинный чистый режим из Thunder Hub
 local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэндвич (Без Флинга)", tabTroll, function(btn, stroke)
     spushCleanActive = not spushCleanActive
     if spushCleanActive then
@@ -1096,7 +1100,7 @@ local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэнд
     end
 end)
 
--- Единый поток обработки
+-- Основной цикл обработки
 RS.Heartbeat:Connect(function()
     if not scriptActive or (not spushBugActive and not spushCleanActive) or not faceTrollTarget then return end
     
@@ -1107,33 +1111,31 @@ RS.Heartbeat:Connect(function()
     
     if myRoot and tHead then
         pcall(function()
-            -- Полностью выключаем коллизию, чтобы пройти сквозь текстуры челика
+            -- Проход сквозь текстуры
             for _, part in ipairs(myChar:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
             
             if spushBugActive then
-                -- РЕЖИМ БАГА (Молоток-Флинг)
+                -- РЕЖИМ БАГА (Бешеный таран-молоток по оси Z)
                 local targetPos = tHead.Position + Vector3.new(0, 1.5, 0)
                 local waveZ = math.sin(tick() * 45) * 1.2 - 2.2
                 myRoot.CFrame = CFrame.lookAt(targetPos, tHead.Position) * CFrame.new(0, 0, waveZ)
-                myRoot.Velocity = Vector3.new(0, 0, waveZ * 50) -- Даем импульс
-                
-            elseif spushCleanActive then
-                -- ЧИСТЫЙ РЕЖИМ (Как в оригинальных хабах):
-                -- Встаём строго лицом к лицу, приподнимаем на уровень рта (Y = -0.5)
-                -- Но фиксируем позицию на месте (на расстоянии 1.8 студа перед ним)
-                local targetCFrame = tHead.CFrame * CFrame.new(0, -0.5, -1.8) * CFrame.Angles(0, math.rad(180), 0)
-                
-                -- Движение делаем ОЧЕНЬ медленным и плавным, чисто декоративным (амплитуда 0.2 студа)
-                local gentleWave = math.sin(tick() * 15) * 0.2
-                myRoot.CFrame = targetCFrame * CFrame.new(0, 0, gentleWave)
-                
-                -- ЖЕСТКО принудительно обнуляем все силы физики Windows/Roblox в каждом кадре
-                myRoot.AssemblyLinearVelocity = Vector3.zero
-                myRoot.AssemblyAngularVelocity = Vector3.zero
                 myRoot.Velocity = Vector3.zero
                 myRoot.RotVelocity = Vector3.zero
+                
+            elseif spushCleanActive then
+                -- ЧИСТЫЙ РЕЖИМ ИЗ THUNDER HUB:
+                -- Встаем ровно перед лицом на расстоянии 1.5 студа, разворот на 180 градусов
+                local basePosition = tHead.CFrame * CFrame.new(0, -0.6, -1.5) * CFrame.Angles(0, math.rad(180), 0)
+                
+                -- Плавное и чистое смещение только по горизонтали (вперед-назад) без диких скоростей
+                local motion = math.sin(tick() * 30) * 0.4
+                myRoot.CFrame = basePosition * CFrame.new(0, 0, motion)
+                
+                -- Обнуляем физическое воздействие на другие хитбоксы, чтобы вообще не было флинга
+                myRoot.Velocity = Vector3.new(0, 0, 0)
+                myRoot.RotVelocity = Vector3.new(0, 0, 0)
             end
         end)
     else
@@ -1146,7 +1148,7 @@ RS.Heartbeat:Connect(function()
     end
 end)
 
--- Сброс при смерти
+-- Сброс при респавне
 LP.CharacterAdded:Connect(function()
     if scriptActive then
         spushBugActive = false

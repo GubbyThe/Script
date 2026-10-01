@@ -1030,6 +1030,19 @@ end)
 -- Переменные для контроля фиксации перед лицом (ФИНАЛЬНЫЙ СТАБИЛЬНЫЙ ВАРИАНТ)
 local faceTrollActive = false
 local faceTrollTarget = nil
+-- Переменные для контроля фиксации перед лицом (СТОПРОЦЕНТНЫЙ ИСПРАВЛЕННЫЙ ВАРИАНТ)
+local faceTrollActive = false
+local faceTrollTarget = nil
+
+-- Функция для принудительного возвращения коллизии персонажу
+local function resetMyCollision()
+    local char = LP.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = true end
+        end
+    end
+end
 
 -- Создаем кнопку во вкладке "Троллинг" (tabTroll)
 local FaceBtn, faceStroke = buildGubbyButton("🥪 Начать кормление сПущёнкой", tabTroll, function(btn, stroke)
@@ -1055,10 +1068,11 @@ local FaceBtn, faceStroke = buildGubbyButton("🥪 Начать кормлени
         end
     else
         faceTrollTarget = nil
+        resetMyCollision() -- ВОЗВРАЩАЕМ КОЛЛИЗИЮ ПРИ ВЫКЛЮЧЕНИИ, ЧТОБЫ НЕ ПАДАТЬ
     end
 end)
 
--- Стабильный цикл движения вперед-назад лицом к цели
+-- Стабильный цикл движения вперед-назад лицом к лицу
 RS.Heartbeat:Connect(function()
     if not scriptActive or not faceTrollActive or not faceTrollTarget then return end
     
@@ -1070,28 +1084,32 @@ RS.Heartbeat:Connect(function()
     
     if myRoot and tHead then
         pcall(function()
-            -- Выключаем коллизию деталей персонажа
+            -- Временное отключение коллизии во время работы функции
             for _, part in ipairs(myChar:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
             
-            -- Вычисляем позицию: нависаем сверху (Y = +0.5 от головы жертвы)
-            -- lookAt заставляет смотреть прямо на врага
-            local baseCFrame = CFrame.lookAt(tHead.Position + Vector3.new(0, 0.5, 0), tHead.Position)
+            -- Вычисляем позицию: стоим строго на горизонтальной линии с головой врага
+            -- Но приподнимаем координату по Y на 1.5 студа (уровень рта/носа нависая сверху)
+            local targetPos = tHead.Position + Vector3.new(0, 1.5, 0)
             
-            -- Делаем чистое движение вперед-назад по оси Z (от -1.5 до -3.5 студов перед лицом)
-            local forwardBackOffset = math.sin(tick() * 45) * 1.0 - 2.5
+            -- Амплитуда движения строго вперед-назад перед лицом (ось Z)
+            local waveZ = math.sin(tick() * 45) * 1.2 - 2.2
             
-            -- Применяем стабильную координату без заваливания по вертикали
-            myRoot.CFrame = baseCFrame * CFrame.new(0, 0, forwardBackOffset)
+            --lookAt строит чистый горизонтальный взгляд в лицо без завалов вниз
+            local baseCFrame = CFrame.lookAt(targetPos, tHead.Position)
             
-            -- Сброс векторов скорости для обхода Byfron
+            -- Двигаемся строго по прямой линии взгляда
+            myRoot.CFrame = baseCFrame * CFrame.new(0, 0, waveZ)
+            
+            -- Обнуление скорости против Byfron
             myRoot.Velocity = Vector3.zero
             myRoot.RotVelocity = Vector3.zero
         end)
     else
         faceTrollActive = false
         faceTrollTarget = nil
+        resetMyCollision() -- ВОЗВРАЩАЕМ КОЛЛИЗИЮ, ЕСЛИ ЦЕЛЬ ОФФНУЛАСЬ ИЛИ УМЕРЛА
         if FaceBtn and faceStroke then
             FaceBtn.BackgroundTransparency = 0.5
             faceStroke.Transparency = 0.5
@@ -1100,3 +1118,11 @@ RS.Heartbeat:Connect(function()
     end
 end)
 
+-- Авто-сброс при смерти
+LP.CharacterAdded:Connect(function()
+    if scriptActive then
+        faceTrollActive = false
+        faceTrollTarget = nil
+        resetMyCollision()
+    end
+end)

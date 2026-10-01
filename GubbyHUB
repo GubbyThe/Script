@@ -1027,7 +1027,7 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
--- Переменные для двух режимов сэндвича (ОПТИМИЗИРОВАННАЯ ВЕРСИЯ THUNDER)
+-- Переменные для двух режимов сэндвича (ВЕРСИЯ С ПОДНЯТОЙ ВЫСОТОЙ)
 local spushBugActive = false
 local spushCleanActive = false
 local faceTrollTarget = nil
@@ -1078,7 +1078,7 @@ local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Та
     end
 end)
 
--- КНОПКА 2: Истинный чистый режим из Thunder Hub
+-- КНОПКА 2: Истинный чистый режим из Thunder Hub (С КОРРЕКЦИЕЙ ВЫСОТЫ)
 local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэндвич (Без Флинга)", tabTroll, function(btn, stroke)
     spushCleanActive = not spushCleanActive
     if spushCleanActive then
@@ -1111,7 +1111,7 @@ RS.Heartbeat:Connect(function()
     
     if myRoot and tHead then
         pcall(function()
-            -- Проход сквозь текстуры
+            -- Проход сквозь текстуры цели
             for _, part in ipairs(myChar:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
@@ -1126,16 +1126,16 @@ RS.Heartbeat:Connect(function()
                 
             elseif spushCleanActive then
                 -- ЧИСТЫЙ РЕЖИМ ИЗ THUNDER HUB:
-                -- Встаем ровно перед лицом на расстоянии 1.5 студа, разворот на 180 градусов
-                local basePosition = tHead.CFrame * CFrame.new(0, -0.6, -1.5) * CFrame.Angles(0, math.rad(180), 0)
+                -- ВЫСОТА ИСПРАВЛЕНА: Изменили -0.6 на 0.3, чтобы персонаж стоял ВЫШЕ (прямо перед лицом)
+                local basePosition = tHead.CFrame * CFrame.new(0, 0.3, -1.5) * CFrame.Angles(0, math.rad(180), 0)
                 
-                -- Плавное и чистое смещение только по горизонтали (вперед-назад) без диких скоростей
+                -- Движение вперед-назад по горизонтали
                 local motion = math.sin(tick() * 30) * 0.4
                 myRoot.CFrame = basePosition * CFrame.new(0, 0, motion)
                 
-                -- Обнуляем физическое воздействие на другие хитбоксы, чтобы вообще не было флинга
-                myRoot.Velocity = Vector3.new(0, 0, 0)
-                myRoot.RotVelocity = Vector3.new(0, 0, 0)
+                -- Обнуляем скорости против флинга
+                myRoot.Velocity = Vector3.zero
+                myRoot.RotVelocity = Vector3.zero
             end
         end)
     else

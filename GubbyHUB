@@ -1027,14 +1027,12 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
--- Переменные для контроля фиксации перед лицом (ФИНАЛЬНЫЙ СТАБИЛЬНЫЙ ВАРИАНТ)
-local faceTrollActive = false
-local faceTrollTarget = nil
--- Переменные для контроля фиксации перед лицом (СТОПРОЦЕНТНЫЙ ИСПРАВЛЕННЫЙ ВАРИАНТ)
-local faceTrollActive = false
+-- Переменные для двух режимов сэндвича
+local spushBugActive = false
+local spushCleanActive = false
 local faceTrollTarget = nil
 
--- Функция для принудительного возвращения коллизии персонажу
+-- Функция возврата коллизии
 local function resetMyCollision()
     local char = LP.Character
     if char then
@@ -1044,84 +1042,116 @@ local function resetMyCollision()
     end
 end
 
--- Создаем кнопку во вкладке "Троллинг" (tabTroll)
-local FaceBtn, faceStroke = buildGubbyButton("🥪 Начать кормление сПущёнкой", tabTroll, function(btn, stroke)
-    faceTrollActive = not faceTrollActive
-    btn.BackgroundTransparency = faceTrollActive and 0.1 or 0.5
-    stroke.Transparency = faceTrollActive and 0.1 or 0.5
-    btn.Text = faceTrollActive and "✅ Кормление: АКТИВНО" or "🥪 Начать кормление сПущёнкой"
-    
-    if faceTrollActive then
-        -- Находим выбранного игрока в списке справа
-        for pl, selected in pairs(Config.GubbyTroll.Targets) do
-            if selected and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
-                faceTrollTarget = pl
-                break
-            end
+-- Функция поиска цели в списке
+local function findTarget()
+    for pl, selected in pairs(Config.GubbyTroll.Targets) do
+        if selected and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
+            return pl
         end
+    end
+    return nil
+end
+
+-- КНОПКА 1: Тот самый угарный баг с отправкой в космос (как на скриншоте!)
+local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)", tabTroll, function(btn, stroke)
+    spushBugActive = not spushBugActive
+    if spushBugActive then
+        spushCleanActive = false
+        if CleanBtn and cleanStroke then CleanBtn.Text = "🥪 Спокойный Сэндвич (Без Флинга)"; CleanBtn.BackgroundTransparency = 0.5; cleanStroke.Transparency = 0.5 end
+        faceTrollTarget = findTarget()
         if not faceTrollTarget then
-            print("[Gubby Hub]: Сначала выбери цель в списке игроков справа!")
-            faceTrollActive = false
-            btn.BackgroundTransparency = 0.5
-            stroke.Transparency = 0.5
-            btn.Text = "🥪 Начать кормление сПущёнкой"
+            spushBugActive = false
+            btn.Text = "🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)"; btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
+            print("[Gubby Hub]: Сначала выбери цель справа!")
+        else
+            btn.Text = "✅ Тач-Сэндвич: АКТИВЕН"
+            btn.BackgroundTransparency = 0.1; stroke.Transparency = 0.1
         end
     else
         faceTrollTarget = nil
-        resetMyCollision() -- ВОЗВРАЩАЕМ КОЛЛИЗИЮ ПРИ ВЫКЛЮЧЕНИИ, ЧТОБЫ НЕ ПАДАТЬ
+        resetMyCollision()
+        btn.Text = "🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)"
+        btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
     end
 end)
 
--- Стабильный цикл движения вперед-назад лицом к лицу
+-- КНОПКА 2: Новая правильная кнопка, которая просто аккуратно двигает персонажа
+local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэндвич (Без Флинга)", tabTroll, function(btn, stroke)
+    spushCleanActive = not spushCleanActive
+    if spushCleanActive then
+        spushBugActive = false
+        if BugBtn and bugStroke then BugBtn.Text = "🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)"; BugBtn.BackgroundTransparency = 0.5; bugStroke.Transparency = 0.5 end
+        faceTrollTarget = findTarget()
+        if not faceTrollTarget then
+            spushCleanActive = false
+            btn.Text = "🥪 Спокойный Сэндвич (Без Флинга)"; btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
+            print("[Gubby Hub]: Сначала выбери цель справа!")
+        else
+            btn.Text = "✅ Спокойный Сэндвич: АКТИВЕН"
+            btn.BackgroundTransparency = 0.1; stroke.Transparency = 0.1
+        end
+    else
+        faceTrollTarget = nil
+        resetMyCollision()
+        btn.Text = "🥪 Спокойный Сэндвич (Без Флинга)"
+        btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
+    end
+end)
+
+-- Единый поток обработки для обоих режимов
 RS.Heartbeat:Connect(function()
-    if not scriptActive or not faceTrollActive or not faceTrollTarget then return end
+    if not scriptActive or (not spushBugActive and not spushCleanActive) or not faceTrollTarget then return end
     
     local myChar = LP.Character
     local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    
     local tChar = faceTrollTarget.Character
     local tHead = tChar and tChar:FindFirstChild("Head")
     
     if myRoot and tHead then
         pcall(function()
-            -- Временное отключение коллизии во время работы функции
+            -- Выключаем коллизию деталей, чтобы не крашило игру
             for _, part in ipairs(myChar:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
             
-            -- Вычисляем позицию: стоим строго на горизонтальной линии с головой врага
-            -- Но приподнимаем координату по Y на 1.5 студа (уровень рта/носа нависая сверху)
-            local targetPos = tHead.Position + Vector3.new(0, 1.5, 0)
-            
-            -- Амплитуда движения строго вперед-назад перед лицом (ось Z)
-            local waveZ = math.sin(tick() * 45) * 1.2 - 2.2
-            
-            --lookAt строит чистый горизонтальный взгляд в лицо без завалов вниз
-            local baseCFrame = CFrame.lookAt(targetPos, tHead.Position)
-            
-            -- Двигаемся строго по прямой линии взгляда
-            myRoot.CFrame = baseCFrame * CFrame.new(0, 0, waveZ)
-            
-            -- Обнуление скорости против Byfron
-            myRoot.Velocity = Vector3.zero
-            myRoot.RotVelocity = Vector3.zero
+            if spushBugActive then
+                -- РЕЖИМ БАГА (Улёт в космос): Жесткий lookAt со смещением
+                local targetPos = tHead.Position + Vector3.new(0, 1.5, 0)
+                local waveZ = math.sin(tick() * 45) * 1.2 - 2.2
+                myRoot.CFrame = CFrame.lookAt(targetPos, tHead.Position) * CFrame.new(0, 0, waveZ)
+                myRoot.Velocity = Vector3.zero
+                myRoot.RotVelocity = Vector3.zero
+                
+            -- КОРРЕКТИРУЮЩИЙ РЕЖИМ (Правильный, без бешеного флинга):
+            elseif spushCleanActive then
+                -- Берём чистую позицию головы, приподнимаем на уровень рта (Y = -0.5)
+                -- Смещаем строго по горизонтали перед лицом чела на 2 студа (Z = -2)
+                local targetCFrame = tHead.CFrame * CFrame.new(0, -0.5, -2) * CFrame.Angles(0, math.rad(180), 0)
+                
+                -- Легкая, аккуратная микро-вибрация вперед-назад чисто для вида
+                local gentleWave = math.sin(tick() * 20) * 0.3
+                myRoot.CFrame = targetCFrame * CFrame.new(0, 0, gentleWave)
+                
+                -- Полностью замораживаем физические силы, чтобы никого не пинало
+                myRoot.Velocity = Vector3.zero
+                myRoot.RotVelocity = Vector3.zero
+            end
         end)
     else
-        faceTrollActive = false
+        spushBugActive = false
+        spushCleanActive = false
         faceTrollTarget = nil
-        resetMyCollision() -- ВОЗВРАЩАЕМ КОЛЛИЗИЮ, ЕСЛИ ЦЕЛЬ ОФФНУЛАСЬ ИЛИ УМЕРЛА
-        if FaceBtn and faceStroke then
-            FaceBtn.BackgroundTransparency = 0.5
-            faceStroke.Transparency = 0.5
-            FaceBtn.Text = "🥪 Начать кормление сПущёнкой"
-        end
+        resetMyCollision()
+        if BugBtn then BugBtn.Text = "🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)"; BugBtn.BackgroundTransparency = 0.5 end
+        if CleanBtn then CleanBtn.Text = "🥪 Спокойный Сэндвич (Без Флинга)"; CleanBtn.BackgroundTransparency = 0.5 end
     end
 end)
 
--- Авто-сброс при смерти
+-- Сброс при смерти
 LP.CharacterAdded:Connect(function()
     if scriptActive then
-        faceTrollActive = false
+        spushBugActive = false
+        spushCleanActive = false
         faceTrollTarget = nil
         resetMyCollision()
     end

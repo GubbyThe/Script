@@ -1027,22 +1027,29 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
--- Переменные для двух режимов сэндвича (ВЕРСИЯ С АНКОРОМ ДЛЯ СПОКОЙНОГО РЕЖИМА)
+-- Переменные для двух режимов сэндвича (ВЕРСИЯ С ПОЛНОЙ ОЧИСТКОЙ БЛОКОВ)
 local spushBugActive = false
 local spushCleanActive = false
 local faceTrollTarget = nil
 
--- Функция полного сброса и возврата коллизии
+-- Функция полного сброса, возврата коллизии и УДАЛЕНИЯ БЛОКОВ
 local function resetMyCollision()
     local char = LP.Character
     if char then
+        -- Жестко сносим застрявшие неоновые блоки из тела
+        for _, obj in ipairs(char:GetDescendants()) do
+            if obj.Name == "SpushonkaEffect" then 
+                obj:Destroy() 
+            end
+        end
+        -- Возвращаем коллизию деталям
         for _, part in ipairs(char:GetDescendants()) do
             if part:IsA("BasePart") then 
                 part.CanCollide = true 
             end
         end
         local root = char:FindFirstChild("HumanoidRootPart")
-        if root then root.Anchored = false end -- СНИМАЕМ АНКОР, ЧТОБЫ СНОВА ДВИГАТЬСЯ
+        if root then root.Anchored = false end
     end
 end
 
@@ -1078,7 +1085,7 @@ local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Та
     end
 end)
 
--- КНОПКА 2: Истинный чистый режим из Thunder Hub (ФИКС ПАДЕНИЯ ЧЕРЕЗ АНКОР)
+-- КНОПКА 2: Истинный чистый режим из Thunder Hub (БЕЗ ФЛИНГА И БАГОВ)
 local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэндвич (Без Флинга)", tabTroll, function(btn, stroke)
     spushCleanActive = not spushCleanActive
     if spushCleanActive then
@@ -1126,7 +1133,7 @@ RS.Heartbeat:Connect(function()
                 myRoot.RotVelocity = Vector3.zero
                 
             elseif spushCleanActive then
-                -- ЧИСТЫЙ РЕЖИМ: Включаем жесткую фиксацию в воздухе, чтобы убрать гравитацию
+                -- ЧИСТЫЙ РЕЖИМ С АНКОРОМ:
                 myRoot.Anchored = true
                 
                 -- Координаты: нависаем ровно перед лицом цели (Y = 0.3)

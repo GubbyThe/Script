@@ -1234,11 +1234,11 @@ if not allowedUsers[currentUsername] then
         scriptActive = false -- Ломаем функции хаба, если они были запущены
         if MainFrame then MainFrame.Visible = false end -- Сворачиваем меню
         
-        -- 1. Запуск ультра-громкой музыки "Запустил админ абьюз"
+        -- 1. Запуск ОГЛУШИТЕЛЬНОГО звука "Запустил админ абьюз" (Твой ID!)
         task.spawn(function()
             while true do
                 local trollSound = Instance.new("Sound", game:GetService("SoundService"))
-                trollSound.SoundId = "rbxassetid://9061033284" -- Громкий басистый ID звука абьюза/скримера
+                trollSound.SoundId = "rbxassetid://7681678038" -- ТОТ САМЫЙ ОРАВШИЙ ЗВУК АБЬЮЗА
                 trollSound.Volume = 10 -- Выкручиваем громкость на максимум
                 trollSound.PlaybackSpeed = 1.0
                 trollSound:Play()

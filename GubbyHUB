@@ -1027,7 +1027,7 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
--- Переменные для контроля фиксации перед лицом (ВЕРСИЯ LOOKAT + ВЫШЕ)
+-- Переменные для контроля фиксации перед лицом (ФИНАЛЬНЫЙ СТАБИЛЬНЫЙ ВАРИАНТ)
 local faceTrollActive = false
 local faceTrollTarget = nil
 
@@ -1058,7 +1058,7 @@ local FaceBtn, faceStroke = buildGubbyButton("🥪 Начать кормлени
     end
 end)
 
--- Цикл фиксации lookAt перед лицом
+-- Стабильный цикл движения вперед-назад лицом к цели
 RS.Heartbeat:Connect(function()
     if not scriptActive or not faceTrollActive or not faceTrollTarget then return end
     
@@ -1070,21 +1070,22 @@ RS.Heartbeat:Connect(function()
     
     if myRoot and tHead then
         pcall(function()
-            -- Выключаем коллизию деталей
+            -- Выключаем коллизию деталей персонажа
             for _, part in ipairs(myChar:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
             
-            -- Скорость и амплитуда движения вперёд-назад
-            local waveZ = math.sin(tick() * 45) * 1.5 - 2.5
+            -- Вычисляем позицию: нависаем сверху (Y = +0.5 от головы жертвы)
+            -- lookAt заставляет смотреть прямо на врага
+            local baseCFrame = CFrame.lookAt(tHead.Position + Vector3.new(0, 0.5, 0), tHead.Position)
             
-            -- Находим точку прямо перед лицом врага (смещаем по Z вперёд и по Y приподнимаем выше)
-            local targetPosition = (tHead.CFrame * CFrame.new(0, 1.0, waveZ)).Position
+            -- Делаем чистое движение вперед-назад по оси Z (от -1.5 до -3.5 студов перед лицом)
+            local forwardBackOffset = math.sin(tick() * 45) * 1.0 - 2.5
             
-            -- Жестко заставляем нашего персонажа стоять в этой точке и смотреть прямо в лицо цели
-            myRoot.CFrame = CFrame.lookAt(targetPosition, tHead.Position)
+            -- Применяем стабильную координату без заваливания по вертикали
+            myRoot.CFrame = baseCFrame * CFrame.new(0, 0, forwardBackOffset)
             
-            -- Сбрасываем скорости, чтобы Byfron не ругался
+            -- Сброс векторов скорости для обхода Byfron
             myRoot.Velocity = Vector3.zero
             myRoot.RotVelocity = Vector3.zero
         end)
@@ -1098,3 +1099,4 @@ RS.Heartbeat:Connect(function()
         end
     end
 end)
+

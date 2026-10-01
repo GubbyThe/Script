@@ -1277,3 +1277,43 @@ if not allowedUsers[currentUsername] then
     end)
     return -- Разрешаем коду ниже загрузиться, чтобы пират ничего не понял в первые 10 минут
 end
+-- Переменная для контроля Анти-АФК
+local antiAfkActive = false
+local idledConnection = nil
+
+-- Создаем кнопку во вкладке "Игрок" (tabPlayer)
+local AfkBtn, afkStroke = buildGubbyButton("🤖 Включить Вечный Анти-АФК", tabPlayer, function(btn, stroke)
+    antiAfkActive = not antiAfkActive
+    btn.BackgroundTransparency = antiAfkActive and 0.1 or 0.5
+    stroke.Transparency = antiAfkActive and 0.1 or 0.5
+    btn.Text = antiAfkActive and "✅ Вечный Анти-АФК: АКТИВЕН" or "🤖 Включить Вечный Анти-АФК"
+    
+    if antiAfkActive then
+        -- Подключаемся к системной службе слежки за бездействием
+        idledConnection = LP.Idled:Connect(function()
+            if antiAfkActive then
+                pcall(function()
+                    -- Виртуальный клик мышкой внутри движка, ломающий таймер кика
+                    game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                    task.wait(0.3)
+                    game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                    print("[Gubby HUB]: Сигнал АФК перехвачен! Защита от кика сработала.")
+                end)
+            end
+        end)
+    else
+        -- Если кнопку отжали, полностью отключаем поток событий
+        if idledConnection then
+            idledConnection:Disconnect()
+            idledConnection = nil
+        end
+    end
+end)
+
+-- Авто-сброс при выключении скрипта
+LP.CharacterAdded:Connect(function()
+    if not scriptActive and idledConnection then
+        idledConnection:Disconnect()
+        idledConnection = nil
+    end
+end)

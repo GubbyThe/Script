@@ -1027,7 +1027,7 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
--- Переменные для двух режимов сэндвича (ВЕРСИЯ С ПОДНЯТОЙ ВЫСОТОЙ)
+-- Переменные для двух режимов сэндвича (ВЕРСИЯ С АНКОРОМ ДЛЯ СПОКОЙНОГО РЕЖИМА)
 local spushBugActive = false
 local spushCleanActive = false
 local faceTrollTarget = nil
@@ -1042,7 +1042,7 @@ local function resetMyCollision()
             end
         end
         local root = char:FindFirstChild("HumanoidRootPart")
-        if root then root.Anchored = false end
+        if root then root.Anchored = false end -- СНИМАЕМ АНКОР, ЧТОБЫ СНОВА ДВИГАТЬСЯ
     end
 end
 
@@ -1078,7 +1078,7 @@ local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Та
     end
 end)
 
--- КНОПКА 2: Истинный чистый режим из Thunder Hub (С КОРРЕКЦИЕЙ ВЫСОТЫ)
+-- КНОПКА 2: Истинный чистый режим из Thunder Hub (ФИКС ПАДЕНИЯ ЧЕРЕЗ АНКОР)
 local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэндвич (Без Флинга)", tabTroll, function(btn, stroke)
     spushCleanActive = not spushCleanActive
     if spushCleanActive then
@@ -1118,6 +1118,7 @@ RS.Heartbeat:Connect(function()
             
             if spushBugActive then
                 -- РЕЖИМ БАГА (Бешеный таран-молоток по оси Z)
+                myRoot.Anchored = false
                 local targetPos = tHead.Position + Vector3.new(0, 1.5, 0)
                 local waveZ = math.sin(tick() * 45) * 1.2 - 2.2
                 myRoot.CFrame = CFrame.lookAt(targetPos, tHead.Position) * CFrame.new(0, 0, waveZ)
@@ -1125,15 +1126,17 @@ RS.Heartbeat:Connect(function()
                 myRoot.RotVelocity = Vector3.zero
                 
             elseif spushCleanActive then
-                -- ЧИСТЫЙ РЕЖИМ ИЗ THUNDER HUB:
-                -- ВЫСОТА ИСПРАВЛЕНА: Изменили -0.6 на 0.3, чтобы персонаж стоял ВЫШЕ (прямо перед лицом)
+                -- ЧИСТЫЙ РЕЖИМ: Включаем жесткую фиксацию в воздухе, чтобы убрать гравитацию
+                myRoot.Anchored = true
+                
+                -- Координаты: нависаем ровно перед лицом цели (Y = 0.3)
                 local basePosition = tHead.CFrame * CFrame.new(0, 0.3, -1.5) * CFrame.Angles(0, math.rad(180), 0)
                 
-                -- Движение вперед-назад по горизонтали
+                -- Плавное движение вперед-назад
                 local motion = math.sin(tick() * 30) * 0.4
                 myRoot.CFrame = basePosition * CFrame.new(0, 0, motion)
                 
-                -- Обнуляем скорости против флинга
+                -- Сброс скоростей
                 myRoot.Velocity = Vector3.zero
                 myRoot.RotVelocity = Vector3.zero
             end

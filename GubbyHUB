@@ -1102,3 +1102,72 @@ LP.CharacterAdded:Connect(function()
         end
     end
 end)
+-- Переменные для контроля фиксации перед лицом
+local faceTrollActive = false
+local faceTrollTarget = nil
+
+-- Создаем кнопку во вкладке "Троллинг" (tabTroll)
+local FaceBtn, faceStroke = buildGubbyButton("🥪 Начать кормление сПущёнкой", tabTroll, function(btn, stroke)
+    faceTrollActive = not faceTrollActive
+    btn.BackgroundTransparency = faceTrollActive and 0.1 or 0.5
+    stroke.Transparency = faceTrollActive and 0.1 or 0.5
+    btn.Text = faceTrollActive and "✅ Кормление: АКТИВНО" or "🥪 Начать кормление сПущёнкой"
+    
+    if faceTrollActive then
+        -- Берём первую выбранную цель из твоего существующего списка игроков справа
+        for pl, selected in pairs(Config.GubbyTroll.Targets) do
+            if selected and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
+                faceTrollTarget = pl
+                break
+            end
+        end
+        if not faceTrollTarget then
+            print("[Gubby Hub]: Сначала выбери цель в списке игроков справа!")
+            faceTrollActive = false
+            btn.BackgroundTransparency = 0.5
+            stroke.Transparency = 0.5
+            btn.Text = "🥪 Начать кормление сПущёнкой"
+        end
+    else
+        faceTrollTarget = nil
+    end
+end)
+
+-- Цикл жесткой привязки к лицу жертвы
+RS.Heartbeat:Connect(function()
+    if not scriptActive or not faceTrollActive or not faceTrollTarget then return end
+    
+    local myChar = LP.Character
+    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    
+    local tChar = faceTrollTarget.Character
+    local tHead = tChar and tChar:FindFirstChild("Head")
+    
+    if myRoot and tHead then
+        pcall(function()
+            -- Полностью отключаем коллизию, чтобы нас не кикнуло и не унесло физикой
+            for _, part in ipairs(myChar:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+            
+            -- Бешеное движение вперёд-назад перед лицом (ось Z) с частотой тика
+            local forwardBackward = math.sin(tick() * 40) * 1.5 - 1.5
+            
+            -- Задаем координаты: точно перед головой жертвы, опускаем на половину тела вниз (на 2.5 студа)
+            myRoot.CFrame = tHead.CFrame * CFrame.new(0, -2.5, forwardBackward)
+            
+            -- Сбрасываем скорость в ноль, чтобы Byfron не выдал краш за телепорты
+            myRoot.Velocity = Vector3.zero
+            myRoot.RotVelocity = Vector3.zero
+        end)
+    else
+        -- Если цель вышла из игры или умерла, выключаем режим
+        faceTrollActive = false
+        faceTrollTarget = nil
+        if FaceBtn and faceStroke then
+            FaceBtn.BackgroundTransparency = 0.5
+            faceStroke.Transparency = 0.5
+            FaceBtn.Text = "🥪 Начать кормление сПущёнкой"
+        end
+    end
+end)

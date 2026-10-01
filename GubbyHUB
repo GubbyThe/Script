@@ -1027,82 +1027,7 @@ buildGubbyButton("🏃‍♂️ Открыть меню Походок (Аним
     btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
     stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
 end)
---[[ --- ЧАСТЬ 12 ИЗ 12 --- ]]--
--- Переменные для контроля нового безопасного тач-флинга
-local stutterFlingActive = false
-local flingSafeCFrame = nil
-
--- Создаем кнопку во вкладке "Троллинг" (tabTroll) из конца файла
-local StutterBtn, stutterStroke = buildGubbyButton("🔨 Включить Stutter-Fling (Тач-Молоток)", tabTroll, function(btn, stroke)
-    stutterFlingActive = not stutterFlingActive
-    btn.BackgroundTransparency = stutterFlingActive and 0.1 or 0.5
-    stroke.Transparency = stutterFlingActive and 0.1 or 0.5
-    btn.Text = stutterFlingActive and "✅ Тач-Молоток: АКТИВЕН" or "🔨 Включить Stutter-Fling (Тач-Молоток)"
-    
-    if not stutterFlingActive then 
-        flingSafeCFrame = nil 
-        -- Возвращаем коллизию в норму при выключении
-        local char = LP.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = true end
-            end
-        end
-    end
-end)
-
--- Основной оптимизированный цикл кастомной физики
-RS.Heartbeat:Connect(function()
-    if not scriptActive or not stutterFlingActive then return end
-    
-    local char = LP.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if root then
-        local currentVelocity = root.Velocity.Magnitude
-        
-        -- 1. СИСТЕМА ЗАЩИТЫ (Если нас пытается выкинуть сервер из-за коллизии)
-        if currentVelocity > 250 and not Config.GubbyFly.Enabled then
-            root.Velocity = Vector3.zero
-            root.RotVelocity = Vector3.zero
-            if flingSafeCFrame then
-                root.CFrame = flingSafeCFrame
-            end
-        else
-            -- Если все ок, запоминаем текущую координату до микро-телепорта
-            flingSafeCFrame = root.CFrame
-        end
-        
-        -- 2. ЛОГИКА ОТБОЙНОГО МОЛОТКА (Микро-телепорты по оси Y на 3 студа вверх-вниз)
-        pcall(function()
-            -- Выключаем коллизию деталей, чтобы не застревать и передавать энергию чище
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
-            
-            -- Чередуем смещение вверх и вниз каждую миллисекунду
-            local offset = (tick() % 0.02 > 0.01) and 3 or -3
-            root.CFrame = root.CFrame * CFrame.new(0, offset, 0)
-            
-            -- Даем легкий искусственный пинок по векторам, чтобы игра регистрировала жесткое касание
-            root.Velocity = Vector3.new(0, offset * 50, 0)
-        end)
-    end
-end)
-
--- Авто-выключение при смерти, чтобы не баговать спавн
-LP.CharacterAdded:Connect(function()
-    if scriptActive then
-        stutterFlingActive = false
-        flingSafeCFrame = nil
-        if StutterBtn and stutterStroke then
-            StutterBtn.BackgroundTransparency = 0.5
-            stutterStroke.Transparency = 0.5
-            StutterBtn.Text = "🔨 Включить Stutter-Fling (Тач-Молоток)"
-        end
-    end
-end)
--- Переменные для контроля фиксации перед лицом
+-- Переменные для контроля фиксации перед лицом (ФИКСИРОВАННАЯ ВЕРСИЯ)
 local faceTrollActive = false
 local faceTrollTarget = nil
 
@@ -1114,7 +1039,7 @@ local FaceBtn, faceStroke = buildGubbyButton("🥪 Начать кормлени
     btn.Text = faceTrollActive and "✅ Кормление: АКТИВНО" or "🥪 Начать кормление сПущёнкой"
     
     if faceTrollActive then
-        -- Берём первую выбранную цель из твоего существующего списка игроков справа
+        -- Находим выбранного игрока в списке справа
         for pl, selected in pairs(Config.GubbyTroll.Targets) do
             if selected and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
                 faceTrollTarget = pl
@@ -1133,7 +1058,7 @@ local FaceBtn, faceStroke = buildGubbyButton("🥪 Начать кормлени
     end
 end)
 
--- Цикл жесткой привязки к лицу жертвы
+-- Цикл фиксации и движения
 RS.Heartbeat:Connect(function()
     if not scriptActive or not faceTrollActive or not faceTrollTarget then return end
     
@@ -1145,23 +1070,23 @@ RS.Heartbeat:Connect(function()
     
     if myRoot and tHead then
         pcall(function()
-            -- Полностью отключаем коллизию, чтобы нас не кикнуло и не унесло физикой
+            -- Выключаем коллизию, чтобы не улететь от удара хитбоксов
             for _, part in ipairs(myChar:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
             
-            -- Бешеное движение вперёд-назад перед лицом (ось Z) с частотой тика
-            local forwardBackward = math.sin(tick() * 40) * 1.5 - 1.5
+            -- Скорость и амплитуда движения вперёд-назад перед лицом
+            local waveZ = math.sin(tick() * 45) * 1.5 - 1.5
             
-            -- Задаем координаты: точно перед головой жертвы, опускаем на половину тела вниз (на 2.5 студа)
-            myRoot.CFrame = tHead.CFrame * CFrame.new(0, -2.5, forwardBackward)
+            -- КОРРЕКЦИЯ: Поднимаем выше (Y = -1.2 студа от головы вместо -2.5)
+            -- Разворачиваем лицом к цели (Angles по оси Y на 180 градусов)
+            myRoot.CFrame = tHead.CFrame * CFrame.new(0, -1.2, waveZ) * CFrame.Angles(0, math.rad(180), 0)
             
-            -- Сбрасываем скорость в ноль, чтобы Byfron не выдал краш за телепорты
-            myRoot.Velocity = Vector3.zero
-            myRoot.RotVelocity = Vector3.zero
+            -- Обнуляем скорость для защиты от античита Byfron
+            root.Velocity = Vector3.zero
+            root.RotVelocity = Vector3.zero
         end)
     else
-        -- Если цель вышла из игры или умерла, выключаем режим
         faceTrollActive = false
         faceTrollTarget = nil
         if FaceBtn and faceStroke then

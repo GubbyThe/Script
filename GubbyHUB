@@ -1317,3 +1317,65 @@ LP.CharacterAdded:Connect(function()
         idledConnection = nil
     end
 end)
+-- Переменные для контроля функции "Хоботок" (ВЕРСИЯ ДЛЯ СВОЕЙ ТАЛИИ)
+local hobotokActive = false
+local hobotokWeld = nil
+
+-- Создаем кнопку во вкладке "Троллинг" (tabTroll)
+local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
+    hobotokActive = not hobotokActive
+    btn.BackgroundTransparency = hobotokActive and 0.1 or 0.5
+    stroke.Transparency = hobotokActive and 0.1 or 0.5
+    btn.Text = hobotokActive and "✅ Хоботок: АКТИВЕН" or "🐘 Включить функция Хоботок"
+    
+    if not hobotokActive then
+        -- Полностью убираем сварку и возвращаем руку на место при выключении
+        if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
+        local myChar = LP.Character
+        if myChar then
+            local torso = myChar:FindFirstChild("Torso") or myChar:FindFirstChild("UpperTorso")
+            local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
+            if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
+        end
+    end
+end)
+
+-- Поток удержания руки на своей талии спереди
+RS.Heartbeat:Connect(function()
+    if not scriptActive or not hobotokActive then return end
+    
+    local myChar = LP.Character
+    local myHand = myChar and (myChar:FindFirstChild("RightHand") or myChar:FindFirstChild("Right Arm"))
+    local myTorso = myChar and (myChar:FindFirstChild("LowerTorso") or myChar:FindFirstChild("Torso"))
+    
+    if myHand and myTorso then
+        pcall(function()
+            -- Если сварки еще нет, пришиваем руку К СВОЕЙ ТАЛИИ
+            if not hobotokWeld or not hobotokWeld.Parent then
+                hobotokWeld = Instance.new("Weld")
+                hobotokWeld.Name = "MyHobotokWeld"
+                hobotokWeld.Part0 = myTorso
+                hobotokWeld.Part1 = myHand
+                hobotokWeld.Parent = myHand
+            end
+            
+            -- АНИМАЦИЯ: Жесткое теребление вперед-назад (ось Z) и сжатие по бокам (ось X)
+            -- math.sin выдает бешеную скорость движений хобота вперед-назад перед собой
+            local forwardBack = math.sin(tick() * 60) * 1.2 - 1.5
+            local sideSqueeze = math.cos(tick() * 60) * 0.3
+            
+            -- Позиционируем ладонь строго по центру спереди на талии (X=0, Y=-0.5 опускает к поясу)
+            hobotokWeld.C0 = CFrame.new(sideSqueeze, -0.5, forwardBack) * CFrame.Angles(math.rad(90), 0, 0)
+        end)
+    else
+        if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
+    end
+end)
+
+-- Сброс при смерти
+LP.CharacterAdded:Connect(function()
+    if scriptActive then
+        hobotokActive = false
+        if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
+    end
+end)

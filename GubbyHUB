@@ -1317,90 +1317,99 @@ LP.CharacterAdded:Connect(function()
         idledConnection = nil
     end
 end)
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ИСПРАВЛЕННАЯ ФУНКЦИЯ "ХОБОТОК" (FE ВИДИМОСТЬ ДЛЯ ВСЕХ)
+-- ========================================================================
+local G_Config = _G.GeminiConfig
+local G_UI = _G.GeminiUI
+local LocalPlr = game:GetService("Players").LocalPlayer
+local HeartbeatService = game:GetService("RunService")
 
-    -- Ищем СТРОГО ладонь (кисть руки), убирая из поиска локти и плечи
-    local myHand = myChar and (myChar:FindFirstChild("RightHand") or myChar:FindFirstChild("Right Hand"))
-    local myTorso = myChar and (myChar:FindFirstChild("LowerTorso") or myChar:FindFirstChild("Torso"))
-    
-    if hobotokActive then
-        -- ВКЛЮЧЕНИЕ: Растягиваем кисть горизонтально
-        if myHand and myTorso then
-            pcall(function()
--- Переменные для контроля функции "Хоботок" (УЛЬТИМАТИВНАЯ ГОР ИЗОНТАЛЬНАЯ ВЕРСИЯ)
-local hobotokActive = false
-local hobotokWeld = nil
-local fakeHobotokPart = nil
+if not G_Config.GubbyHobotok then G_Config.GubbyHobotok = {Enabled = false} end
 
--- Функция полной зачистки и возврата в дефолт
-local function resetHobotok()
-    if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
-    if fakeHobotokPart then fakeHobotokPart:Destroy(); fakeHobotokPart = nil end
-    
-    local myChar = LP.Character
-    local myHand = myChar and (myChar:FindFirstChild("RightHand") or myChar:FindFirstChild("Right Hand"))
-    if myHand then 
-        myHand.Transparency = 0 -- Возвращаем видимость ладони
-        myHand.CanCollide = true
-    end
-    
-    local torso = myChar and (myChar:FindFirstChild("Torso") or myChar:FindFirstChild("UpperTorso"))
-    local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
-    if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
-end
-
--- Создаем кнопку во вкладке "Троллинг" (tabTroll)
-local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
-    hobotokActive = not hobotokActive
-    btn.BackgroundTransparency = hobotokActive and 0.1 or 0.5
-    stroke.Transparency = hobotokActive and 0.1 or 0.5
-    btn.Text = hobotokActive and "✅ Хоботок: АКТИВЕН" or "🐘 Включить функция Хоботок"
-    
-    local myChar = LP.Character
-    local myHand = myChar and (myChar:FindFirstChild("RightHand") or myChar:FindFirstChild("Right Hand"))
-    local myTorso = myChar and (myChar:FindFirstChild("LowerTorso") or myChar:FindFirstChild("Torso"))
-    
-    if hobotokActive then
-        if myHand and myTorso then
-            pcall(function()
-                -- 1. Делаем родную ладонь невидимой, чтобы она не лагала
-                myHand.Transparency = 1
-                myHand.CanCollide = false
-                
-                -- 2. Привариваем руку к талии спереди
-                hobotokWeld = Instance.new("Weld")
-                hobotokWeld.Name = "MyGubbyHobotokWeld"
-                hobotokWeld.Part0 = myTorso
-                hobotokWeld.Part1 = myHand
-                hobotokWeld.C0 = CFrame.new(0, -0.5, -0.5) * CFrame.Angles(0, math.rad(180), 0)
-                hobotokWeld.Parent = myHand
-                
-                -- 3. Создаем идеальный кастомный хобот, который не ломает физику
-                fakeHobotokPart = Instance.new("Part")
-                fakeHobotokPart.Name = "GubbyFakeHobotok"
-                fakeHobotokPart.Size = Vector3.new(0.4, 0.4, 4.5) -- Длинный горизонтальный хобот!
-                fakeHobotokPart.Material = Enum.Material.SmoothPlastic
-                -- Подстраиваем цвет под кожу твоего персонажа
-                fakeHobotokPart.Color = myHand.Color 
-                fakeHobotokPart.CanCollide = false
-                fakeHobotokPart.Parent = myChar
-                
-                -- Жестко привариваем его горизонтально вперед
-                local meshWeld = Instance.new("Weld", fakeHobotokPart)
-                meshWeld.Part0 = myHand
-                meshWeld.Part1 = fakeHobotokPart
-                -- Вытягиваем строго вперед горизонтально взгляда!
-                meshWeld.C0 = CFrame.new(0, 0, -2.0) * CFrame.Angles(0, 0, 0)
-            end)
+-- Находим твою родную вкладку "Троллинг" или берем общую контент-зону
+local targetScrollFrame = nil
+if G_UI and G_UI.Tabs then
+    for _, currentTab in pairs(G_UI.Tabs) do
+        if currentTab.name == "Утилиты" or currentTab.name == "Троллинг" then 
+            targetScrollFrame = currentTab.sc 
+            break 
         end
-    else
-        resetHobotok()
     end
-end)
+end
+if not targetScrollFrame and G_UI then targetScrollFrame = G_UI.ContentArea end
 
--- Авто-сброс при респавне/смерти
-LP.CharacterAdded:Connect(function()
-    if scriptActive then
-        hobotokActive = false
-        resetHobotok()
-    end
-end)
+if targetScrollFrame and G_UI.CreateButton then
+    -- ИСПОЛЬЗУЕМ ТВОЮ РОДНУЮ ФУНКЦИЮ СОЗДАНИЯ КНОПОК (ФИКС ОШИБКИ NIL!)
+    local HobotokButton = G_UI.CreateButton("Включить функция Хоботок", targetScrollFrame, 35)
+    G_UI.B_Refs.HobotokBtn = HobotokButton
+
+    local hobotokTool = nil
+    local hobotokConnection = nil
+
+    HobotokButton.MouseButton1Click:Connect(function()
+        G_Config.GubbyHobotok.Enabled = not G_Config.GubbyHobotok.Enabled
+        HobotokButton.BackgroundColor3 = G_Config.GubbyHobotok.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+
+        local char = LocalPlr.Character
+        local backpack = LocalPlr:FindFirstChild("Backpack")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        local myHand = char and (char:FindFirstChild("RightHand") or char:FindFirstChild("Right Hand"))
+
+        if G_Config.GubbyHobotok.Enabled then
+            if char and backpack and hum and myHand then
+                -- ТЕХНОЛОГИЯ FE: Создаем реальный предмет, чтобы его видели абсолютно ВСЕ на сервере!
+                hobotokTool = Instance.new("Tool")
+                hobotokTool.Name = "Хобот"
+                hobotokTool.RequiresHandle = true
+                
+                local handle = Instance.new("Part", hobotokTool)
+                handle.Name = "Handle"
+                handle.Size = Vector3.new(0.4, 0.4, 4.5) -- Длинный горизонтальный хобот
+                handle.Material = Enum.Material.SmoothPlastic
+                handle.Color = myHand.Color -- Цвет подстраивается под кожу твоего аватара
+                handle.CanCollide = false
+                
+                hobotokTool.Parent = backpack
+                hum:EquipTool(hobotokTool)
+
+                -- ЖЕСТКИЙ ПОТОК ФИКСАЦИИ ХОБОТА НА ПОЯСЕ (БЕЗ ТРЯСКИ И СБРОСОВ)
+                hobotokConnection = HeartbeatService.Heartbeat:Connect(function()
+                    local currentChar = LocalPlr.Character
+                    local torso = currentChar and (currentChar:FindFirstChild("LowerTorso") or currentChar:FindFirstChild("Torso"))
+                    local handPart = currentChar and (currentChar:FindFirstChild("RightHand") or currentChar:FindFirstChild("Right Hand"))
+                    
+                    if torso and handPart and hobotokTool and hobotokTool.Parent == currentChar and handle and handle.Parent then
+                        pcall(function()
+                            -- Разрываем ладонный зацеп анимации Roblox, чтобы рука не улетала к плечу
+                            local rArm = currentChar:FindFirstChild("Right Arm") or currentChar:FindFirstChild("RightUpperArm")
+                            local grip = rArm and rArm:FindFirstChild("RightGrip") or handPart:FindFirstChild("RightGrip")
+                            if grip then grip:Destroy() end
+                            local charGrip = currentChar:FindFirstChild("RightGrip", true)
+                            if charGrip then charGrip:Destroy() end
+
+                            -- Выключаем коллизию рук
+                            handPart.CanCollide = false
+                            
+                            -- Намертво ставим хобот горизонтально вперед перед твоей талией
+                            -- Смещение: X=0 (центр), Y=-0.4 (пояс), Z=-2.2 (вынос вперед)
+                            handle.CFrame = torso.CFrame * CFrame.new(0, -0.4, -2.2) * CFrame.Angles(0, 0, 0)
+                            handle.Velocity = Vector3.new(0, 0.02, 0) -- Сетевой пинг для видимости другими
+                        end)
+                    end
+                end)
+            end
+        else
+            -- НАЧИСТО ВЫКЛЮЧАЕМ РЕЖИМ
+            if hobotokConnection then hobotokConnection:Disconnect() hobotokConnection = nil end
+            if hobotokTool then pcall(function() hobotokTool:Destroy() end) hobotokTool = nil end
+            if char and hum then 
+                hum:UnequipTools() 
+                -- Возвращаем суставы рук в нормальное состояние
+                local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+                local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
+                if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
+            end
+        end
+    end)
+end

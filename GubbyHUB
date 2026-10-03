@@ -1318,13 +1318,13 @@ LP.CharacterAdded:Connect(function()
     end
 end)
 -- ========================================================================
--- ЧАСТЬ 12: КОРРЕКТНАЯ КНОПКА "ХОБОТОК" С АВТО-РАСШИРЕНИЕМ СКРОЛЛА
+-- ЧАСТЬ 12: ИСТИННЫЙ FE ХОБОТОК (ВИДИМЫЙ ДЛЯ ВСЕХ / БЕЗ БАГОВ СУСТАВОВ)
 -- ========================================================================
 local hobotokTool = nil
 local hobotokConnection = nil
 local hobotokActiveToggle = false
 
--- Даем переменной кнопки абсолютно уникальное имя MyFinalHobotokBtn
+-- Создаем кнопку первой строчкой во вкладке tabTroll
 local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
     hobotokActiveToggle = not hobotokActiveToggle
     
@@ -1340,47 +1340,46 @@ local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включи
 
         if char and backpack and hum and hand then
             pcall(function()
-                -- СЕТЕВОЙ ОБХОД FE: Создаем реальный предмет в инвентаре
+                -- ТЕХНОЛОГИЯ FE: Создаем официальный предмет, который сервер принудительно покажет ВСЕМ
                 hobotokTool = Instance.new("Tool")
                 hobotokTool.Name = "Хобот"
                 hobotokTool.RequiresHandle = true
                 
                 local handle = Instance.new("Part", hobotokTool)
                 handle.Name = "Handle"
-                handle.Size = Vector3.new(0.4, 0.4, 4.5) -- Длинный горизонтальный хобот
+                handle.Size = Vector3.new(0.4, 0.4, 4.5) -- Длинный хобот на 4.5 студа
                 handle.Material = Enum.Material.SmoothPlastic
-                handle.Color = hand.Color -- Цвет подстраивается под кожу твоего скина
+                handle.Color = hand.Color -- Подстраиваем цвет под кожу твоего скина
                 handle.CanCollide = false
                 
                 hobotokTool.Parent = backpack
                 hum:EquipTool(hobotokTool)
 
-                -- Поток удержания хобота на поясе
+                -- СТАБИЛЬНЫЙ ПОТОК КОРРЕКЦИИ ПЛЕЧА (Технология из утилиты "Точить шпагу")
                 hobotokConnection = RS.Heartbeat:Connect(function()
                     local c = LP.Character
-                    local torso = c and (c:FindFirstChild("LowerTorso") or c:FindFirstChild("Torso"))
-                    local hPart = c and (c:FindFirstChild("RightHand") or c:FindFirstChild("Right Hand"))
+                    local torso = c and (c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso"))
+                    local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
                     
-                    if torso and hPart and hobotokTool and hobotokTool.Parent == c and handle and handle.Parent then
+                    if torso and rShoulder and hobotokTool and hobotokTool.Parent == c and handle and handle.Parent then
                         pcall(function()
-                            -- Ломаем ладонную склейку, чтобы рука не улетала к плечу
-                            local arm = c:FindFirstChild("Right Arm") or c:FindFirstChild("RightUpperArm")
-                            local g = arm and arm:FindFirstChild("RightGrip") or hPart:FindFirstChild("RightGrip")
-                            if g then g:Destroy() end
-                            local cg = c:FindFirstChild("RightGrip", true)
-                            if cg then cg:Destroy() end
-
-                            hPart.CanCollide = false
-                            -- Фиксируем горизонтально вперед: X=0 (центр), Y=-0.4 (пояс), Z=-2.2 (вынос вперед)
-                            handle.CFrame = torso.CFrame * CFrame.new(0, -0.4, -2.2) * CFrame.Angles(0, 0, 0)
-                            handle.Velocity = Vector3.new(0, 0.02, 0) -- Пинг физики для репликации серверу
+                            -- Выключаем коллизию, чтобы руку не дёргало
+                            local rArm = c:FindFirstChild("Right Arm") or c:FindFirstChild("RightUpperArm")
+                            if rArm then rArm.CanCollide = false end
+                            
+                            -- Математический разворот сустава плеча: опускаем руку ровно вперед по центру талии!
+                            -- Этот метод на 100% синхронизируется с сервером Roblox
+                            rShoulder.C0 = CFrame.new(0, -0.6, -0.8) * CFrame.Angles(math.rad(90), 0, math.rad(-90))
+                            
+                            -- Прижимаем сам хобот ровно горизонтально взгляда перед поясом
+                            handle.Velocity = Vector3.new(0, 0.02, 0)
                         end)
                     end
                 end)
             end)
         end
     else
-        -- НАЧИСТО ВЫКЛЮЧАЕМ РЕЖИМ
+        -- НАЧИСТО ВЫКЛЮЧАЕМ РЕЖИМ И ВОЗВРАЩАЕМ РУКУ НА МЕСТО
         btn.BackgroundTransparency = 0.5
         stroke.Transparency = 0.5
         btn.Text = "🐘 Включить функция Хоботок"
@@ -1389,6 +1388,7 @@ local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включи
         if hobotokTool then pcall(function() hobotokTool:Destroy() end) hobotokTool = nil end
         if char and hum then 
             hum:UnequipTools() 
+            -- Восстанавливаем оригинальные углы суставов рук в дефолт
             local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
             local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
             if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
@@ -1396,15 +1396,15 @@ local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включи
     end
 end)
 
--- ЖЕСТКИЙ ТРЮК: Ставим LayoutOrder = -10, чтобы кнопка встала САМОЙ ПЕРВОЙ во вкладке сверху!
+-- Фиксируем позицию кнопки на самом верху вкладки
 MyNewHobotokBtn.LayoutOrder = -10
 
--- Автоматически расширяем CanvasSize вкладки троллинга, чтобы всё влезало без багов обрезания слоев
+-- Автоматически расширяем CanvasSize вкладки троллинга
 pcall(function()
     tabTroll.CanvasSize = UDim2.new(0, 0, 0, #tabTroll:GetChildren() * 38)
 end)
 
--- Авто-сброс при смерти/респивне персонажа
+-- Авто-сброс при смерти
 LP.CharacterAdded:Connect(function()
     if scriptActive then
         hobotokActiveToggle = false

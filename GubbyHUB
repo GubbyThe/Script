@@ -1318,13 +1318,13 @@ LP.CharacterAdded:Connect(function()
     end
 end)
 -- ========================================================================
--- ЧАСТЬ 12: ФИНАЛЬНАЯ УНИКАЛЬНАЯ КНОПКА "ХОБОТОК" (БЕЗ ИСЧЕЗНОВЕНИЙ)
+-- ЧАСТЬ 12: КОРРЕКТНАЯ КНОПКА "ХОБОТОК" С АВТО-РАСШИРЕНИЕМ СКРОЛЛА
 -- ========================================================================
 local hobotokTool = nil
 local hobotokConnection = nil
 local hobotokActiveToggle = false
 
--- Даем переменной кнопки абсолютно новое уникальное имя MyNewHobotokBtn
+-- Даем переменной кнопки абсолютно уникальное имя MyFinalHobotokBtn
 local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
     hobotokActiveToggle = not hobotokActiveToggle
     
@@ -1396,8 +1396,13 @@ local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включи
     end
 end)
 
--- Принудительно прописываем LayoutOrder, чтобы кнопка встала в самый конец списка троллинга
-MyNewHobotokBtn.LayoutOrder = 99
+-- ЖЕСТКИЙ ТРЮК: Ставим LayoutOrder = -10, чтобы кнопка встала САМОЙ ПЕРВОЙ во вкладке сверху!
+MyNewHobotokBtn.LayoutOrder = -10
+
+-- Автоматически расширяем CanvasSize вкладки троллинга, чтобы всё влезало без багов обрезания слоев
+pcall(function()
+    tabTroll.CanvasSize = UDim2.new(0, 0, 0, #tabTroll:GetChildren() * 38)
+end)
 
 -- Авто-сброс при смерти/респивне персонажа
 LP.CharacterAdded:Connect(function()

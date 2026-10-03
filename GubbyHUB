@@ -1318,125 +1318,94 @@ LP.CharacterAdded:Connect(function()
     end
 end)
 -- ========================================================================
--- ФИНАЛЬНЫЙ АВТОНОМНЫЙ ХОБОТОК (0% ЗАВИСИМОСТИ / 100% FE СЕТЕВАЯ ВИДИМОСТЬ)
+-- ЧАСТЬ 12: ОРИГИНАЛЬНАЯ ФУНКЦИЯ "ХОБОТОК" (FE ВИДИМОСТЬ ДЛЯ ВСЕХ)
 -- ========================================================================
-task.spawn(function()
-    local P = game:GetService("Players")
-    local LP = P.LocalPlayer or P.PlayerAdded:Wait()
-    local RS = game:GetService("RunService")
-    
-    -- Скрытые переменные контроля
-    local enabled = false
-    local tool = nil
-    local connection = nil
+local hobotokTool = nil
+local hobotokConnection = nil
 
-    -- Железный поиск фрейма утилит напрямую в PlayerGui без использования таблиц
-    local sg = LP:WaitForChild("PlayerGui"):WaitForChild("ДжиминиХаб_v40.0", 10)
-    local scroll = nil
+-- Создаем кнопку строго через твою оригинальную функцию во вкладке tabTroll
+local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
+    Config.GubbyTroll.Enabled = not Config.GubbyTroll.Enabled -- Используем твой глобальный переключатель
     
-    if sg then
-        local main = sg:FindFirstChild("MainFrame")
-        local content = main and main:FindFirstChild("ContentArea")
-        if content then
-            -- Прочесываем все вкладки, ищем ту, где лежит кнопка автокликера (это вкладка Утилиты)
-            for _, child in ipairs(content:GetChildren()) do
-                if child:IsA("ScrollingFrame") then
-                    for _, btn in ipairs(child:GetChildren()) do
-                        if btn:IsA("TextButton") and btn.Text:lower():find("click") then
-                            scroll = child
-                            break
-                        end
+    local char = LP.Character
+    local backpack = LP:FindFirstChild("Backpack")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local hand = char and (char:FindFirstChild("RightHand") or char:FindFirstChild("Right Hand"))
+
+    -- Если кнопку активировали
+    if Config.GubbyTroll.Enabled then
+        btn.BackgroundTransparency = 0.1
+        stroke.Transparency = 0.1
+        btn.Text = "✅ Хоботок: АКТИВЕН"
+
+        if char and backpack and hum and hand then
+            pcall(function()
+                -- СЕТЕВОЙ ОБХОД FE: Создаем реальный предмет, чтобы его видели абсолютно все на сервере!
+                hobotokTool = Instance.new("Tool")
+                hobotokTool.Name = "Хобот"
+                hobotokTool.RequiresHandle = true
+                
+                local handle = Instance.new("Part", hobotokTool)
+                handle.Name = "Handle"
+                handle.Size = Vector3.new(0.4, 0.4, 4.5) -- Длинный горизонтальный хобот
+                handle.Material = Enum.Material.SmoothPlastic
+                handle.Color = hand.Color -- Цвет подстраивается под скин твоего персонажа
+                handle.CanCollide = false
+                
+                hobotokTool.Parent = backpack
+                hum:EquipTool(hobotokTool)
+
+                -- Жесткий поток фиксации хобота на твоем поясе
+                hobotokConnection = RS.Heartbeat:Connect(function()
+                    local c = LP.Character
+                    local torso = c and (c:FindFirstChild("LowerTorso") or c:FindFirstChild("Torso"))
+                    local hPart = c and (c:FindFirstChild("RightHand") or c:FindFirstChild("Right Hand"))
+                    
+                    if torso and hPart and hobotokTool and hobotokTool.Parent == c and handle and handle.Parent then
+                        pcall(function()
+                            -- Ломаем ладонную склейку, чтобы рука не улетала обратно на плечо
+                            local arm = c:FindFirstChild("Right Arm") or c:FindFirstChild("RightUpperArm")
+                            local g = arm and arm:FindFirstChild("RightGrip") or hPart:FindFirstChild("RightGrip")
+                            if g then g:Destroy() end
+                            local cg = c:FindFirstChild("RightGrip", true)
+                            if cg then cg:Destroy() end
+
+                            hPart.CanCollide = false
+                            -- Позиция: X=0 (центр), Y=-0.4 (пояс), Z=-2.2 (вынос горизонтально вперед взгляда!)
+                            handle.CFrame = torso.CFrame * CFrame.new(0, -0.4, -2.2) * CFrame.Angles(0, 0, 0)
+                            handle.Velocity = Vector3.new(0, 0.02, 0) -- Пинг физики для репликации серверу
+                        end)
                     end
-                end
-            end
-            -- Резерв: если не нашли по кнопкам, берем самый последний ScrollingFrame
-            if not scroll then
-                local frames = {}
-                for _, child in ipairs(content:GetChildren()) do
-                    if child:IsA("ScrollingFrame") then table.insert(frames, child) end
-                end
-                scroll = frames[#frames]
-            end
+                end)
+            end)
+        end
+    else
+        -- НАЧИСТО ВЫКЛЮЧАЕМ РЕЖИМ И СБРОСЫ
+        btn.BackgroundTransparency = 0.5
+        stroke.Transparency = 0.5
+        btn.Text = "🐘 Включить функция Хоботок"
+
+        if hobotokConnection then hobotokConnection:Disconnect() hobotokConnection = nil end
+        if hobotokTool then pcall(function() hobotokTool:Destroy() end) hobotokTool = nil end
+        if char and hum then 
+            hum:UnequipTools() 
+            -- Восстанавливаем оригинальные углы суставов рук
+            local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+            local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
+            if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
         end
     end
+end)
 
-    -- Если фрейм найден, создаем кнопку вручную через стандартный синтаксис Roblox
-    if scroll then
-        local HobotokBtn = Instance.new("TextButton", scroll)
-        HobotokBtn.Name = "GubbyHobotokStandaloneButton"
-        HobotokBtn.Size = UDim2.new(1, -10, 0, 32)
-        HobotokBtn.BackgroundColor3 = Color3.fromRGB(255, 152, 0)
-        HobotokBtn.BackgroundTransparency = 0.4
-        HobotokBtn.Text = "Включить функция Хоботок"
-        HobotokBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        HobotokBtn.Font = Enum.Font.SourceSansBold
-        HobotokBtn.TextScaled = true
-        Instance.new("UICorner", HobotokBtn).CornerRadius = UDim.new(0, 6)
-
-        -- Логика переключения кнопки
-        HobotokBtn.MouseButton1Click:Connect(function()
-            enabled = not enabled
-            HobotokBtn.BackgroundColor3 = enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
-            HobotokBtn.Text = enabled and "✅ Хоботок: АКТИВЕН" or "Включить функция Хоботок"
-
-            local char = LP.Character
-            local backpack = LP:FindFirstChild("Backpack")
-            local hum = char and char:FindFirstChildOfClass("Humanoid")
-            local hand = char and (char:FindFirstChild("RightHand") or char:FindFirstChild("Right Hand"))
-
-            if enabled then
-                if char and backpack and hum and hand then
-                    pcall(function()
-                        -- СЕТЕВОЙ ОБХОД FE: Создаем реальный предмет в инвентаре
-                        tool = Instance.new("Tool")
-                        tool.Name = "Хобот"
-                        tool.RequiresHandle = true
-                        
-                        local handle = Instance.new("Part", tool)
-                        handle.Name = "Handle"
-                        handle.Size = Vector3.new(0.4, 0.4, 4.5) -- Длинная вытянутая кисть
-                        handle.Material = Enum.Material.SmoothPlastic
-                        handle.Color = hand.Color -- Цвет кожи твоего скина
-                        handle.CanCollide = false
-                        
-                        tool.Parent = backpack
-                        hum:EquipTool(tool)
-
-                        -- Поток удержания хоботка строго горизонтально перед собой
-                        connection = RS.Heartbeat:Connect(function()
-                            local c = LP.Character
-                            local torso = c and (c:FindFirstChild("LowerTorso") or c:FindFirstChild("Torso"))
-                            local hPart = c and (c:FindFirstChild("RightHand") or c:FindFirstChild("Right Hand"))
-                            
-                            if torso and hPart and tool and tool.Parent == c and handle and handle.Parent then
-                                pcall(function()
-                                    -- Ломаем ладонную склейку, чтобы рука стояла на талии
-                                    local arm = c:FindFirstChild("Right Arm") or c:FindFirstChild("RightUpperArm")
-                                    local g = arm and arm:FindFirstChild("RightGrip") or hPart:FindFirstChild("RightGrip")
-                                    if g then g:Destroy() end
-                                    local cg = c:FindFirstChild("RightGrip", true)
-                                    if cg then cg:Destroy() end
-
-                                    hPart.CanCollide = false
-                                    -- Позиция: X=0 (центр), Y=-0.4 (пояс), Z=-2.2 (вынос горизонтально вперед)
-                                    handle.CFrame = torso.CFrame * CFrame.new(0, -0.4, -2.2) * CFrame.Angles(0, 0, 0)
-                                    handle.Velocity = Vector3.new(0, 0.02, 0) -- Пинг для видимости другими
-                                end)
-                            end
-                        end)
-                    end)
-                end
-            else
-                -- ПОЛНОЕ ВЫКЛЮЧЕНИЕ И СБРОС СУСТАВОВ
-                if connection then connection:Disconnect() connection = nil end
-                if tool then pcall(function() tool:Destroy() end) tool = nil end
-                if char and hum then 
-                    hum:UnequipTools() 
-                    local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-                    local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
-                    if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
-                end
-            end
-        end)
+-- Авто-сброс при смерти/респивне персонажа
+LP.CharacterAdded:Connect(function()
+    if scriptActive then
+        if hobotokConnection then hobotokConnection:Disconnect() hobotokConnection = nil end
+        if hobotokTool then pcall(function() hobotokTool:Destroy() end) hobotokTool = nil end
+        if HobotokBtn and hobotokStroke then
+            HobotokBtn.BackgroundTransparency = 0.5
+            hobotokStroke.Transparency = 0.5
+            HobotokBtn.Text = "🐘 Включить функция Хоботок"
+        end
     end
 end)

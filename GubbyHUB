@@ -1317,10 +1317,10 @@ LP.CharacterAdded:Connect(function()
         idledConnection = nil
     end
 end)
--- Переменные для контроля функции "Хоботок" (БЕЗОПАСНАЯ НЕОНОВАЯ ВЕРСИЯ)
+-- Переменные для контроля функции "Хоботок" (НЕПОДВИЖНАЯ ВЕРСИЯ БЕЗ ТРЯСКИ)
 local hobotokActive = false
 local hobotokWeld = nil
-local hobotokMesh = nil
+local originalHandSize = nil
 
 -- Создаем кнопку во вкладке "Троллинг" (tabTroll)
 local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
@@ -1329,74 +1329,49 @@ local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить фун
     stroke.Transparency = hobotokActive and 0.1 or 0.5
     btn.Text = hobotokActive and "✅ Хоботок: АКТИВЕН" or "🐘 Включить функция Хоботок"
     
-    if not hobotokActive then
-        -- Полностью и начисто удаляем хобот при выключении
+    local myChar = LP.Character
+    local myHand = myChar and (myChar:FindFirstChild("RightHand") or myChar:FindFirstChild("Right Arm"))
+    local myTorso = myChar and (myChar:FindFirstChild("LowerTorso") or myChar:FindFirstChild("Torso"))
+    
+    if hobotokActive then
+        -- ВКЛЮЧЕНИЕ: Растягиваем и крепим намертво
+        if myHand and myTorso then
+            pcall(function()
+                -- Запоминаем оригинальный размер руки, чтобы вернуть его потом
+                if not originalHandSize then originalHandSize = myHand.Size end
+                
+                myHand.CanCollide = false
+                -- Растягиваем твою родную ладонь в длину на 4 студа (без создания левых блоков!)
+                myHand.Size = Vector3.new(0.4, 0.4, 4.0) 
+                
+                -- Создаем жесткую сварку к своей талии
+                hobotokWeld = Instance.new("Weld")
+                hobotokWeld.Name = "MyStaticHobotokWeld"
+                hobotokWeld.Part0 = myTorso
+                hobotokWeld.Part1 = myHand
+                -- Ставим строго по центру спереди (X=0, Y=-0.4 у пояса, Z=-2.0 выдвигаем вперед)
+                hobotokWeld.C0 = CFrame.new(0, -0.4, -2.0) * CFrame.Angles(math.rad(90), 0, 0)
+                hobotokWeld.Parent = myHand
+            end)
+        end
+    else
+        -- ВЫКЛЮЧЕНИЕ: Возвращаем всё в дефолт
         if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
-        if hobotokMesh then hobotokMesh:Destroy(); hobotokMesh = nil end
-        
-        local myChar = LP.Character
+        if myHand and originalHandSize then
+            myHand.Size = originalHandSize -- Рука снова обычная
+        end
+        -- Возвращаем сустав плеча на место
         local torso = myChar and (myChar:FindFirstChild("Torso") or myChar:FindFirstChild("UpperTorso"))
         local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
         if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
     end
 end)
 
--- Поток стабильного и плавного покачивания хоботка
-RS.Heartbeat:Connect(function()
-    if not scriptActive or not hobotokActive then return end
-    
-    local myChar = LP.Character
-    local myHand = myChar and (myChar:FindFirstChild("RightHand") or myChar:FindFirstChild("Right Arm"))
-    local myTorso = myChar and (myChar:FindFirstChild("LowerTorso") or myChar:FindFirstChild("Torso"))
-    
-    if myHand and myTorso then
-        pcall(function()
-            -- Выключаем коллизию рук, чтобы персонажа не трясло
-            myHand.CanCollide = false
-            
-            -- Если самого хобота еще нет в теле, создаем его как отдельную красивую деталь
-            if not hobotokMesh or not hobotokMesh.Parent then
-                hobotokMesh = Instance.new("Part")
-                hobotokMesh.Name = "GubbyHobotokPart"
-                hobotokMesh.Material = Enum.Material.Neon
-                hobotokMesh.Color = Color3.fromRGB(255, 235, 59) -- Фирменный ярко-желтый цвет Джимини Хаба!
-                hobotokMesh.Size = Vector3.new(0.4, 0.4, 3.5) -- Тонкий и длинный хобот на 3.5 студа
-                hobotokMesh.CanCollide = false
-                hobotokMesh.Parent = myChar
-                
-                -- Привариваем хобот напрямую к твоей руке
-                local meshWeld = Instance.new("Weld", hobotokMesh)
-                meshWeld.Part0 = myHand
-                meshWeld.Part1 = hobotokMesh
-                meshWeld.C0 = CFrame.new(0, 0, -1.5) -- Выносим его вперед из ладони
-            end
-            
-            -- Если основная сварка руки к талии пропала, создаем заново
-            if not hobotokWeld or not hobotokWeld.Parent then
-                hobotokWeld = Instance.new("Weld")
-                hobotokWeld.Name = "MyStableHobotokWeld"
-                hobotokWeld.Part0 = myTorso
-                hobotokWeld.Part1 = myHand
-                hobotokWeld.Parent = myHand
-            end
-            
-            -- ПЛАВНАЯ АНИМАЦИЯ: Скорость всего 12 (очень медленно) и микро-движение вперед-назад
-            local slowWave = math.sin(tick() * 12) * 0.25 - 1.2
-            
-            -- Держим руку мертво по центру спереди на поясе (X=0, Y=-0.4)
-            hobotokWeld.C0 = CFrame.new(0, -0.4, slowWave) * CFrame.Angles(math.rad(90), 0, 0)
-        end)
-    else
-        if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
-        if hobotokMesh then hobotokMesh:Destroy(); hobotokMesh = nil end
-    end
-end)
-
--- Сброс при смерти
+-- Авто-сброс при смерти
 LP.CharacterAdded:Connect(function()
     if scriptActive then
         hobotokActive = false
-        if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
-        if hobotokMesh then hobotokMesh:Destroy(); hobotokMesh = nil end
+        hobotokWeld = nil
+        originalHandSize = nil
     end
 end)

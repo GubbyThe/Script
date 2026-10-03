@@ -1318,29 +1318,29 @@ LP.CharacterAdded:Connect(function()
     end
 end)
 -- ========================================================================
--- ЧАСТЬ 12: ОРИГИНАЛЬНАЯ ФУНКЦИЯ "ХОБОТОК" (FE ВИДИМОСТЬ ДЛЯ ВСЕХ)
+-- ЧАСТЬ 12: ФИНАЛЬНАЯ УНИКАЛЬНАЯ КНОПКА "ХОБОТОК" (БЕЗ ИСЧЕЗНОВЕНИЙ)
 -- ========================================================================
 local hobotokTool = nil
 local hobotokConnection = nil
+local hobotokActiveToggle = false
 
--- Создаем кнопку строго через твою оригинальную функцию во вкладке tabTroll
-local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
-    Config.GubbyTroll.Enabled = not Config.GubbyTroll.Enabled -- Используем твой глобальный переключатель
+-- Даем переменной кнопки абсолютно новое уникальное имя MyNewHobotokBtn
+local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
+    hobotokActiveToggle = not hobotokActiveToggle
     
     local char = LP.Character
     local backpack = LP:FindFirstChild("Backpack")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local hand = char and (char:FindFirstChild("RightHand") or char:FindFirstChild("Right Hand"))
 
-    -- Если кнопку активировали
-    if Config.GubbyTroll.Enabled then
+    if hobotokActiveToggle then
         btn.BackgroundTransparency = 0.1
         stroke.Transparency = 0.1
         btn.Text = "✅ Хоботок: АКТИВЕН"
 
         if char and backpack and hum and hand then
             pcall(function()
-                -- СЕТЕВОЙ ОБХОД FE: Создаем реальный предмет, чтобы его видели абсолютно все на сервере!
+                -- СЕТЕВОЙ ОБХОД FE: Создаем реальный предмет в инвентаре
                 hobotokTool = Instance.new("Tool")
                 hobotokTool.Name = "Хобот"
                 hobotokTool.RequiresHandle = true
@@ -1349,13 +1349,13 @@ local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить фун
                 handle.Name = "Handle"
                 handle.Size = Vector3.new(0.4, 0.4, 4.5) -- Длинный горизонтальный хобот
                 handle.Material = Enum.Material.SmoothPlastic
-                handle.Color = hand.Color -- Цвет подстраивается под скин твоего персонажа
+                handle.Color = hand.Color -- Цвет подстраивается под кожу твоего скина
                 handle.CanCollide = false
                 
                 hobotokTool.Parent = backpack
                 hum:EquipTool(hobotokTool)
 
-                -- Жесткий поток фиксации хобота на твоем поясе
+                -- Поток удержания хобота на поясе
                 hobotokConnection = RS.Heartbeat:Connect(function()
                     local c = LP.Character
                     local torso = c and (c:FindFirstChild("LowerTorso") or c:FindFirstChild("Torso"))
@@ -1363,7 +1363,7 @@ local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить фун
                     
                     if torso and hPart and hobotokTool and hobotokTool.Parent == c and handle and handle.Parent then
                         pcall(function()
-                            -- Ломаем ладонную склейку, чтобы рука не улетала обратно на плечо
+                            -- Ломаем ладонную склейку, чтобы рука не улетала к плечу
                             local arm = c:FindFirstChild("Right Arm") or c:FindFirstChild("RightUpperArm")
                             local g = arm and arm:FindFirstChild("RightGrip") or hPart:FindFirstChild("RightGrip")
                             if g then g:Destroy() end
@@ -1371,7 +1371,7 @@ local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить фун
                             if cg then cg:Destroy() end
 
                             hPart.CanCollide = false
-                            -- Позиция: X=0 (центр), Y=-0.4 (пояс), Z=-2.2 (вынос горизонтально вперед взгляда!)
+                            -- Фиксируем горизонтально вперед: X=0 (центр), Y=-0.4 (пояс), Z=-2.2 (вынос вперед)
                             handle.CFrame = torso.CFrame * CFrame.new(0, -0.4, -2.2) * CFrame.Angles(0, 0, 0)
                             handle.Velocity = Vector3.new(0, 0.02, 0) -- Пинг физики для репликации серверу
                         end)
@@ -1380,7 +1380,7 @@ local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить фун
             end)
         end
     else
-        -- НАЧИСТО ВЫКЛЮЧАЕМ РЕЖИМ И СБРОСЫ
+        -- НАЧИСТО ВЫКЛЮЧАЕМ РЕЖИМ
         btn.BackgroundTransparency = 0.5
         stroke.Transparency = 0.5
         btn.Text = "🐘 Включить функция Хоботок"
@@ -1389,7 +1389,6 @@ local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить фун
         if hobotokTool then pcall(function() hobotokTool:Destroy() end) hobotokTool = nil end
         if char and hum then 
             hum:UnequipTools() 
-            -- Восстанавливаем оригинальные углы суставов рук
             local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
             local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
             if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
@@ -1397,15 +1396,19 @@ local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить фун
     end
 end)
 
+-- Принудительно прописываем LayoutOrder, чтобы кнопка встала в самый конец списка троллинга
+MyNewHobotokBtn.LayoutOrder = 99
+
 -- Авто-сброс при смерти/респивне персонажа
 LP.CharacterAdded:Connect(function()
     if scriptActive then
+        hobotokActiveToggle = false
         if hobotokConnection then hobotokConnection:Disconnect() hobotokConnection = nil end
         if hobotokTool then pcall(function() hobotokTool:Destroy() end) hobotokTool = nil end
-        if HobotokBtn and hobotokStroke then
-            HobotokBtn.BackgroundTransparency = 0.5
-            hobotokStroke.Transparency = 0.5
-            HobotokBtn.Text = "🐘 Включить функция Хоботок"
+        if MyNewHobotokBtn and uniqueHobotokStroke then
+            MyNewHobotokBtn.BackgroundTransparency = 0.5
+            uniqueHobotokStroke.Transparency = 0.5
+            MyNewHobotokBtn.Text = "🐘 Включить функция Хоботок"
         end
     end
 end)

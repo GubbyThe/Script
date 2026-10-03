@@ -1318,10 +1318,11 @@ LP.CharacterAdded:Connect(function()
     end
 end)
 -- ========================================================================
--- ЧАСТЬ 12: ЧИСТЫЙ FE ХОБОТОК ЧЕРЕЗ РАЗВОР ОТ ПЛЕЧА (ВИДИМ ДЛЯ ВСЕХ)
+-- ЧАСТЬ 12: ИСТИННЫЙ FE ХОБОТОК ЧЕРЕЗ СУСТАВ И РАСТЯЖЕНИЕ (ВИДИМ ДЛЯ ВСЕХ)
 -- ========================================================================
 local hobotokConnection = nil
 local hobotokActiveToggle = false
+local originalHandSize = nil
 
 -- Создаем кнопку первой строчкой во вкладке tabTroll
 local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
@@ -1329,51 +1330,67 @@ local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включи
     
     local char = LP.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local hand = char and (char:FindFirstChild("RightHand") or char:FindFirstChild("Right Hand"))
 
     if hobotokActiveToggle then
         btn.BackgroundTransparency = 0.1
         stroke.Transparency = 0.1
         btn.Text = "✅ Хоботок: АКТИВЕН"
 
-        if char and hum then
-            -- ЖЕСТКИЙ ПОТОК ФИКСАЦИИ СУСТАВА (Полная копия технологии "Точить шпагу")
+        if char and hum and hand then
+            -- Запоминаем дефолтный размер кисти
+            if not originalHandSize then originalHandSize = hand.Size end
+            
+            -- Выключаем стандартный аниматор Roblox для правой руки, чтобы она не дёргалась
+            local animScript = char:FindFirstChild("Animate")
+            if animScript then animScript.Disabled = true end
+
+            -- ЖЕСТКИЙ ПОТОК ФИКСАЦИИ СУСТАВА И РАЗМЕРА
             hobotokConnection = RS.Heartbeat:Connect(function()
                 local c = LP.Character
                 local torso = c and (c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso"))
                 local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
+                local hPart = c and (c:FindFirstChild("RightHand") or c:FindFirstChild("Right Hand"))
                 
-                if torso and rShoulder then
+                if torso and rShoulder and hPart then
                     pcall(function()
-                        -- Отключаем коллизию деталей правой руки, чтобы её не дёргало
+                        -- Растягиваем кисть в длину на 4.5 студа горизонтально взгляда
+                        hPart.Size = Vector3.new(0.4, 0.4, 4.5)
+                        hPart.CanCollide = false
+                        
+                        -- Отключаем коллизию остальных частей руки
                         local rArm = c:FindFirstChild("Right Arm") or c:FindFirstChild("RightUpperArm")
-                        local rLower = c:FindFirstChild("RightLowerArm")
-                        local rHand = c:FindFirstChild("RightHand") or c:FindFirstChild("Right Hand")
-                        
                         if rArm then rArm.CanCollide = false end
-                        if rLower then rLower.CanCollide = false end
-                        if rHand then rHand.CanCollide = false end
                         
-                        -- МАТЕМАТИЧЕСКИЙ РАЗВОР ОТ СУСТАВА (FE РЕПЛИКАЦИЯ):
-                        -- Смещаем руку к центру живота (X = -1.0) и опускаем к поясу (Y = -0.5)
-                        -- Разворачиваем строго горизонтально вперёд под 90 градусов (math.rad(90))
-                        rShoulder.C0 = CFrame.new(-1.0, -0.5, -0.5) * CFrame.Angles(math.rad(90), 0, math.rad(-90))
+                        -- РАЗВОР ОТ ПЛЕЧА (FE РЕПЛИКАЦИЯ): 
+                        -- Смещаем руку к центру живота и вытягиваем ровно ГОРИЗОНТАЛЬНО вперед!
+                        rShoulder.C0 = CFrame.new(-1.0, -0.4, -2.0) * CFrame.Angles(math.rad(90), 0, math.rad(-90))
                     end)
                 end
             end)
         end
     else
-        -- НАЧИСТО ВЫКЛЮЧАЕМ РЕЖИМ И ВОЗВРАЩАЕМ СУСТАВ В ДЕФОЛТ
+        -- НАЧИСТО ВЫКЛЮЧАЕМ РЕЖИМ И ВОЗВРАЩАЕМ ВСЁ В ДЕФОЛТ
         btn.BackgroundTransparency = 0.5
         stroke.Transparency = 0.5
         btn.Text = "🐘 Включить функция Хоботок"
 
         if hobotokConnection then hobotokConnection:Disconnect() hobotokConnection = nil end
+        
         if char then 
             pcall(function()
+                -- Включаем анимации ходьбы обратно
+                local animScript = char:FindFirstChild("Animate")
+                if animScript then animScript.Disabled = false end
+                
+                -- Возвращаем ладони её нормальный размер
+                local hPart = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Hand")
+                if hPart and originalHandSize then hPart.Size = originalHandSize end
+                
+                -- Возвращаем руку на плечо
                 local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
                 local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
                 if rShoulder then 
-                    -- Возвращаем руку на плечо в её стандартное положение
                     rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) 
                 end
             end)
@@ -1394,10 +1411,6 @@ LP.CharacterAdded:Connect(function()
     if scriptActive then
         hobotokActiveToggle = false
         if hobotokConnection then hobotokConnection:Disconnect() hobotokConnection = nil end
-        if MyNewHobotokBtn and uniqueHobotokStroke then
-            MyNewHobotokBtn.BackgroundTransparency = 0.5
-            uniqueHobotokStroke.Transparency = 0.5
-            MyNewHobotokBtn.Text = "🐘 Включить функция Хоботок"
-        end
+        originalHandSize = nil
     end
 end)

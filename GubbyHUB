@@ -1317,7 +1317,7 @@ LP.CharacterAdded:Connect(function()
         idledConnection = nil
     end
 end)
--- Переменные для контроля функции "Хоботок" (НЕПОДВИЖНАЯ ВЕРСИЯ БЕЗ ТРЯСКИ)
+-- Переменные для контроля функции "Хоботок" (ИСПРАВЛЕННАЯ ЛАДОНЬ ГОРИЗОНТАЛЬНО)
 local hobotokActive = false
 local hobotokWeld = nil
 local originalHandSize = nil
@@ -1330,44 +1330,46 @@ local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить фун
     btn.Text = hobotokActive and "✅ Хоботок: АКТИВЕН" or "🐘 Включить функция Хоботок"
     
     local myChar = LP.Character
-    local myHand = myChar and (myChar:FindFirstChild("RightHand") or myChar:FindFirstChild("Right Arm"))
+    -- Ищем СТРОГО ладонь (кисть руки), убирая из поиска локти и плечи
+    local myHand = myChar and (myChar:FindFirstChild("RightHand") or myChar:FindFirstChild("Right Hand"))
     local myTorso = myChar and (myChar:FindFirstChild("LowerTorso") or myChar:FindFirstChild("Torso"))
     
     if hobotokActive then
-        -- ВКЛЮЧЕНИЕ: Растягиваем и крепим намертво
+        -- ВКЛЮЧЕНИЕ: Растягиваем кисть горизонтально
         if myHand and myTorso then
             pcall(function()
-                -- Запоминаем оригинальный размер руки, чтобы вернуть его потом
+                -- Запоминаем оригинальный размер ладошки
                 if not originalHandSize then originalHandSize = myHand.Size end
                 
                 myHand.CanCollide = false
-                -- Растягиваем твою родную ладонь в длину на 4 студа (без создания левых блоков!)
-                myHand.Size = Vector3.new(0.4, 0.4, 4.0) 
+                -- Растягиваем только кисть: тонкая по бокам (0.4), но вытянутая вперед на 4.5 студа!
+                myHand.Size = Vector3.new(0.4, 0.4, 4.5) 
                 
-                -- Создаем жесткую сварку к своей талии
+                -- Создаем жесткую сварку к своей талии спереди
                 hobotokWeld = Instance.new("Weld")
-                hobotokWeld.Name = "MyStaticHobotokWeld"
+                hobotokWeld.Name = "MyStaticHorizHobotok"
                 hobotokWeld.Part0 = myTorso
                 hobotokWeld.Part1 = myHand
-                -- Ставим строго по центру спереди (X=0, Y=-0.4 у пояса, Z=-2.0 выдвигаем вперед)
-                hobotokWeld.C0 = CFrame.new(0, -0.4, -2.0) * CFrame.Angles(math.rad(90), 0, 0)
+                
+                -- ФИКС НАПРАВЛЕНИЯ: Нависаем спереди (Z = -2.2) и разворачиваем горизонтально вперед!
+                hobotokWeld.C0 = CFrame.new(0, -0.4, -2.2) * CFrame.Angles(0, math.rad(180), 0)
                 hobotokWeld.Parent = myHand
             end)
         end
     else
-        -- ВЫКЛЮЧЕНИЕ: Возвращаем всё в дефолт
+        -- ВЫКЛЮЧЕНИЕ: Возвращаем маленькую ладошку на место
         if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
         if myHand and originalHandSize then
-            myHand.Size = originalHandSize -- Рука снова обычная
+            myHand.Size = originalHandSize -- Ладонь снова нормальная
         end
-        -- Возвращаем сустав плеча на место
+        -- Сбрасываем углы плеча, если они залагали
         local torso = myChar and (myChar:FindFirstChild("Torso") or myChar:FindFirstChild("UpperTorso"))
         local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
         if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
     end
 end)
 
--- Авто-сброс при смерти
+-- Авто-сброс при респавне
 LP.CharacterAdded:Connect(function()
     if scriptActive then
         hobotokActive = false

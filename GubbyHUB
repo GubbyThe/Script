@@ -1317,9 +1317,10 @@ LP.CharacterAdded:Connect(function()
         idledConnection = nil
     end
 end)
--- Переменные для контроля функции "Хоботок" (ВЕРСИЯ ДЛЯ СВОЕЙ ТАЛИИ)
+-- Переменные для контроля функции "Хоботок" (РАСТЯНУТАЯ СТАБИЛЬНАЯ ВЕРСИЯ)
 local hobotokActive = false
 local hobotokWeld = nil
+local originalHandSize = nil
 
 -- Создаем кнопку во вкладке "Троллинг" (tabTroll)
 local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
@@ -1329,18 +1330,22 @@ local HobotokBtn, hobotokStroke = buildGubbyButton("🐘 Включить фун
     btn.Text = hobotokActive and "✅ Хоботок: АКТИВЕН" or "🐘 Включить функция Хоботок"
     
     if not hobotokActive then
-        -- Полностью убираем сварку и возвращаем руку на место при выключении
+        -- Полностью возвращаем всё в дефолт при выключении
         if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
+        
         local myChar = LP.Character
-        if myChar then
-            local torso = myChar:FindFirstChild("Torso") or myChar:FindFirstChild("UpperTorso")
-            local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
-            if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
+        local myHand = myChar and (myChar:FindFirstChild("RightHand") or myChar:FindFirstChild("Right Arm"))
+        if myHand and originalHandSize then
+            myHand.Size = originalHandSize -- Возвращаем нормальный размер руке
         end
+        
+        local torso = myChar and (myChar:FindFirstChild("Torso") or myChar:FindFirstChild("UpperTorso"))
+        local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
+        if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) end
     end
 end)
 
--- Поток удержания руки на своей талии спереди
+-- Поток удержания и плавной анимации растянутого хоботка
 RS.Heartbeat:Connect(function()
     if not scriptActive or not hobotokActive then return end
     
@@ -1350,32 +1355,40 @@ RS.Heartbeat:Connect(function()
     
     if myHand and myTorso then
         pcall(function()
-            -- Если сварки еще нет, пришиваем руку К СВОЕЙ ТАЛИИ
+            -- ТВОЯ ИДЕЯ: Растягиваем ладонь в длину по оси Z (делаем длинный хобот)
+            if not originalHandSize then
+                originalHandSize = myHand.Size -- Запоминаем дефолтный размер
+            end
+            -- Делаем руку тонкой по бокам (0.4), но вытянутой вперед на 3.5 студа!
+            myHand.Size = Vector3.new(0.4, 0.4, 3.5)
+            myHand.CanCollide = false
+            
+            -- Если сварки еще нет, пришиваем растянутую ладонь к талии спереди
             if not hobotokWeld or not hobotokWeld.Parent then
                 hobotokWeld = Instance.new("Weld")
-                hobotokWeld.Name = "MyHobotokWeld"
+                hobotokWeld.Name = "MyExtendedHobotokWeld"
                 hobotokWeld.Part0 = myTorso
                 hobotokWeld.Part1 = myHand
                 hobotokWeld.Parent = myHand
             end
             
-            -- АНИМАЦИЯ: Жесткое теребление вперед-назад (ось Z) и сжатие по бокам (ось X)
-            -- math.sin выдает бешеную скорость движений хобота вперед-назад перед собой
-            local forwardBack = math.sin(tick() * 60) * 1.2 - 1.5
-            local sideSqueeze = math.cos(tick() * 60) * 0.3
+            -- ФИКС ТРЯСКИ: Снизили скорость до 25 (вместо 60) и уменьшили амплитуду до 0.4
+            -- Теперь хобот аккуратно и плавно покачивается вперед-назад
+            local gentleWave = math.sin(tick() * 25) * 0.4 - 1.8
             
-            -- Позиционируем ладонь строго по центру спереди на талии (X=0, Y=-0.5 опускает к поясу)
-            hobotokWeld.C0 = CFrame.new(sideSqueeze, -0.5, forwardBack) * CFrame.Angles(math.rad(90), 0, 0)
+            -- Четко фиксируем по центру спереди (X=0, Y=-0.4 на уровне пояса)
+            hobotokWeld.C0 = CFrame.new(0, -0.4, gentleWave) * CFrame.Angles(math.rad(90), 0, 0)
         end)
     else
         if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
     end
 end)
 
--- Сброс при смерти
+-- Сброс при респавне
 LP.CharacterAdded:Connect(function()
     if scriptActive then
         hobotokActive = false
-        if hobotokWeld then hobotokWeld:Destroy(); hobotokWeld = nil end
+        hobotokWeld = nil
+        originalHandSize = nil
     end
 end)

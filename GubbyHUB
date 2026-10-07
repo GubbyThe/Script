@@ -2017,3 +2017,86 @@ LP.CharacterAdded:Connect(function(char)
         end
     end
 end)
+-- ========================================================================
+-- ЧАСТЬ 19: РЕАЛИСТИЧНЫЙ 3D ГУББИ-ДОЖДЬ С ФИЗИКОЙ (GUBBY RAIN)
+-- ========================================================================
+local gubbyRainActive = false
+local rainModelId = "rbxassetid://130484375778325"
+
+-- Создаем кнопку во вкладке "Визуалы" (tabVisuals)
+local RainBtn, rainStroke = buildGubbyButton("🌧️ Включить 3D Губби-Дождь", tabVisuals, function(btn, stroke)
+    gubbyRainActive = not gubbyRainActive
+    btn.BackgroundTransparency = gubbyRainActive and 0.1 or 0.5
+    stroke.Transparency = gubbyRainActive and 0.1 or 0.5
+    
+    if gubbyRainActive then
+        btn.Text = "✅ Губби-Дождь: АКТИВЕН"
+        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+        
+        -- Поток генерации падающих моделей
+        task.spawn(function()
+            while gubbyRainActive and scriptActive do
+                local char = LP.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                
+                if root then
+                    pcall(function()
+                        -- Скачиваем копию модели Губби
+                        local success, assetModel = pcall(function()
+                            return game:GetObjects(rainModelId)
+                        end)
+                        
+                        if success and assetModel then
+                            assetModel.Parent = workspace
+                            
+                            -- Генерируем случайные координаты вокруг игрока в радиусе 40 студов
+                            local randomX = math.random(-40, 40)
+                            local randomZ = math.random(-40, 40)
+                            -- Спавним высоко в небе (на 50 студов выше игрока)
+                            local spawnPos = root.Position + Vector3.new(randomX, 50, randomZ)
+                            
+                            if assetModel:IsA("Model") then
+                                assetModel:PivotTo(CFrame.new(spawnPos) * CFrame.Angles(math.rad(math.random(0,360)), math.rad(math.random(0,360)), math.rad(math.random(0,360))))
+                            elseif assetModel:IsA("BasePart") then
+                                assetModel.CFrame = CFrame.new(spawnPos)
+                            end
+                            
+                            -- Включаем физику и гравитацию, чтобы они падали и сталкивались с картой
+                            for _, part in ipairs(assetModel:GetDescendants()) do
+                                if part:IsA("BasePart") then
+                                    part.CanCollide = true -- Губби будут биться о землю и лежать!
+                                    part.Anchored = false
+                                    -- Выключаем коллизию только с твоим персонажем, чтобы дождь тебя не пинал
+                                    local noTouch = Instance.new("NoCollisionConstraint", part)
+                                    noTouch.Part0 = part
+                                    noTouch.Part1 = root
+                                end
+                            end
+                            
+                            -- Поток для отсчета времени после падения
+                            task.spawn(function()
+                                -- Ждем, пока модель упадет, а затем держим её на земле 10 секунд
+                                task.wait(12) 
+                                
+                                -- Плавно растворяем детали перед удалением
+                                for i = 0, 1, 0.1 do
+                                    if not assetModel then break end
+                                    for _, part in ipairs(assetModel:GetDescendants()) do
+                                        if part:IsA("BasePart") then part.Transparency = i end
+                                    end
+                                    task.wait(0.05)
+                                end
+                                
+                                if assetModel then assetModel:Destroy() end
+                            end)
+                        end
+                    end)
+                end
+                task.wait(0.4) -- Скорость падения капель (каждые 0.4 сек летит новый Губби)
+            end
+        end)
+    else
+        btn.Text = "🌧️ Включить 3D Губби-Дождь"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    end
+end)

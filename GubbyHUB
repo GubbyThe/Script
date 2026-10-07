@@ -1414,3 +1414,92 @@ LP.CharacterAdded:Connect(function()
         originalHandSize = nil
     end
 end)
+-- ========================================================================
+-- ЧАСТЬ 13: СПАВН СОБСТВЕННОЙ МОДЕЛИ ГУББИ (ЧЕРЕЗ GETOBJECTS)
+-- ========================================================================
+
+buildGubbyButton("🐾 Заспавнить модель Губби", tabTroll, function(btn, stroke)
+    local char = LP.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if not root then 
+        btn.Text = "❌ Персонаж не найден!"
+        task.wait(1.5)
+        btn.Text = "🐾 Заспавнить модель Губби"
+        return 
+    end
+    
+    btn.Text = "⏳ Загрузка модели..."
+    btn.BackgroundTransparency = 0.1
+    stroke.Transparency = 0.1
+    
+    -- Безопасный вызов загрузки объекта из базы Roblox
+    local success, assetModel = pcall(function()
+        -- Solara V3 поддерживает GetObjects для незаблокированных ID
+        return game:GetObjects("rbxassetid://130484375778325")[1]
+    end)
+    
+    if success and assetModel then
+        btn.Text = "✅ Губби заспавнен!"
+        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+        
+        -- Помещаем модель в Workspace
+        assetModel.Parent = workspace
+        
+        -- Рассчитываем позицию: на 4 студа впереди твоего персонажа
+        local spawnCFrame = root.CFrame * CFrame.new(0, 0, -4)
+        
+        -- Если это Model, используем Pivot, если одиночная деталь — CFrame
+        if assetModel:IsA("Model") then
+            assetModel:PivotTo(spawnCFrame)
+        elseif assetModel:IsA("BasePart") then
+            assetModel.CFrame = spawnCFrame
+        end
+        
+        -- Добавляем красивый 3D никнейм над моделью, чтобы выглядело фирменно
+        local billboard = Instance.new("BillboardGui")
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.AlwaysOnTop = true
+        billboard.StudsOffset = Vector3.new(0, 3, 0) -- Высота текста над Губби
+        
+        local textLabel = Instance.new("TextLabel", billboard)
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = "🐾 GUBBY 🐾"
+        textLabel.TextColor3 = Color3.fromRGB(245, 245, 245)
+        textLabel.Font = Enum.Font.SourceSansBold
+        textLabel.TextSize = 18
+        
+        -- Ищем куда прикрепить текст внутри созданной модели
+        local mainPart = assetModel:FindFirstChildOfClass("BasePart") or assetModel.PrimaryPart
+        if mainPart then
+            billboard.Adornee = mainPart
+            billboard.Parent = mainPart
+        else
+            billboard.Parent = assetModel
+        end
+        
+        -- Возвращаем кнопку в исходный вид через 2 секунды
+        task.wait(2)
+        btn.Text = "🐾 Заспавнить модель Губби"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        btn.BackgroundTransparency = 0.5
+        stroke.Transparency = 0.5
+    else
+        -- Если ID приватный или Solara не смогла его стянуть
+        btn.Text = "❌ Ошибка загрузки ID!"
+        btn.TextColor3 = Color3.fromRGB(255, 50, 50)
+        print("[Gubby Hub]: Не удалось загрузить модель. Убедись, что модель открыта для продажи (Public) в Creator Marketplace.")
+        
+        task.wait(2)
+        btn.Text = "🐾 Заспавнить модель Губби"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        btn.BackgroundTransparency = 0.5
+        stroke.Transparency = 0.5
+    end
+end)
+
+-- Обновляем размер скролла во вкладке троллинга, чтобы кнопка точно влезла
+pcall(function()
+    tabTroll.CanvasSize = UDim2.new(0, 0, 0, #tabTroll:GetChildren() * 38)
+end)

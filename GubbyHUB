@@ -1503,3 +1503,126 @@ end)
 pcall(function()
     tabTroll.CanvasSize = UDim2.new(0, 0, 0, #tabTroll:GetChildren() * 38)
 end)
+-- ========================================================================
+-- ЧАСТЬ 13 (ОБНОВЛЕННАЯ): СПАВН ГУББИ-ПИТОМЦА, КОТОРЫЙ БЕГАЕТ ЗА ТОБОЙ
+-- ========================================================================
+
+buildGubbyButton("🐾 Заспавнить Губби-Питомца", tabTroll, function(btn, stroke)
+    local char = LP.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if not root then 
+        btn.Text = "❌ Персонаж не найден!"
+        task.wait(1.5)
+        btn.Text = "🐾 Заспавнить Губби-Питомца"
+        return 
+    end
+    
+    btn.Text = "⏳ Загрузка питомца..."
+    btn.BackgroundTransparency = 0.1
+    stroke.Transparency = 0.1
+    
+    -- Скачиваем модель Губби
+    local success, assetModel = pcall(function()
+        return game:GetObjects("rbxassetid://130484375778325")
+    end)
+    
+    if success and assetModel then
+        btn.Text = "✅ Губби-Питомец призван!"
+        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+        
+        assetModel.Parent = workspace
+        
+        -- Начальная позиция: чуть позади игрока
+        local spawnCFrame = root.CFrame * CFrame.new(0, 0, 4)
+        if assetModel:IsA("Model") then
+            assetModel:PivotTo(spawnCFrame)
+        elseif assetModel:IsA("BasePart") then
+            assetModel.CFrame = spawnCFrame
+        end
+        
+        -- Выключаем коллизию модели, чтобы она не толкала тебя и не флингала
+        for _, part in ipairs(assetModel:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+                -- Если в модели есть текстуры или меши, делаем их локально гладкими
+                if part:IsA("MeshPart") or part:IsA("SpecialMesh") then
+                    part.RenderFidelity = Enum.RenderFidelity.Precise
+                end
+            end
+        end
+        
+        -- Создаем красивый 3D никнейм "ПИТОМЕЦ GUBBY"
+        local billboard = Instance.new("BillboardGui")
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.AlwaysOnTop = true
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        
+        local textLabel = Instance.new("TextLabel", billboard)
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = "🐾 ПИТОМЕЦ GUBBY 🐾"
+        textLabel.TextColor3 = Color3.fromRGB(50, 255, 150) -- Зелененький неоновый цвет
+        textLabel.Font = Enum.Font.SourceSansBold
+        textLabel.TextSize = 16
+        
+        local mainPart = assetModel:FindFirstChildOfClass("BasePart") or assetModel.PrimaryPart
+        if mainPart then
+            billboard.Adornee = mainPart
+            billboard.Parent = mainPart
+        else
+            billboard.Parent = assetModel
+        end
+        
+        -- ЦИКЛ СЛЕДОВАНИЯ ЗА ИГРОКОМ (Будет работать, пока жив скрипт и существует модель)
+        task.spawn(function()
+            local TS = game:GetService("TweenService")
+            
+            while scriptActive and assetModel and assetModel.Parent do
+                task.wait(0.03) -- Оптимальное обновление для Solara v3 (30 FPS для физики)
+                
+                local myChar = LP.Character
+                local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                
+                if myRoot then
+                    pcall(function()
+                        -- Точка назначения: за спиной игрока на расстоянии 3 студа и чуть выше земли
+                        local targetCFrame = myRoot.CFrame * CFrame.new(2, -0.5, 3.5)
+                        
+                        -- Плавно перемещаем модель Губби к этой точке через Lerp (сглаживание)
+                        if assetModel:IsA("Model") then
+                            local currentCFrame = assetModel:GetPivot()
+                            -- 0.15 — скорость подлёта (чем меньше, тем плавнее бежит за тобой)
+                            assetModel:PivotTo(currentCFrame:Lerp(targetCFrame, 0.15))
+                        elseif assetModel:IsA("BasePart") then
+                            assetModel.CFrame = assetModel.CFrame:Lerp(targetCFrame, 0.15)
+                        end
+                    end)
+                else
+                    -- Если ты умер, Губби ждёт твоего возрождения на месте
+                    task.wait(0.5)
+                end
+            end
+        end)
+        
+        -- Возвращаем кнопку в исходный вид
+        task.wait(2)
+        btn.Text = "🐾 Заспавнить Губби-Питомца"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        btn.BackgroundTransparency = 0.5
+        stroke.Transparency = 0.5
+    else
+        btn.Text = "❌ Ошибка загрузки ID!"
+        btn.TextColor3 = Color3.fromRGB(255, 50, 50)
+        task.wait(2)
+        btn.Text = "🐾 Заспавнить Губби-Питомца"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        btn.BackgroundTransparency = 0.5
+        stroke.Transparency = 0.5
+    end
+end)
+
+-- Автоматически расширяем CanvasSize вкладки троллинга
+pcall(function()
+    tabTroll.CanvasSize = UDim2.new(0, 0, 0, #tabTroll:GetChildren() * 38)
+end)

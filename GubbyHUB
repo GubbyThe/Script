@@ -1910,3 +1910,110 @@ local TrailBtn, trailStroke = buildGubbyButton("👣 След из картин�
         btn.TextColor3 = Color3.fromRGB(240, 240, 240)
     end
 end)
+-- ========================================================================
+-- ЧАСТЬ 18: 3D GUBBY MORPH (ПРЕВРАЩЕНИЕ ПЕРСОНАЖА В МОДЕЛЕК ГУББИ)
+-- ========================================================================
+local gubbyMorphActive = false
+local morphModelId = "rbxassetid://130484375778325"
+local currentMorph = nil
+
+-- Функция для скрытия/показа стандартного тела игрока
+local function setCharacterVisibility(char, visible)
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.Transparency = visible and 0 or 1
+        elseif part:IsA("Decal") then
+            part.Transparency = visible and 0 or 1
+        end
+    end
+end
+
+-- Создаем кнопку во вкладку "Визуалы" (tabVisuals)
+local MorphBtn, morphStroke = buildGubbyButton("🦊 Превратиться в Губби (Morph)", tabVisuals, function(btn, stroke)
+    gubbyMorphActive = not gubbyMorphActive
+    btn.BackgroundTransparency = gubbyMorphActive and 0.1 or 0.5
+    stroke.Transparency = gubbyMorphActive and 0.1 or 0.5
+    
+    local char = LP.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if not root then
+        btn.Text = "❌ Персонаж не найден!"
+        gubbyMorphActive = false
+        task.wait(1)
+        btn.Text = "🦊 Превратиться в Губби (Morph)"
+        return
+    end
+    
+    if gubbyMorphActive then
+        btn.Text = "⏳ Загрузка морфа..."
+        
+        -- Скачиваем модель Губби
+        local success, assetModel = pcall(function()
+            return game:GetObjects(morphModelId)
+        end)
+        
+        if success and assetModel and assetModel[1] then
+            currentMorph = assetModel[1]
+            currentMorph.Parent = char
+            
+            -- Скрываем твой стандартный скин
+            setCharacterVisibility(char, false)
+            
+            -- Настраиваем физику модели Губби, чтобы она не толкала тебя
+            for _, part in ipairs(currentMorph:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                    -- Привариваем детали морфа к твоему HumanoidRootPart
+                    local weld = Instance.new("WeldConstraint")
+                    weld.Part0 = root
+                    weld.Part1 = part
+                    weld.Parent = part
+                end
+            end
+            
+            -- Позиционируем морф ровно по центру твоего игрока
+            if currentMorph:IsA("Model") then
+                currentMorph:PivotTo(root.CFrame)
+            elseif currentMorph:IsA("BasePart") then
+                currentMorph.CFrame = root.CFrame
+            end
+            
+            btn.Text = "✅ Ты — Губби!"
+            btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+        else
+            btn.Text = "❌ Ошибка загрузки модели"
+            btn.TextColor3 = Color3.fromRGB(255, 50, 50)
+            gubbyMorphActive = false
+            task.wait(1.5)
+            btn.Text = "🦊 Превратиться в Губби (Morph)"
+            btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        end
+    else
+        btn.Text = "🦊 Превратиться в Губби (Morph)"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        
+        -- Возвращаем скин игрока назад и удаляем морф
+        if currentMorph then
+            currentMorph:Destroy()
+            currentMorph = nil
+        end
+        if char then
+            setCharacterVisibility(char, true)
+        end
+    end
+end)
+
+-- Авто-сброс морфа при респавне, чтобы ничего не забагалось
+LP.CharacterAdded:Connect(function(char)
+    if scriptActive then
+        gubbyMorphActive = false
+        currentMorph = nil
+        if MorphBtn and morphStroke then
+            MorphBtn.BackgroundTransparency = 0.5
+            morphStroke.Transparency = 0.5
+            MorphBtn.Text = "🦊 Превратиться в Губби (Morph)"
+            MorphBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        end
+    end
+end)

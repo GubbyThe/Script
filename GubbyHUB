@@ -1626,3 +1626,99 @@ end)
 pcall(function()
     tabTroll.CanvasSize = UDim2.new(0, 0, 0, #tabTroll:GetChildren() * 38)
 end)
+-- ========================================================================
+-- ЧАСТЬ 14: УНИВЕРСАЛЬНЫЙ AUTO-FARM ПРЕДМЕТОВ (МОНЕТЫ, КОНФЕТЫ, КЭШ)
+-- ========================================================================
+local autoFarmActive = false
+local farmSpeed = 0.3 -- Задержка между сбором предметов (безопасно для античита)
+
+-- Ключевые слова для поиска предметов на разных картах и ивентах
+local targetNames = {
+    "coin", "candy", "cash", "diamond", "gold", "money", "token", "present",
+    "монета", "конфета", "алмаз", "золото", "деньги", "кусок", "drop"
+}
+
+-- Функция проверки: является ли объект монетой или конфетой
+local function isFarmableItem(obj)
+    if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Model") then
+        local nameLower = string.lower(obj.Name)
+        for _, keyword in ipairs(targetNames) do
+            if string.find(nameLower, keyword) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Создаем кнопку во вкладку "Кнопки" (tabButtons)
+local FarmBtn, farmStroke = buildGubbyButton("💰 Включить Умный Auto-Farm (Сбор предметов)", tabButtons, function(btn, stroke)
+    autoFarmActive = not autoFarmActive
+    btn.BackgroundTransparency = autoFarmActive and 0.1 or 0.5
+    stroke.Transparency = autoFarmActive and 0.1 or 0.5
+    btn.Text = autoFarmActive and "✅ Auto-Farm: АКТИВЕН (Сбор денег...)" or "💰 Включить Умный Auto-Farm (Сбор предметов)"
+    
+    if autoFarmActive then
+        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+        
+        -- Запускаем бесконечный поток сбора в фоне
+        task.spawn(function()
+            while autoFarmActive and scriptActive do
+                local char = LP.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                
+                if root and hum and hum.Health > 0 then
+                    local itemsFound = {}
+                    
+                    -- Ищем подходящие предметы по всему Workspace
+                    for _, obj in ipairs(workspace:GetDescendants()) do
+                        if isFarmableItem(obj) then
+                            -- Проверяем, можно ли до него дотронуться (TouchInterest) или это просто деталь
+                            local targetPart = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildOfClass("BasePart")) or obj
+                            if targetPart and targetPart:IsA("BasePart") and targetPart.Parent then
+                                table.insert(itemsFound, targetPart)
+                            end
+                        end
+                    end
+                    
+                    -- Если предметы найдены, летим к ближайшему
+                    if #itemsFound > 0 then
+                        for _, item in ipairs(itemsFound) do
+                            if not autoFarmActive or not scriptActive then break end
+                            if item and item.Parent and root then
+                                pcall(function()
+                                    -- Мгновенно переносим игрока прямо на предмет
+                                    root.CFrame = item.CFrame
+                                    root.Velocity = Vector3.zero
+                                end)
+                                task.wait(farmSpeed) -- Небольшая пауза, чтобы сервер успел засчитать подбор
+                            end
+                        end
+                    else
+                        -- Если монет на карте пока нет, ждем секунду и ищем заново
+                        task.wait(1)
+                    end
+                else
+                    task.wait(0.5) -- Если персонаж мертв, ждем возрождения
+                end
+                task.wait(0.01)
+            end
+        end)
+    else
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    end
+end)
+
+-- Авто-выключение при респавне для предотвращения багов с CFrame
+LP.CharacterAdded:Connect(function()
+    if scriptActive then
+        autoFarmActive = false
+        if FarmBtn and farmStroke then
+            FarmBtn.BackgroundTransparency = 0.5
+            farmStroke.Transparency = 0.5
+            FarmBtn.Text = "💰 Включить Умный Auto-Farm (Сбор предметов)"
+            FarmBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        end
+    end
+end)

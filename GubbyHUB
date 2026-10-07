@@ -1794,3 +1794,54 @@ local InvasionBtn, invasionStroke = buildGubbyButton("🖼️ Заражение
         end
     end
 end)
+-- ========================================================================
+-- ЧАСТЬ 16: ЗАМЕНА ЗВУКА СМЕРТИ НА ЗВУК ГУББИ
+-- ========================================================================
+local customDeathSoundActive = false
+local gubbySoundId = "rbxassetid://106359762254988"
+
+-- Функция для подмены звука в голове персонажа
+local function replaceDeathSound(character)
+    local head = character:WaitForChild("Head", 5)
+    if head then
+        local diedSound = head:WaitForChild("Died", 5)
+        if diedSound and customDeathSoundActive then
+            diedSound.SoundId = gubbySoundId
+        end
+    end
+end
+
+-- Создаем кнопку во вкладке "Визуалы" (tabVisuals)
+local DeathSoundBtn, deathSoundStroke = buildGubbyButton("🎵 Звук смерти Губби", tabVisuals, function(btn, stroke)
+    customDeathSoundActive = not customDeathSoundActive
+    btn.BackgroundTransparency = customDeathSoundActive and 0.1 or 0.5
+    stroke.Transparency = customDeathSoundActive and 0.1 or 0.5
+    
+    if customDeathSoundActive then
+        btn.Text = "✅ Звук Губби при смерти: ВКЛ"
+        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+        
+        -- Сразу проверяем текущего персонажа
+        if LP.Character then
+            pcall(replaceDeathSound, LP.Character)
+        end
+    else
+        btn.Text = "🎵 Звук смерти Губби"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        
+        -- Возвращаем стандартный звук, если кнопка выключена
+        if LP.Character and LP.Character:FindFirstChild("Head") then
+            local diedSound = LP.Character.Head:FindFirstChild("Died")
+            if diedSound then
+                diedSound.SoundId = "rbxassetid://122213730" -- Дефолтный звук ухода в небытие
+            end
+        end
+    end
+end)
+
+-- Отслеживаем каждое новое возрождение персонажа для подмены звука
+LP.CharacterAdded:Connect(function(character)
+    if scriptActive and customDeathSoundActive then
+        pcall(replaceDeathSound, character)
+    end
+end)

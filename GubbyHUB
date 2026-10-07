@@ -1722,3 +1722,75 @@ LP.CharacterAdded:Connect(function()
         end
     end
 end)
+-- ========================================================================
+-- ЧАСТЬ 15: ТОТАЛЬНАЯ ЗАМЕНА ВСЕХ ТЕКСТУР НА ГУББИ (ЭФФЕКТ C00LKIDD)
+-- ========================================================================
+local gubbyInvasionActive = false
+local textureId = "rbxassetid://91690425987587"
+local faces = {Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Front, Enum.NormalId.Back}
+
+-- Функция для натягивания текстуры Губби на деталь
+local function applyGubbyTexture(part)
+    if part:IsA("BasePart") and not part:FindFirstChild("GubbyMark") then
+        -- Помечаем деталь, чтобы не спамить текстурами повторно
+        local tag = Instance.new("BoolValue", part)
+        tag.Name = "GubbyMark"
+        
+        -- Делаем деталь неоновой для максимального эффекта
+        part.Material = Enum.Material.Neon
+        part.Color = Color3.fromRGB(255, 255, 255)
+        
+        -- Накладываем текстуру на все 6 сторон блока
+        for _, face in ipairs(faces) do
+            local tex = Instance.new("Texture", part)
+            tex.Name = "GubbyInvasion"
+            tex.Texture = textureId
+            tex.Face = face
+            tex.StudsPerTileU = 4 -- Размер картинки по горизонтали
+            tex.StudsPerTileV = 4 -- Размер картинки по вертикали
+        end
+    end
+end
+
+-- Создаем кнопку во вкладку "Визуалы" (tabVisuals)
+local InvasionBtn, invasionStroke = buildGubbyButton("🖼️ Заражение Губби (C00lkidd Mode)", tabVisuals, function(btn, stroke)
+    gubbyInvasionActive = not gubbyInvasionActive
+    btn.BackgroundTransparency = gubbyInvasionActive and 0.1 or 0.5
+    stroke.Transparency = gubbyInvasionActive and 0.1 or 0.5
+    
+    if gubbyInvasionActive then
+        btn.Text = "✅ Губби повсюду!"
+        btn.TextColor3 = Color3.fromRGB(255, 50, 50) -- Агрессивный красный цвет
+        
+        -- 1. Сразу заражаем все текущие объекты на карте
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            pcall(applyGubbyTexture, obj)
+        end
+        
+        -- 2. Ловим новые объекты (если карта меняется или спавнятся предметы)
+        local conn
+        conn = workspace.DescendantAdded:Connect(function(descendant)
+            if not gubbyInvasionActive then
+                conn:Disconnect()
+                return
+            end
+            pcall(applyGubbyTexture, descendant)
+        end)
+        
+        print("[Gubby Hub]: C00lkidd Mode активирован! Мир успешно заражен.")
+    else
+        btn.Text = "🖼️ Заражение Губби (C00lkidd Mode)"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        
+        -- Возвращаем всё назад (удаляем наши текстуры и метки)
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            pcall(function()
+                if obj.Name == "GubbyMark" then obj:Destroy() end
+                if obj.Name == "GubbyInvasion" then obj:Destroy() end
+                if obj:IsA("BasePart") then
+                    obj.Material = Enum.Material.Plastic -- Дефолтный пластик
+                end
+            end)
+        end
+    end
+end)

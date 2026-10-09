@@ -699,3 +699,65 @@ task.spawn(function()
 end)
 
 print("[Gubby Hub]: Скрипт полностью собран и успешно загружен!")
+--[[ --- ЧАСТЬ 8 (ФИНАЛЬНАЯ ОЧИСТКА ПРИ ЗАКРЫТИИ) --- ]]--
+if TopBar and TopBar:FindFirstChild("CloseBtn") then
+    local CloseBtn = TopBar.CloseBtn
+    
+    -- Очищаем старые события кнопки закрытия
+    CloseBtn:Destroy()
+    
+    -- Создаем новую чистую кнопку закрытия
+    local NewCloseBtn = Instance.new("TextButton", TopBar)
+    NewCloseBtn.Name = "CloseBtn"
+    NewCloseBtn.Size = UDim2.new(0, 35, 0, 35)
+    NewCloseBtn.Position = UDim2.new(1, -35, 0, 0)
+    NewCloseBtn.BackgroundTransparency = 1
+    NewCloseBtn.Text = "✕"
+    NewCloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    NewCloseBtn.TextSize = 14
+    NewCloseBtn.Font = Enum.Font.Ubuntu
+
+    NewCloseBtn.MouseEnter:Connect(function() NewCloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100) end)
+    NewCloseBtn.MouseLeave:Connect(function() NewCloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150) end)
+    
+    NewCloseBtn.MouseButton1Click:Connect(function()
+        -- 1. Выключаем главный флаг скрипта, чтобы остановить все циклы
+        scriptActive = false
+        if _G.GubbyKillOldStreams then _G.GubbyKillOldStreams() end
+        
+        -- 2. Полностью вырезаем ESP и Тросы из памяти игры
+        if ActiveVisuals then
+            for player, visuals in pairs(ActiveVisuals) do
+                if visuals.Box then visuals.Box:Destroy() end
+                if visuals.Line then visuals.Line:Destroy() end
+                if visuals.Connection then visuals.Connection:Disconnect() end
+            end
+            table.clear(ActiveVisuals)
+        end
+        
+        -- Дополнительная проверка на случай, если какие-то объекты потерялись в Gui
+        for _, obj in pairs(ScreenGui:GetChildren()) do
+            if obj.Name == "GubbyBox" or obj.Name == "GubbyTracer" then
+                obj:Destroy()
+            end
+        end
+        
+        -- 3. Возвращаем оригинальный свет и туман игры
+        Config.GubbyFullBright.Enabled = false
+        L.Ambient = Config.GubbyFullBright.OrigAmbient
+        L.Brightness = Config.GubbyFullBright.OrigBrightness
+        L.GlobalShadows = Config.GubbyFullBright.OrigShadows
+        L.ClockTime = Config.GubbyFullBright.OrigClockTime
+        
+        -- Возвращаем стандартный туман, если игра хоррор
+        L.FogStart = 0
+        L.FogEnd = 250 -- Примерное стандартное значение для тумана
+        
+        -- Возвращаем гравитацию
+        W.Gravity = Config.PlayerMods.Gravity
+        
+        -- 4. Уничтожаем сам GUI интерфейс
+        ScreenGui:Destroy()
+        print("[Gubby Hub]: Скрипт полностью выгружен, все визуалы очищены!")
+    end)
+end

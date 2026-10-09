@@ -9,7 +9,6 @@ local Cam = W.CurrentCamera
 local HttpService = game:GetService("HttpService")
 
 local CONFIG_FILE = "GubbyHub_Config.txt"
-
 local oldGui = LP:WaitForChild("PlayerGui"):FindFirstChild("REDIT_41_Gubby_Hub")
 if oldGui then oldGui:Destroy() end
 if _G.GubbyKillOldStreams then _G.GubbyKillOldStreams() end
@@ -39,7 +38,6 @@ local scriptActive = true
 _G.GubbyKillOldStreams = function()
     scriptActive = false
 end
-
 _G.SaveGubbyConfig = function()
     pcall(function()
         if writefile then
@@ -59,14 +57,11 @@ _G.SaveGubbyConfig = function()
         end
     end)
 end
-
 local function loadGubbyConfig()
     if readfile and isfile and isfile(CONFIG_FILE) then
         local success, result = pcall(function()
             local jsonText = readfile(CONFIG_FILE)
-            if jsonText and jsonText ~= "" then
-                return HttpService:JSONDecode(jsonText)
-            end
+            if jsonText and jsonText ~= "" then return HttpService:JSONDecode(jsonText) end
         end)
         if success and result then
             if result.Speed then Config.PlayerMods.Speed = result.Speed end
@@ -83,7 +78,6 @@ local function loadGubbyConfig()
     end
 end
 loadGubbyConfig()
---[[ --- ЧАСТЬ 2 --- ]]--
 local ScreenGui = Instance.new("ScreenGui", LP:WaitForChild("PlayerGui"))
 ScreenGui.Name = "REDIT_41_Gubby_Hub"
 ScreenGui.ResetOnSpawn = false
@@ -97,7 +91,6 @@ MainFrame.BorderSizePixel = 0
 
 local MainUICorner = Instance.new("UICorner", MainFrame)
 MainUICorner.CornerRadius = UDim.new(0, 10)
-
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Name = "TopBar"
 TopBar.Size = UDim2.new(1, 0, 0, 35)
@@ -112,7 +105,6 @@ TopFix.Size = UDim2.new(1, 0, 0, 10)
 TopFix.Position = UDim2.new(0, 0, 1, -10)
 TopFix.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
 TopFix.BorderSizePixel = 0
-
 local Title = Instance.new("TextLabel", TopBar)
 Title.Size = UDim2.new(1, -40, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
@@ -122,6 +114,7 @@ Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 15
 Title.Font = Enum.Font.Ubuntu
 Title.TextXAlignment = Enum.TextXAlignment.Left
+local ActiveVisuals = {}
 
 local CloseBtn = Instance.new("TextButton", TopBar)
 CloseBtn.Size = UDim2.new(0, 35, 0, 35)
@@ -132,10 +125,22 @@ CloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
 CloseBtn.TextSize = 14
 CloseBtn.Font = Enum.Font.Ubuntu
 
-CloseBtn.MouseEnter:Connect(function() CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100) end)
-CloseBtn.MouseLeave:Connect(function() CloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150) end)
-CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() _G.GubbyKillOldStreams() end)
-
+CloseBtn.MouseButton1Click:Connect(function()
+    scriptActive = false
+    if _G.GubbyKillOldStreams then _G.GubbyKillOldStreams() end
+    if ActiveVisuals then
+        for p, visuals in pairs(ActiveVisuals) do
+            if visuals.Box then visuals.Box:Destroy() end
+            if visuals.Line then visuals.Line:Destroy() end
+            if visuals.Connection then visuals.Connection:Disconnect() end
+        end
+    end
+    L.Ambient = Config.GubbyFullBright.OrigAmbient
+    L.Brightness = Config.GubbyFullBright.OrigBrightness
+    L.GlobalShadows = Config.GubbyFullBright.OrigShadows
+    L.ClockTime = Config.GubbyFullBright.OrigClockTime
+    ScreenGui:Destroy()
+end)
 local SideBar = Instance.new("Frame", MainFrame)
 SideBar.Name = "SideBar"
 SideBar.Size = UDim2.new(0, 130, 1, -35)
@@ -151,13 +156,6 @@ SideFix.Size = UDim2.new(0, 15, 1, 0)
 SideFix.Position = UDim2.new(1, -15, 0, 0)
 SideFix.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 SideFix.BorderSizePixel = 0
-
-local SideFixTop = Instance.new("Frame", SideBar)
-SideFixTop.Size = UDim2.new(1, 0, 0, 15)
-SideFixTop.Position = UDim2.new(0, 0, 0, 0)
-SideFixTop.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-SideFixTop.BorderSizePixel = 0
-
 local TabsContainer = Instance.new("Frame", SideBar)
 TabsContainer.Size = UDim2.new(1, -10, 1, -20)
 TabsContainer.Position = UDim2.new(0, 5, 0, 10)
@@ -171,274 +169,101 @@ local ContentContainer = Instance.new("Frame", MainFrame)
 ContentContainer.Size = UDim2.new(1, -140, 1, -45)
 ContentContainer.Position = UDim2.new(0, 135, 0, 40)
 ContentContainer.BackgroundTransparency = 1
-
 local dragToggle, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragToggle = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragToggle = false end
-        end)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragToggle = true dragStart = input.Position startPos = MainFrame.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end)
     end
 end)
 UIS.InputChanged:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragToggle then
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragToggle then
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
---[[ --- ЧАСТЬ 3 --- ]]--
 local function CreateTab(name)
     local TabFrame = Instance.new("ScrollingFrame", ContentContainer)
     TabFrame.Size = UDim2.new(1, 0, 1, 0)
-    TabFrame.BackgroundTransparency = 1
-    TabFrame.Visible = false
-    TabFrame.ScrollBarThickness = 3
-    TabFrame.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
-    TabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-
+    TabFrame.BackgroundTransparency = 1 TabFrame.Visible = false TabFrame.ScrollBarThickness = 3
     local TabLayout = Instance.new("UIListLayout", TabFrame)
-    TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    TabLayout.Padding = UDim.new(0, 5)
-
-    TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
-    end)
+    TabLayout.SortOrder = Enum.SortOrder.LayoutOrder TabLayout.Padding = UDim.new(0, 5)
+    TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10) end)
 
     local TabBtn = Instance.new("TextButton", TabsContainer)
-    TabBtn.Size = UDim2.new(1, 0, 0, 30)
-    TabBtn.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-    TabBtn.Text = name
-    TabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-    TabBtn.TextSize = 13
-    TabBtn.Font = Enum.Font.Ubuntu
-
-    local TabBtnCorner = Instance.new("UICorner", TabBtn)
-    TabBtnCorner.CornerRadius = UDim.new(0, 6)
-
+    TabBtn.Size = UDim2.new(1, 0, 0, 30) TabBtn.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+    TabBtn.Text = name TabBtn.TextColor3 = Color3.fromRGB(180, 180, 180) TabBtn.TextSize = 13 TabBtn.Font = Enum.Font.Ubuntu
+    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
     TabBtn.MouseButton1Click:Connect(function()
-        for _, t in pairs(_G.GubbyUI.Tabs) do
-            t.Frame.Visible = false
-            t.Btn.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-            t.Btn.TextColor3 = Color3.fromRGB(180, 180, 180)
-        end
-        TabFrame.Visible = true
-        TabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        for _, t in pairs(_G.GubbyUI.Tabs) do t.Frame.Visible = false t.Btn.BackgroundColor3 = Color3.fromRGB(24, 24, 24) end
+        TabFrame.Visible = true TabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     end)
+    table.insert(_G.GubbyUI.Tabs, {Frame = TabFrame, Btn = TabBtn, TabFrame = TabFrame})
+    if #_G.GubbyUI.Tabs == 1 then TabFrame.Visible = true TabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40) end
 
-    table.insert(_G.GubbyUI.Tabs, {Frame = TabFrame, Btn = TabBtn})
-    if #_G.GubbyUI.Tabs == 1 then
-        TabFrame.Visible = true
-        TabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    local m = {}
+    function m:CreateToggle(text, default, callback)
+        local f = Instance.new("Frame", TabFrame) f.Size = UDim2.new(1, -5, 0, 32) f.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        Instance.new("UICorner", f).CornerRadius = UDim.new(0, 6)
+        local l = Instance.new("TextLabel", f) l.Size = UDim2.new(1, -50, 1, 0) l.Position = UDim2.new(0, 10, 0, 0) l.BackgroundTransparency = 1 l.Text = text l.TextColor3 = Color3.fromRGB(230, 230, 230) l.TextSize = 13 l.Font = Enum.Font.Ubuntu l.TextXAlignment = Enum.TextXAlignment.Left
+        local b = Instance.new("TextButton", f) b.Size = UDim2.new(0, 35, 0, 18) b.Position = UDim2.new(1, -45, 0.5, -9) b.BackgroundColor3 = default and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(45, 45, 45) b.Text = ""
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 9)
+        local c = Instance.new("Frame", b) c.Size = UDim2.new(0, 14, 0, 14) c.Position = default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7) c.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Instance.new("UICorner", c).CornerRadius = UDim.new(1, 0)
+        local s = default
+        b.MouseButton1Click:Connect(function() s = not s b.BackgroundColor3 = s and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(45, 45, 45) c.Position = s and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7) callback(s) end)
     end
-
-    local tabMethods = {}
-
-    function tabMethods:CreateToggle(text, default, callback)
-        local ToggleFrame = Instance.new("Frame", TabFrame)
-        ToggleFrame.Size = UDim2.new(1, -5, 0, 32)
-        ToggleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        local TFCorner = Instance.new("UICorner", ToggleFrame)
-        TFCorner.CornerRadius = UDim.new(0, 6)
-
-        local Label = Instance.new("TextLabel", ToggleFrame)
-        Label.Size = UDim2.new(1, -50, 1, 0)
-        Label.Position = UDim2.new(0, 10, 0, 0)
-        Label.BackgroundTransparency = 1
-        Label.Text = text
-        Label.TextColor3 = Color3.fromRGB(230, 230, 230)
-        Label.TextSize = 13
-        Label.Font = Enum.Font.Ubuntu
-        Label.TextXAlignment = Enum.TextXAlignment.Left
-
-        local ClickBtn = Instance.new("TextButton", ToggleFrame)
-        ClickBtn.Size = UDim2.new(0, 35, 0, 18)
-        ClickBtn.Position = UDim2.new(1, -45, 0.5, -9)
-        ClickBtn.BackgroundColor3 = default and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(45, 45, 45)
-        ClickBtn.Text = ""
-        local CBCorner = Instance.new("UICorner", ClickBtn)
-        CBCorner.CornerRadius = UDim.new(0, 9)
-
-        local Circle = Instance.new("Frame", ClickBtn)
-        Circle.Size = UDim2.new(0, 14, 0, 14)
-        Circle.Position = default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
-        Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        local CircleCorner = Instance.new("UICorner", Circle)
-        CircleCorner.CornerRadius = UDim.new(1, 0)
-
-        local state = default
-        ClickBtn.MouseButton1Click:Connect(function()
-            state = not state
-            ClickBtn.BackgroundColor3 = state and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(45, 45, 45)
-            Circle.Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
-            callback(state)
-        end)
+    function m:CreateButton(text, callback)
+        local b = Instance.new("TextButton", TabFrame) b.Size = UDim2.new(1, -5, 0, 32) b.BackgroundColor3 = Color3.fromRGB(25, 25, 25) b.Text = text b.TextColor3 = Color3.fromRGB(240, 240, 240) b.TextSize = 13 b.Font = Enum.Font.Ubuntu
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6) b.MouseButton1Click:Connect(callback)
     end
-
-    function tabMethods:CreateButton(text, callback)
-        local Btn = Instance.new("TextButton", TabFrame)
-        Btn.Size = UDim2.new(1, -5, 0, 32)
-        Btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-        Btn.Text = text
-        Btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        Btn.TextSize = 13
-        Btn.Font = Enum.Font.Ubuntu
-        local BCorner = Instance.new("UICorner", Btn)
-        BCorner.CornerRadius = UDim.new(0, 6)
-        Btn.MouseButton1Click:Connect(callback)
+    function m:CreateSlider(text, min, max, default, callback)
+        local f = Instance.new("Frame", TabFrame) f.Size = UDim2.new(1, -5, 0, 45) f.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        Instance.new("UICorner", f).CornerRadius = UDim.new(0, 6)
+        local l = Instance.new("TextLabel", f) l.Size = UDim2.new(1, -60, 0, 22) l.Position = UDim2.new(0, 10, 0, 2) l.BackgroundTransparency = 1 l.Text = text l.TextColor3 = Color3.fromRGB(220, 220, 220) l.TextSize = 13 l.Font = Enum.Font.Ubuntu l.TextXAlignment = Enum.TextXAlignment.Left
+        local vl = Instance.new("TextLabel", f) vl.Size = UDim2.new(0, 50, 0, 22) vl.Position = UDim2.new(1, -55, 0, 2) vl.BackgroundTransparency = 1 vl.Text = tostring(default) vl.TextColor3 = Color3.fromRGB(0, 180, 255) vl.TextSize = 13 vl.Font = Enum.Font.Ubuntu vl.TextXAlignment = Enum.TextXAlignment.Right
+        local sb = Instance.new("TextButton", f) sb.Size = UDim2.new(1, -20, 0, 6) sb.Position = UDim2.new(0, 10, 0, 28) sb.BackgroundColor3 = Color3.fromRGB(45, 45, 45) sb.Text = ""
+        Instance.new("UICorner", sb).CornerRadius = UDim.new(0, 3)
+        local fi = Instance.new("Frame", sb) fi.Size = UDim2.new((default-min)/(max-min), 0, 1, 0) fi.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
+        Instance.new("UICorner", fi).CornerRadius = UDim.new(0, 3)
+        local sl = false
+        local function u(i) local o = math.clamp((i.Position.X - sb.AbsolutePosition.X) / sb.AbsoluteSize.X, 0, 1) fi.Size = UDim2.new(o, 0, 1, 0) local v = math.floor(min + (max - min) * o) vl.Text = tostring(v) callback(v) end
+        sb.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sl = true u(i) end end)
+        UIS.InputChanged:Connect(function(i) if sl and i.UserInputType == Enum.UserInputType.MouseMovement then u(i) end end)
+        UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sl = false end end)
     end
-
-    function tabMethods:CreateSlider(text, min, max, default, callback)
-        local SliderFrame = Instance.new("Frame", TabFrame)
-        SliderFrame.Size = UDim2.new(1, -5, 0, 45)
-        SliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        local SFCorner = Instance.new("UICorner", SliderFrame)
-        SFCorner.CornerRadius = UDim.new(0, 6)
-
-        local Label = Instance.new("TextLabel", SliderFrame)
-        Label.Size = UDim2.new(1, -60, 0, 22)
-        Label.Position = UDim2.new(0, 10, 0, 2)
-        Label.BackgroundTransparency = 1
-        Label.Text = text
-        Label.TextColor3 = Color3.fromRGB(220, 220, 220)
-        Label.TextSize = 13
-        Label.Font = Enum.Font.Ubuntu
-        Label.TextXAlignment = Enum.TextXAlignment.Left
-
-        local ValLabel = Instance.new("TextLabel", SliderFrame)
-        ValLabel.Size = UDim2.new(0, 50, 0, 22)
-        ValLabel.Position = UDim2.new(1, -55, 0, 2)
-        ValLabel.BackgroundTransparency = 1
-        ValLabel.Text = tostring(default)
-        ValLabel.TextColor3 = Color3.fromRGB(0, 180, 255)
-        ValLabel.TextSize = 13
-        ValLabel.Font = Enum.Font.Ubuntu
-        ValLabel.TextXAlignment = Enum.TextXAlignment.Right
-
-        local SliderBar = Instance.new("TextButton", SliderFrame)
-        SliderBar.Size = UDim2.new(1, -20, 0, 6)
-        SliderBar.Position = UDim2.new(0, 10, 0, 28)
-        SliderBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        SliderBar.Text = ""
-        local SBCorner = Instance.new("UICorner", SliderBar)
-        SBCorner.CornerRadius = UDim.new(0, 3)
-
-        local Fill = Instance.new("Frame", SliderBar)
-        local pct = (default - min) / (max - min)
-        Fill.Size = UDim2.new(pct, 0, 1, 0)
-        Fill.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
-        local FillCorner = Instance.new("UICorner", Fill)
-        FillCorner.CornerRadius = UDim.new(0, 3)
-
-        local sliding = false
-        local function update(input)
-            local offset = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
-            Fill.Size = UDim2.new(offset, 0, 1, 0)
-            local val = math.floor(min + (max - min) * offset)
-            ValLabel.Text = tostring(val)
-            callback(val)
-        end
-
-        SliderBar.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                sliding = true
-                update(input)
-            end
-        end)
-        UIS.InputChanged:Connect(function(input)
-            if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                update(input)
-            end
-        end)
-        UIS.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                sliding = false
-            end
-        end)
+    function m:CreateTextBox(text, placeholder, callback)
+        local f = Instance.new("Frame", TabFrame) f.Size = UDim2.new(1, -5, 0, 35) f.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        Instance.new("UICorner", f).CornerRadius = UDim.new(0, 6)
+        local l = Instance.new("TextLabel", f) l.Size = UDim2.new(0, 120, 1, 0) l.Position = UDim2.new(0, 10, 0, 0) l.BackgroundTransparency = 1 l.Text = text l.TextColor3 = Color3.fromRGB(220, 220, 220) l.TextSize = 13 l.Font = Enum.Font.Ubuntu l.TextXAlignment = Enum.TextXAlignment.Left
+        local box = Instance.new("TextBox", f) box.Size = UDim2.new(1, -140, 0, 24) box.Position = UDim2.new(0, 130, 0.5, -12) box.BackgroundColor3 = Color3.fromRGB(30, 30, 30) box.PlaceholderText = placeholder box.Text = "" box.TextColor3 = Color3.fromRGB(255, 255, 255) box.TextSize = 12 box.Font = Enum.Font.Ubuntu
+        Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4) box.FocusLost:Connect(function(ep) callback(box.Text, ep) end)
     end
-
-    function tabMethods:CreateTextBox(text, placeholder, callback)
-        local TBFrame = Instance.new("Frame", TabFrame)
-        TBFrame.Size = UDim2.new(1, -5, 0, 35)
-        TBFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        local TBFCorner = Instance.new("UICorner", TBFrame)
-        TBFCorner.CornerRadius = UDim.new(0, 6)
-
-        local Label = Instance.new("TextLabel", TBFrame)
-        Label.Size = UDim2.new(0, 120, 1, 0)
-        Label.Position = UDim2.new(0, 10, 0, 0)
-        Label.BackgroundTransparency = 1
-        Label.Text = text
-        Label.TextColor3 = Color3.fromRGB(220, 220, 220)
-        Label.TextSize = 13
-        Label.Font = Enum.Font.Ubuntu
-        Label.TextXAlignment = Enum.TextXAlignment.Left
-
-        local Box = Instance.new("TextBox", TBFrame)
-        Box.Size = UDim2.new(1, -140, 0, 24)
-        Box.Position = UDim2.new(0, 130, 0.5, -12)
-        Box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        Box.PlaceholderText = placeholder
-        Box.Text = ""
-        Box.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Box.TextSize = 12
-        Box.Font = Enum.Font.Ubuntu
-        local BoxCorner = Instance.new("UICorner", Box)
-        BoxCorner.CornerRadius = UDim.new(0, 4)
-
-        Box.FocusLost:Connect(function(enterPressed)
-            callback(Box.Text, enterPressed)
-        end)
-    end
-
-    return tabMethods
+    m.TabFrame = TabFrame
+    return m
 end
---[[ --- ЧАСТЬ 4 --- ]]--
 local tabPlayer = CreateTab("Игрок")
 tabPlayer:CreateSlider("Скорость бега", 16, 250, Config.PlayerMods.Speed, function(v) Config.PlayerMods.Speed = v _G.SaveGubbyConfig() end)
 tabPlayer:CreateSlider("Высота прыжка", 50, 500, Config.PlayerMods.Jump, function(v) Config.PlayerMods.Jump = v _G.SaveGubbyConfig() end)
 tabPlayer:CreateSlider("Гравитация", 0, 500, math.floor(Config.PlayerMods.Gravity), function(v) Config.PlayerMods.Gravity = v end)
 tabPlayer:CreateToggle("Бесконечный прыжок", Config.InfJump.Enabled, function(state) Config.InfJump.Enabled = state end)
-tabPlayer:CreateToggle("Ноклип (Сквозь стены)", Config.GubbyNoclip.Enabled, function(state) Config.GubbyNoclip.Enabled = state end)
-
+tabPlayer:CreateToggle("Ноклип (Оригинал)", Config.GubbyNoclip.Enabled, function(state) Config.GubbyNoclip.Enabled = state end)
 task.spawn(function()
     while scriptActive do
         local character = LP.Character
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                if humanoid.WalkSpeed ~= Config.PlayerMods.Speed then humanoid.WalkSpeed = Config.PlayerMods.Speed end
-                if humanoid.UseJumpPower then
-                    if humanoid.JumpPower ~= Config.PlayerMods.Jump then humanoid.JumpPower = Config.PlayerMods.Jump end
-                else
-                    local jumpHeight = Config.PlayerMods.Jump / 7.5
-                    if humanoid.JumpHeight ~= jumpHeight then humanoid.JumpHeight = jumpHeight end
-                end
-            end
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.WalkSpeed = Config.PlayerMods.Speed
+            if character.Humanoid.UseJumpPower then character.Humanoid.JumpPower = Config.PlayerMods.Jump else character.Humanoid.JumpHeight = Config.PlayerMods.Jump / 7.5 end
             if Config.GubbyNoclip.Enabled then
-                for _, part in pairs(character:GetChildren()) do
-                    if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
-                end
+                for _, part in pairs(character:GetChildren()) do if part:IsA("BasePart") then part.CanCollide = false end end
             end
         end
         task.wait(0.1)
     end
 end)
 
-UIS.JumpRequest:Connect(function()
-    if Config.InfJump.Enabled then
-        local character = LP.Character
-        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
-    end
-end)
---[[ --- ЧАСТЬ 5 --- ]]--
+UIS.JumpRequest:Connect(function() if Config.InfJump.Enabled and LP.Character and LP.Character:FindFirstChild("Humanoid") then LP.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end)
 local tabVisuals = CreateTab("Визуалы")
-local ActiveVisuals = {}
 
 local function removeVisualsForPlayer(p)
     if ActiveVisuals[p] then
@@ -448,316 +273,136 @@ local function removeVisualsForPlayer(p)
         ActiveVisuals[p] = nil
     end
 end
-
 local function applyESPAndTracers(p)
     if p == LP then return end
     removeVisualsForPlayer(p)
-
-    local Box = Instance.new("BoxHandleAdornment")
-    Box.AlwaysOnTop = true
-    Box.ZIndex = 5
-    Box.Color3 = Color3.fromRGB(255, 0, 100)
-    Box.Transparency = 0.5
-    Box.Size = Vector3.new(4, 5.5, 1.5)
-    Box.Parent = ScreenGui
-
-    local Line = Instance.new("LineHandleAdornment")
-    Line.AlwaysOnTop = true
-    Line.ZIndex = 4
-    Line.Color3 = Color3.fromRGB(0, 180, 255)
-    Line.Thickness = 2
-    Line.Parent = ScreenGui
-
+    local Box = Instance.new("BoxHandleAdornment") Box.AlwaysOnTop = true Box.ZIndex = 5 Box.Color3 = Color3.fromRGB(255, 0, 100) Box.Transparency = 0.5 Box.Size = Vector3.new(4, 5.5, 1.5) Box.Parent = ScreenGui
+    local Line = Instance.new("LineHandleAdornment") Line.AlwaysOnTop = true Line.ZIndex = 4 Line.Color3 = Color3.fromRGB(0, 180, 255) Line.Thickness = 2 Line.Parent = ScreenGui
     local conn = RS.RenderStepped:Connect(function()
-        local char = p.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        local myChar = LP.Character
-        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-
-        if root and myRoot and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChildOfClass("Humanoid").Health > 0 then
+        local char = p.Character local root = char and char:FindFirstChild("HumanoidRootPart") local myChar = LP.Character local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        if root and myRoot and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
             Box.Adornee = Config.GubbyESP.Enabled and root or nil
-            if Config.GubbyTracers.Enabled then
-                Line.Adornee = root
-                Line.Length = (myRoot.Position - root.Position).Magnitude
-                Line.CFrame = CFrame.lookAt(myRoot.Position, root.Position)
-            else
-                Line.Adornee = nil
-            end
-        else
-            Box.Adornee = nil
-            Line.Adornee = nil
-        end
+            if Config.GubbyTracers.Enabled then Line.Adornee = root Line.Length = (myRoot.Position - root.Position).Magnitude Line.CFrame = CFrame.lookAt(myRoot.Position, root.Position) else Line.Adornee = nil end
+        else Box.Adornee = nil Line.Adornee = nil end
     end)
     ActiveVisuals[p] = {Box = Box, Line = Line, Connection = conn}
 end
-
-tabVisuals:CreateToggle("Включить ESP (Подсветка)", Config.GubbyESP.Enabled, function(state)
-    Config.GubbyESP.Enabled = state
-    if state then for _, p in pairs(P:GetPlayers()) do applyESPAndTracers(p) end end
-end)
-
-tabVisuals:CreateToggle("Включить Трейсеры (Тросы)", Config.GubbyTracers.Enabled, function(state)
-    Config.GubbyTracers.Enabled = state
-    if state then for _, p in pairs(P:GetPlayers()) do applyESPAndTracers(p) end end
-end)
-
+tabVisuals:CreateToggle("Включить ESP (Подсветка)", Config.GubbyESP.Enabled, function(state) Config.GubbyESP.Enabled = state if state then for _, p in pairs(P:GetPlayers()) do applyESPAndTracers(p) end end end)
+tabVisuals:CreateToggle("Включить Трейсеры (Тросы)", Config.GubbyTracers.Enabled, function(state) Config.GubbyTracers.Enabled = state if state then for _, p in pairs(P:GetPlayers()) do applyESPAndTracers(p) end end end)
 P.PlayerAdded:Connect(function(p) if Config.GubbyESP.Enabled or Config.GubbyTracers.Enabled then applyESPAndTracers(p) end end)
 P.PlayerRemoving:Connect(removeVisualsForPlayer)
 
 tabVisuals:CreateToggle("FullBright (Убрать тьму и дым)", Config.GubbyFullBright.Enabled, function(state)
     Config.GubbyFullBright.Enabled = state
-    if not state then
-        L.Ambient = Config.GubbyFullBright.OrigAmbient
-        L.Brightness = Config.GubbyFullBright.OrigBrightness
-        L.GlobalShadows = Config.GubbyFullBright.OrigShadows
-        L.ClockTime = Config.GubbyFullBright.OrigClockTime
-    end
+    if not state then L.Ambient = Config.GubbyFullBright.OrigAmbient L.Brightness = Config.GubbyFullBright.OrigBrightness L.GlobalShadows = Config.GubbyFullBright.OrigShadows L.ClockTime = Config.GubbyFullBright.OrigClockTime end
 end)
-
 task.spawn(function()
     while scriptActive do
         if Config.GubbyFullBright.Enabled then
-            L.Ambient = Color3.fromRGB(255, 255, 255)
-            L.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-            L.Brightness = 3
-            L.GlobalShadows = false
-            L.ClockTime = 14
-            L.FogStart = 0
-            L.FogEnd = 999999
-            for _, effect in pairs(L:GetDescendants()) do
-                if effect:IsA("Atmosphere") then
-                    effect.Density = 0
-                    effect.FogStart = 999999
-                elseif effect:IsA("BlurEffect") or effect:IsA("DepthOfFieldEffect") then
-                    effect.Enabled = false
-                end
-            end
+            L.Ambient = Color3.fromRGB(255, 255, 255) L.OutdoorAmbient = Color3.fromRGB(255, 255, 255) L.Brightness = 3 L.GlobalShadows = false L.ClockTime = 14 L.FogStart = 0 L.FogEnd = 999999
+            for _, effect in pairs(L:GetDescendants()) do if effect:IsA("Atmosphere") then effect.Density = 0 effect.FogStart = 999999 elseif effect:IsA("BlurEffect") or effect:IsA("DepthOfFieldEffect") then effect.Enabled = false end end
         end
         task.wait(0.3)
     end
 end)
---[[ --- ЧАСТЬ 6 --- ]]--
-tabVisuals:CreateToggle("KFC Мод (Замена текстур)", Config.GubbyKFC.Enabled, function(state)
+tabVisuals:CreateToggle("Курочка КФС (Замена текстур)", Config.GubbyKFC.Enabled, function(state)
     Config.GubbyKFC.Enabled = state
-    if state then
-        for _, obj in pairs(W:GetDescendants()) do
-            if obj:IsA("Texture") or obj:IsA("Decal") then obj.Texture = "rbxassetid://10850843651"
-            elseif obj:IsA("MeshPart") then obj.TextureID = "rbxassetid://10850843651" end
-        end
-    end
+    if state then for _, obj in pairs(W:GetDescendants()) do if obj:IsA("Texture") or obj:IsA("Decal") then obj.Texture = "rbxassetid://10850843651" elseif obj:IsA("MeshPart") then obj.TextureID = "rbxassetid://10850843651" end end end
 end)
 
 local morphModelId = "14300481283"
 tabVisuals:CreateTextBox("ID Морфа (для 3D)", "Введите ID объекта", function(text) if text and text ~= "" then morphModelId = text end end)
-
 tabVisuals:CreateButton("3D-Морф (Локально)", function()
     local char = LP.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
-        pcall(function()
-            local obj = game:GetObjects("rbxassetid://" .. morphModelId)
-            if obj and #obj > 0 then
-                local model = obj
-                model.Parent = char
-                if model:IsA("Model") then model:SetPrimaryPartCFrame(char.HumanoidRootPart.CFrame)
-                elseif model:IsA("BasePart") then model.CFrame = char.HumanoidRootPart.CFrame end
-            end
-        end)
+        pcall(function() local obj = game:GetObjects("rbxassetid://" .. morphModelId) if obj and #obj > 0 then local model = obj model.Parent = char if model:IsA("Model") then model:SetPrimaryPartCFrame(char.HumanoidRootPart.CFrame) elseif model:IsA("BasePart") then model.CFrame = char.HumanoidRootPart.CFrame end end end)
     end
 end)
-
 tabVisuals:CreateButton("3D-Дождь (Вокруг вас)", function()
     task.spawn(function()
         for i = 1, 30 do
             if not scriptActive then break end
-            local p = Instance.new("Part", W)
-            p.Size = Vector3.new(2, 2, 2)
-            p.Color = Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255))
-            local char = LP.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then p.Position = char.HumanoidRootPart.Position + Vector3.new(math.random(-20, 20), 30, math.random(-20, 20)) end
-            p.CanCollide = false
-            game:GetService("Debris"):AddItem(p, 5)
-            task.wait(0.1)
+            local p = Instance.new("Part", W) p.Size = Vector3.new(2, 2, 2) p.Color = Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255))
+            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then p.Position = LP.Character.HumanoidRootPart.Position + Vector3.new(math.random(-20, 20), 30, math.random(-20, 20)) end
+            p.CanCollide = false game:GetService("Debris"):AddItem(p, 5) task.wait(0.1)
         end
     end)
 end)
-
-tabVisuals:CreateButton("Эффект Заражения (Экран)", function()
-    local cc = Instance.new("ColorCorrectionEffect", L)
-    cc.TintColor = Color3.fromRGB(0, 255, 100)
-    cc.Saturation = 2
-    game:GetService("Debris"):AddItem(cc, 4)
-end)
-
-tabVisuals:CreateButton("Звук Смерти (Скример)", function()
-    local s = Instance.new("Sound", W)
-    s.SoundId = "rbxassetid://9069609268"
-    s.Volume = 5
-    s.PlayOnRemove = true
-    s.Parent = nil
-    s:Destroy()
-end)
-
+tabVisuals:CreateButton("Эффект Заражения (Экран)", function() local cc = Instance.new("ColorCorrectionEffect", L) cc.TintColor = Color3.fromRGB(0, 255, 100) cc.Saturation = 2 game:GetService("Debris"):AddItem(cc, 4) end)
+tabVisuals:CreateButton("Звук Смерти (Скример)", function() local s = Instance.new("Sound", W) s.SoundId = "rbxassetid://9069609268" s.Volume = 5 s.PlayOnRemove = true s.Parent = nil s:Destroy() end)
 local tabTeleport = CreateTab("Телепорт")
-tabTeleport:CreateToggle("Click TP (Ctrl + Клик мыши)", Config.ClickTp.Enabled, function(state) Config.ClickTp.Enabled = state end)
+tabTeleport:CreateToggle("Click TP (Ctrl + Клик)", Config.ClickTp.Enabled, function(state) Config.ClickTp.Enabled = state end)
 
-local selectedTpPlayer = ""
-tabTeleport:CreateTextBox("Ник игрока для ТП", "Введите имя игрока", function(text) selectedTpPlayer = text end)
-
-tabTeleport:CreateButton("Телепортироваться к игроку", function()
-    if selectedTpPlayer ~= "" then
+task.spawn(function()
+    while scriptActive do
         for _, p in pairs(P:GetPlayers()) do
-            if p ~= LP and (p.Name:lower():find(selectedTpPlayer:lower()) or p.DisplayName:lower():find(selectedTpPlayer:lower())) then
-                local targetChar = p.Character
-                local myChar = LP.Character
-                if targetChar and targetChar:FindFirstChild("HumanoidRootPart") and myChar and myChar:FindFirstChild("HumanoidRootPart") then
-                    myChar.HumanoidRootPart.CFrame = targetChar.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
-                    break
-                end
+            if p ~= LP and not tabTeleport.TabFrame:FindFirstChild(p.Name) then
+                tabTeleport:CreateButton("ТП к " .. (p.DisplayName or p.Name), function()
+                    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        LP.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+                    end
+                end)
             end
         end
+        task.wait(5)
     end
 end)
-
 UIS.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if Config.ClickTp.Enabled and input.UserInputType == Enum.UserInputType.MouseButton1 and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
         local mouse = LP:GetMouse()
-        local myChar = LP.Character
-        if mouse and myChar and myChar:FindFirstChild("HumanoidRootPart") then
-            if mouse.Target then myChar.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0)) end
+        if mouse and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and mouse.Target then
+            LP.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
         end
     end
 end)
---[[ --- ЧАСТЬ 7 --- ]]--
+
 local tabTroll = CreateTab("Троллинг")
-tabTroll:CreateTextBox("Добавить ник для Троллинга", "Введите имя игрока", function(text)
-    if text and text ~= "" then
-        for _, p in pairs(P:GetPlayers()) do
-            if p ~= LP and (p.Name:lower():find(text:lower()) or p.DisplayName:lower():find(text:lower())) then
-                if not table.find(Config.GubbyTroll.Targets, p.Name) then table.insert(Config.GubbyTroll.Targets, p.Name) end
-                break
-            end
-        end
-    end
-end)
-tabTroll:CreateButton("Очистить список целей", function() table.clear(Config.GubbyTroll.Targets) end)
-
-local tabSettings = CreateTab("Настройки")
-tabSettings:CreateButton("Кнопка открытия UI: " .. Config.GubbyUIBind.Key.Name, function() Config.GubbyUIBind.Listening = true end)
-
-tabSettings:CreateTextBox("Клавиша Полёта (Fly)", "Текущая: " .. Config.KeyBinds.Fly.Key, function(text)
-    if text and #text == 1 then Config.KeyBinds.Fly.Key = text:upper() _G.SaveGubbyConfig() end
-end)
-tabSettings:CreateTextBox("Клавиша Ноклипа (Noclip)", "Текущая: " .. Config.KeyBinds.Noclip.Key, function(text)
-    if text and #text == 1 then Config.KeyBinds.Noclip.Key = text:upper() _G.SaveGubbyConfig() end
-end)
-tabSettings:CreateTextBox("Клавиша Бесконечного Прыжка", "Текущая: " .. Config.KeyBinds.InfJump.Key, function(text)
-    if text and #text == 1 then Config.KeyBinds.InfJump.Key = text:upper() _G.SaveGubbyConfig() end
-end)
-
-UIS.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if Config.GubbyUIBind.Listening then
-        if input.UserInputType == Enum.UserInputType.Keyboard then
-            Config.GubbyUIBind.Key = input.KeyCode
-            Config.GubbyUIBind.Listening = false
-            _G.SaveGubbyConfig()
-        end
-        return
-    end
-    if input.UserInputType == Enum.UserInputType.Keyboard then
-        local pressedKey = input.KeyCode.Name
-        if input.KeyCode == Config.GubbyUIBind.Key then MainFrame.Visible = not MainFrame.Visible
-        elseif pressedKey == Config.KeyBinds.Fly.Key then Config.GubbyFly.Enabled = not Config.GubbyFly.Enabled
-        elseif pressedKey == Config.KeyBinds.Noclip.Key then Config.GubbyNoclip.Enabled = not Config.GubbyNoclip.Enabled
-        elseif pressedKey == Config.KeyBinds.InfJump.Key then Config.InfJump.Enabled = not Config.InfJump.Enabled end
-    end
-end)
-
 task.spawn(function()
     while scriptActive do
-        if Config.GubbyFly.Enabled then
-            local char = LP.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
-            if root then
-                W.Gravity = 0
-                local moveDir = Vector3.new(0,0,0)
-                if UIS:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + Cam.CFrame.LookVector end
-                if UIS:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - Cam.CFrame.LookVector end
-                if UIS:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - Cam.CFrame.RightVector end
-                if UIS:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + Cam.CFrame.RightVector end
-                if UIS:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0,1,0) end
-                if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0,1,0) end
-                root.Velocity = moveDir.Unit * Config.GubbyFly.Speed
-                if moveDir.Magnitude == 0 then root.Velocity = Vector3.new(0,0,0) end
+        for _, p in pairs(P:GetPlayers()) do
+            if p ~= LP and not tabTroll.TabFrame:FindFirstChild("Troll_" .. p.Name) then
+                tabTroll:CreateButton("Троллить " .. (p.DisplayName or p.Name), function()
+                    if not table.find(Config.GubbyTroll.Targets, p.Name) then table.insert(Config.GubbyTroll.Targets, p.Name) else for i, v in ipairs(Config.GubbyTroll.Targets) do if v == p.Name then table.remove(Config.GubbyTroll.Targets, i) break end end end
+                end)
             end
-        else
-            if W.Gravity == 0 then W.Gravity = Config.PlayerMods.Gravity end
         end
+        task.wait(5)
+    end
+end)
+local tabSettings = CreateTab("Настройки")
+tabSettings:CreateButton("Кнопка открытия UI: " .. Config.GubbyUIBind.Key.Name, function() Config.GubbyUIBind.Listening = true end)
+tabSettings:CreateTextBox("Клавиша Полёта (Fly)", "F", function(t) if #t == 1 then Config.KeyBinds.Fly.Key = t:upper() _G.SaveGubbyConfig() end end)
+tabSettings:CreateTextBox("Клавиша Ноклипа", "V", function(t) if #t == 1 then Config.KeyBinds.Noclip.Key = t:upper() _G.SaveGubbyConfig() end end)
+tabSettings:CreateTextBox("Клавиша Инф.Прыжка", "B", function(t) if #t == 1 then Config.KeyBinds.InfJump.Key = t:upper() _G.SaveGubbyConfig() end end)
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if Config.GubbyUIBind.Listening and input.UserInputType == Enum.UserInputType.Keyboard then
+        Config.GubbyUIBind.Key = input.KeyCode Config.GubbyUIBind.Listening = false _G.SaveGubbyConfig() return
+    end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        local k = input.KeyCode.Name
+        if input.KeyCode == Config.GubbyUIBind.Key then MainFrame.Visible = not MainFrame.Visible
+        elseif k == Config.KeyBinds.Fly.Key then Config.GubbyFly.Enabled = not Config.GubbyFly.Enabled
+        elseif k == Config.KeyBinds.Noclip.Key then Config.GubbyNoclip.Enabled = not Config.GubbyNoclip.Enabled
+        elseif k == Config.KeyBinds.InfJump.Key then Config.InfJump.Enabled = not Config.InfJump.Enabled end
+    end
+end)
+task.spawn(function()
+    while scriptActive do
+        if Config.GubbyFly.Enabled and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+            W.Gravity = 0 local md = Vector3.new(0,0,0)
+            if UIS:IsKeyDown(Enum.KeyCode.W) then md = md + Cam.CFrame.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.S) then md = md - Cam.CFrame.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.A) then md = md - Cam.CFrame.RightVector end
+            if UIS:IsKeyDown(Enum.KeyCode.D) then md = md + Cam.CFrame.RightVector end
+            if UIS:IsKeyDown(Enum.KeyCode.Space) then md = md + Vector3.new(0,1,0) end
+            if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then md = md - Vector3.new(0,1,0) end
+            LP.Character.HumanoidRootPart.Velocity = md.Unit * Config.GubbyFly.Speed
+            if md.Magnitude == 0 then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0) end
+        else if W.Gravity == 0 then W.Gravity = Config.PlayerMods.Gravity end end
         task.wait()
     end
 end)
 
-print("[Gubby Hub]: Скрипт полностью собран и успешно загружен!")
---[[ --- ЧАСТЬ 8 (ФИНАЛЬНАЯ ОЧИСТКА ПРИ ЗАКРЫТИИ) --- ]]--
-if TopBar and TopBar:FindFirstChild("CloseBtn") then
-    local CloseBtn = TopBar.CloseBtn
-    
-    -- Очищаем старые события кнопки закрытия
-    CloseBtn:Destroy()
-    
-    -- Создаем новую чистую кнопку закрытия
-    local NewCloseBtn = Instance.new("TextButton", TopBar)
-    NewCloseBtn.Name = "CloseBtn"
-    NewCloseBtn.Size = UDim2.new(0, 35, 0, 35)
-    NewCloseBtn.Position = UDim2.new(1, -35, 0, 0)
-    NewCloseBtn.BackgroundTransparency = 1
-    NewCloseBtn.Text = "✕"
-    NewCloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
-    NewCloseBtn.TextSize = 14
-    NewCloseBtn.Font = Enum.Font.Ubuntu
-
-    NewCloseBtn.MouseEnter:Connect(function() NewCloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100) end)
-    NewCloseBtn.MouseLeave:Connect(function() NewCloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150) end)
-    
-    NewCloseBtn.MouseButton1Click:Connect(function()
-        -- 1. Выключаем главный флаг скрипта, чтобы остановить все циклы
-        scriptActive = false
-        if _G.GubbyKillOldStreams then _G.GubbyKillOldStreams() end
-        
-        -- 2. Полностью вырезаем ESP и Тросы из памяти игры
-        if ActiveVisuals then
-            for player, visuals in pairs(ActiveVisuals) do
-                if visuals.Box then visuals.Box:Destroy() end
-                if visuals.Line then visuals.Line:Destroy() end
-                if visuals.Connection then visuals.Connection:Disconnect() end
-            end
-            table.clear(ActiveVisuals)
-        end
-        
-        -- Дополнительная проверка на случай, если какие-то объекты потерялись в Gui
-        for _, obj in pairs(ScreenGui:GetChildren()) do
-            if obj.Name == "GubbyBox" or obj.Name == "GubbyTracer" then
-                obj:Destroy()
-            end
-        end
-        
-        -- 3. Возвращаем оригинальный свет и туман игры
-        Config.GubbyFullBright.Enabled = false
-        L.Ambient = Config.GubbyFullBright.OrigAmbient
-        L.Brightness = Config.GubbyFullBright.OrigBrightness
-        L.GlobalShadows = Config.GubbyFullBright.OrigShadows
-        L.ClockTime = Config.GubbyFullBright.OrigClockTime
-        
-        -- Возвращаем стандартный туман, если игра хоррор
-        L.FogStart = 0
-        L.FogEnd = 250 -- Примерное стандартное значение для тумана
-        
-        -- Возвращаем гравитацию
-        W.Gravity = Config.PlayerMods.Gravity
-        
-        -- 4. Уничтожаем сам GUI интерфейс
-        ScreenGui:Destroy()
-        print("[Gubby Hub]: Скрипт полностью выгружен, все визуалы очищены!")
-    end)
-end
+print("[Gubby Hub]: Скрипт полностью обновлен и готов к работе!")

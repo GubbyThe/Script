@@ -1723,22 +1723,21 @@ LP.CharacterAdded:Connect(function()
     end
 end)
 -- ========================================================================
--- ЧАСТЬ 15: ТОТАЛЬНАЯ ЗАМЕНА ВСЕХ ТЕКСТУР НА ГУББИ (ЭФФЕКТ C00LKIDD)
+-- ЧАСТЬ 15: ТОТАЛЬНАЯ ЗАМЕНА ВСЕХ ТЕКСТУР НА ГУББИ (БЕЗ ВЫЖИГАНИЯ ГЛАЗ)
 -- ========================================================================
 local gubbyInvasionActive = false
 local textureId = "rbxassetid://91690425987587"
 local faces = {Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Front, Enum.NormalId.Back}
 
--- Функция для натягивания текстуры Губби на деталь
+-- Функция для натягивания текстуры Губби на деталь (БЕЗ НЕОНА)
 local function applyGubbyTexture(part)
     if part:IsA("BasePart") and not part:FindFirstChild("GubbyMark") then
         -- Помечаем деталь, чтобы не спамить текстурами повторно
         local tag = Instance.new("BoolValue", part)
         tag.Name = "GubbyMark"
         
-        -- Делаем деталь неоновой для максимального эффекта
-        part.Material = Enum.Material.Neon
-        part.Color = Color3.fromRGB(255, 255, 255)
+        -- Используем SmoothPlastic вместо Neon, чтобы убрать ядовитый свет!
+        part.Material = Enum.Material.SmoothPlastic
         
         -- Накладываем текстуру на все 6 сторон блока
         for _, face in ipairs(faces) do
@@ -1760,14 +1759,14 @@ local InvasionBtn, invasionStroke = buildGubbyButton("🖼️ Заражение
     
     if gubbyInvasionActive then
         btn.Text = "✅ Губби повсюду!"
-        btn.TextColor3 = Color3.fromRGB(255, 50, 50) -- Агрессивный красный цвет
+        btn.TextColor3 = Color3.fromRGB(255, 50, 50)
         
         -- 1. Сразу заражаем все текущие объекты на карте
         for _, obj in ipairs(workspace:GetDescendants()) do
             pcall(applyGubbyTexture, obj)
         end
         
-        -- 2. Ловим новые объекты (если карта меняется или спавнятся предметы)
+        -- 2. Ловим новые объекты (если карта меняется)
         local conn
         conn = workspace.DescendantAdded:Connect(function(descendant)
             if not gubbyInvasionActive then
@@ -1777,18 +1776,18 @@ local InvasionBtn, invasionStroke = buildGubbyButton("🖼️ Заражение
             pcall(applyGubbyTexture, descendant)
         end)
         
-        print("[Gubby Hub]: C00lkidd Mode активирован! Мир успешно заражен.")
+        print("[Gubby Hub]: C00lkidd Mode активирован! Без выжигания глаз.")
     else
         btn.Text = "🖼️ Заражение Губби (C00lkidd Mode)"
         btn.TextColor3 = Color3.fromRGB(240, 240, 240)
         
-        -- Возвращаем всё назад (удаляем наши текстуры и метки)
+        -- Возвращаем всё назад
         for _, obj in ipairs(workspace:GetDescendants()) do
             pcall(function()
                 if obj.Name == "GubbyMark" then obj:Destroy() end
                 if obj.Name == "GubbyInvasion" then obj:Destroy() end
                 if obj:IsA("BasePart") then
-                    obj.Material = Enum.Material.Plastic -- Дефолтный пластик
+                    obj.Material = Enum.Material.Plastic
                 end
             end)
         end
@@ -2093,6 +2092,178 @@ local RainBtn, rainStroke = buildGubbyButton("🌧️ Включить 3D Губ
                     end)
                 end
                 task.wait(0.4) -- Скорость падения капель (каждые 0.4 сек летит новый Губби)
+            end
+        end)
+    else
+        btn.Text = "🌧️ Включить 3D Губби-Дождь"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    end
+end)
+-- ========================================================================
+-- ЧАСТЬ 20: ВЕЛИКИЙ ИСПРАВЛЕННЫЙ ПАК ДЛЯ SOLARA (ЗВУК, МОРФ, ДОЖДЬ)
+-- ========================================================================
+local customDeathSoundActive = false
+local gubbySoundId = "rbxassetid://106359762254988"
+local deathConnection = nil
+local LP = game:GetService("Players").LocalPlayer
+
+-- [1. ФИКС ЗВУКА СМЕРТИ]
+local function connectDeathTracker()
+    local char = LP.Character or LP.CharacterAdded:Wait()
+    local hum = char:WaitForChild("Humanoid", 10)
+    if hum then
+        if deathConnection then deathConnection:Disconnect() end
+        deathConnection = hum.Died:Connect(function()
+            if customDeathSoundActive then
+                local s = Instance.new("Sound")
+                s.SoundId = gubbySoundId
+                s.Volume = 2
+                s.Parent = game:GetService("SoundService")
+                s:Play()
+                game:GetService("Debris"):AddItem(s, 5)
+            end
+        end)
+    end
+end
+
+local DeathSoundBtn, deathSoundStroke = buildGubbyButton("🎵 Звук смерти Губби", tabVisuals, function(btn, stroke)
+    customDeathSoundActive = not customDeathSoundActive
+    btn.BackgroundTransparency = customDeathSoundActive and 0.1 or 0.5
+    stroke.Transparency = customDeathSoundActive and 0.1 or 0.5
+    btn.Text = customDeathSoundActive and "✅ Звук Губби при смерти: ВКЛ" or "🎵 Звук смерти Губби"
+    btn.TextColor3 = customDeathSoundActive and Color3.fromRGB(50, 255, 150) or Color3.fromRGB(240, 240, 240)
+    if customDeathSoundActive then connectDeathTracker() end
+end)
+
+LP.CharacterAdded:Connect(function()
+    if customDeathSoundActive then task.wait(0.5) connectDeathTracker() end
+end)
+
+-- [2. ФИКС 3D ГУББИ-МОРФА]
+local gubbyMorphActive = false
+local morphTexture = "rbxassetid://91690425987587"
+local myMorphPart = nil
+
+local function setCharMeshVisibility(char, visible)
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.Transparency = visible and 0 or 1
+        elseif part:IsA("Decal") then
+            part.Transparency = visible and 0 or 1
+        end
+    end
+end
+
+local MorphBtn, morphStroke = buildGubbyButton("🦊 Превратиться в Губби (Morph)", tabVisuals, function(btn, stroke)
+    gubbyMorphActive = not gubbyMorphActive
+    btn.BackgroundTransparency = gubbyMorphActive and 0.1 or 0.5
+    stroke.Transparency = gubbyMorphActive and 0.1 or 0.5
+    local char = LP.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if not root then
+        gubbyMorphActive = false
+        btn.Text = "❌ Персонаж не найден!"
+        task.wait(1)
+        btn.Text = "🦊 Превратиться в Губби (Morph)"
+        return
+    end
+    
+    if gubbyMorphActive then
+        btn.Text = "✅ Ты — Губби!"
+        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+        setCharMeshVisibility(char, false)
+        
+        myMorphPart = Instance.new("Part")
+        myMorphPart.Size = Vector3.new(3, 3, 3)
+        myMorphPart.CanCollide = false
+        myMorphPart.Massless = true
+        myMorphPart.Material = Enum.Material.SmoothPlastic
+        myMorphPart.CFrame = root.CFrame
+        myMorphPart.Parent = char
+        
+        local faces = {Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Front, Enum.NormalId.Back}
+        for _, face in ipairs(faces) do
+            local tex = Instance.new("Texture", myMorphPart)
+            tex.Texture = morphTexture
+            tex.Face = face
+            tex.StudsPerTileU = 3
+            tex.StudsPerTileV = 3
+        end
+        
+        local weld = Instance.new("WeldConstraint")
+        weld.Part0 = root
+        weld.Part1 = myMorphPart
+        weld.Parent = myMorphPart
+    else
+        btn.Text = "🦊 Превратиться в Губби (Morph)"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        if myMorphPart then myMorphPart:Destroy() myMorphPart = nil end
+        if char then setCharMeshVisibility(char, true) end
+    end
+end)
+
+LP.CharacterAdded:Connect(function()
+    gubbyMorphActive = false
+    if myMorphPart then myMorphPart:Destroy() myMorphPart = nil end
+end)
+
+-- [3. ФИКС 3D ГУББИ-ДОЖДЯ]
+local gubbyRainActive = false
+local rainTexture = "rbxassetid://91690425987587"
+
+local RainBtn, rainStroke = buildGubbyButton("🌧️ Включить 3D Губби-Дождь", tabVisuals, function(btn, stroke)
+    gubbyRainActive = not gubbyRainActive
+    btn.BackgroundTransparency = gubbyRainActive and 0.1 or 0.5
+    stroke.Transparency = gubbyRainActive and 0.1 or 0.5
+    
+    if gubbyRainActive then
+        btn.Text = "✅ Губби-Дождь: АКТИВЕН"
+        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+        
+        task.spawn(function()
+            while gubbyRainActive do
+                local char = LP.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                if root then
+                    pcall(function()
+                        local p = Instance.new("Part")
+                        p.Size = Vector3.new(1.5, 1.5, 1.5)
+                        p.CanCollide = true
+                        p.Anchored = false
+                        p.Material = Enum.Material.SmoothPlastic
+                        
+                        local randomX = math.random(-40, 40)
+                        local randomZ = math.random(-40, 40)
+                        p.Position = root.Position + Vector3.new(randomX, 50, randomZ)
+                        p.CFrame = p.CFrame * CFrame.Angles(math.rad(math.random(0,360)), math.rad(math.random(0,360)), math.rad(math.random(0,360)))
+                        p.Parent = workspace
+                        
+                        local faces = {Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Front, Enum.NormalId.Back}
+                        for _, face in ipairs(faces) do
+                            local tex = Instance.new("Texture", p)
+                            tex.Texture = rainTexture
+                            tex.Face = face
+                            tex.StudsPerTileU = 1.5
+                            tex.StudsPerTileV = 1.5
+                        end
+                        
+                        local noTouch = Instance.new("NoCollisionConstraint", p)
+                        noTouch.Part0 = p
+                        noTouch.Part1 = root
+                        
+                        task.spawn(function()
+                            task.wait(10)
+                            for i = 0, 1, 0.1 do
+                                if not p then break end
+                                p.Transparency = i
+                                task.wait(0.05)
+                            end
+                            if p then p:Destroy() end
+                        end)
+                    end)
+                end
+                task.wait(0.3)
             end
         end)
     else

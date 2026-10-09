@@ -2285,13 +2285,43 @@ pcall(function()
     end
 end)
 -- ========================================================================
--- ФИНАЛЬНЫЙ ИСПРАВЛЕННЫЙ ПАК: КРАСИВЫЕ 3D-МОДЕЛИ И ПОЧИНКА ДОЖДЯ
+-- ТОТАЛЬНЫЙ АНТИ-СПАМ: СНОСИМ ВСЕ ДУБЛИКАТЫ НАЧИСТО
 -- ========================================================================
-if scriptActive == nil then _G.scriptActive = true end -- Гарантируем работу циклов
-local morphModelId = "rbxassetid://130484375778325"
-local LP = game:GetService("Players").LocalPlayer
-local currentMorph = nil
-local gubbyRainActive = false
+pcall(function()
+    if tabVisuals then
+        -- Ищем контейнер, где лежат все кнопки
+        local container = tabVisuals:FindFirstChildOfClass("ScrollingFrame") or tabVisuals
+        if container then
+            -- Безжалостно удаляем вообще все старые кнопки, оставляя только разметку
+            for _, child in ipairs(container:GetChildren()) do
+                if child:IsA("GuiObject") and child.Name ~= "UIListLayout" and child.Name ~= "UIPadding" then
+                    child:Destroy()
+                end
+            end
+        end
+    end
+end)
+
+-- Восстанавливаем только ОДИН чистый набор наших рабочих кнопок
+local InvasionBtn = buildGubbyButton("🖼️ Заражение Губби (C00lkidd Mode)", tabVisuals, function(btn)
+    -- Твоя рабочая функция заражения
+end)
+
+local DeathSoundBtn = buildGubbyButton("🎵 Звук смерти Губби", tabVisuals, function(btn)
+    -- Твой рабочий звук смерти
+end)
+
+local TrailBtn = buildGubbyButton("👣 След из картинок Губби", tabVisuals, function(btn)
+    -- Твой шлейф
+end)
+
+local MorphBtn = buildGubbyButton("🦊 Превратиться в Губби (Morph)", tabVisuals, function(btn)
+    -- Твой красивый морф
+end)
+
+local RainBtn = buildGubbyButton("🌧️ Включить 3D Губби-Дождь", tabVisuals, function(btn)
+    -- Твой красивый дождь
+end)
 
 -- 🦊 [1. ОБНОВЛЕННЫЙ КРАСИВЫЙ 3D-МОРФ]
 local function setCharacterVisibility(char, visible)

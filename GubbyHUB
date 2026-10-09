@@ -2271,3 +2271,16 @@ local RainBtn, rainStroke = buildGubbyButton("🌧️ Включить 3D Губ
         btn.TextColor3 = Color3.fromRGB(240, 240, 240)
     end
 end)
+-- ========================================================================
+-- АНТИ-ДУБЛИКАТ: ОЧИСТКА СТАРЫХ КНОПОК ПЕРЕД ПЕРЕЗАПУСКОМ
+-- ========================================================================
+pcall(function()
+    if tabVisuals and tabVisuals:FindFirstChild("ScrollingFrame") then
+        -- Находим контейнер с кнопками и удаляем всё, что там уже было создано
+        for _, child in ipairs(tabVisuals.ScrollingFrame:GetChildren()) do
+            if child:IsA("GuiObject") and child.Name ~= "UIListLayout" then
+                child:Destroy()
+            end
+        end
+    end
+end)

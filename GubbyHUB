@@ -1,4 +1,4 @@
---[[ --- ЧАСТЬ 1 ИЗ 8 --- ]]--
+--[[ --- ЧАСТЬ 1 --- ]]--
 local P = game:GetService("Players")
 local W = game:GetService("Workspace")
 local LP = P.LocalPlayer or P.PlayerAdded:Wait()
@@ -56,7 +56,6 @@ _G.SaveGubbyConfig = function()
                 InfJumpKeyToggle = Config.KeyBinds.InfJump.Enabled
             }
             writefile(CONFIG_FILE, HttpService:JSONEncode(dataToSave))
-            print("[Gubby Hub]: Настройки сохранены!")
         end
     end)
 end
@@ -69,7 +68,6 @@ local function loadGubbyConfig()
                 return HttpService:JSONDecode(jsonText)
             end
         end)
-        
         if success and result then
             if result.Speed then Config.PlayerMods.Speed = result.Speed end
             if result.Jump then Config.PlayerMods.Jump = result.Jump end
@@ -81,28 +79,21 @@ local function loadGubbyConfig()
             if result.NoclipKeyToggle ~= nil then Config.KeyBinds.Noclip.Enabled = result.NoclipKeyToggle end
             if result.InfJumpKey then Config.KeyBinds.InfJump.Key = result.InfJumpKey end
             if result.InfJumpKeyToggle ~= nil then Config.KeyBinds.InfJump.Enabled = result.InfJumpKeyToggle end
-            print("[Gubby Hub]: Конфиг успешно загружен!")
-        else
-            _G.SaveGubbyConfig()
         end
-    else
-        _G.SaveGubbyConfig()
     end
 end
-
 loadGubbyConfig()
-
+--[[ --- ЧАСТЬ 2 --- ]]--
 local ScreenGui = Instance.new("ScreenGui", LP:WaitForChild("PlayerGui"))
 ScreenGui.Name = "REDIT_41_Gubby_Hub"
 ScreenGui.ResetOnSpawn = false
---[[ --- ЧАСТЬ 2 ИЗ 8 --- ]]--
+
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 520, 0, 360)
 MainFrame.Position = UDim2.new(0.5, -260, 0.5, -180)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
-MainFrame.ClipsDescendants = false
 
 local MainUICorner = Instance.new("UICorner", MainFrame)
 MainUICorner.CornerRadius = UDim.new(0, 10)
@@ -198,7 +189,7 @@ UIS.InputChanged:Connect(function(input)
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
---[[ --- ЧАСТЬ 3 ИЗ 8 --- ]]--
+--[[ --- ЧАСТЬ 3 --- ]]--
 local function CreateTab(name)
     local TabFrame = Instance.new("ScrollingFrame", ContentContainer)
     TabFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -251,7 +242,6 @@ local function CreateTab(name)
         local ToggleFrame = Instance.new("Frame", TabFrame)
         ToggleFrame.Size = UDim2.new(1, -5, 0, 32)
         ToggleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        
         local TFCorner = Instance.new("UICorner", ToggleFrame)
         TFCorner.CornerRadius = UDim.new(0, 6)
 
@@ -270,7 +260,6 @@ local function CreateTab(name)
         ClickBtn.Position = UDim2.new(1, -45, 0.5, -9)
         ClickBtn.BackgroundColor3 = default and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(45, 45, 45)
         ClickBtn.Text = ""
-        
         local CBCorner = Instance.new("UICorner", ClickBtn)
         CBCorner.CornerRadius = UDim.new(0, 9)
 
@@ -278,7 +267,6 @@ local function CreateTab(name)
         Circle.Size = UDim2.new(0, 14, 0, 14)
         Circle.Position = default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
         Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        
         local CircleCorner = Instance.new("UICorner", Circle)
         CircleCorner.CornerRadius = UDim.new(1, 0)
 
@@ -299,10 +287,8 @@ local function CreateTab(name)
         Btn.TextColor3 = Color3.fromRGB(240, 240, 240)
         Btn.TextSize = 13
         Btn.Font = Enum.Font.Ubuntu
-
         local BCorner = Instance.new("UICorner", Btn)
         BCorner.CornerRadius = UDim.new(0, 6)
-
         Btn.MouseButton1Click:Connect(callback)
     end
 
@@ -310,7 +296,6 @@ local function CreateTab(name)
         local SliderFrame = Instance.new("Frame", TabFrame)
         SliderFrame.Size = UDim2.new(1, -5, 0, 45)
         SliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        
         local SFCorner = Instance.new("UICorner", SliderFrame)
         SFCorner.CornerRadius = UDim.new(0, 6)
 
@@ -339,7 +324,6 @@ local function CreateTab(name)
         SliderBar.Position = UDim2.new(0, 10, 0, 28)
         SliderBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         SliderBar.Text = ""
-        
         local SBCorner = Instance.new("UICorner", SliderBar)
         SBCorner.CornerRadius = UDim.new(0, 3)
 
@@ -347,7 +331,6 @@ local function CreateTab(name)
         local pct = (default - min) / (max - min)
         Fill.Size = UDim2.new(pct, 0, 1, 0)
         Fill.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
-        
         local FillCorner = Instance.new("UICorner", Fill)
         FillCorner.CornerRadius = UDim.new(0, 3)
 
@@ -378,31 +361,49 @@ local function CreateTab(name)
         end)
     end
 
-   --[[ --- ЧАСТЬ 4 ИЗ 8 --- ]]--
+    function tabMethods:CreateTextBox(text, placeholder, callback)
+        local TBFrame = Instance.new("Frame", TabFrame)
+        TBFrame.Size = UDim2.new(1, -5, 0, 35)
+        TBFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        local TBFCorner = Instance.new("UICorner", TBFrame)
+        TBFCorner.CornerRadius = UDim.new(0, 6)
+
+        local Label = Instance.new("TextLabel", TBFrame)
+        Label.Size = UDim2.new(0, 120, 1, 0)
+        Label.Position = UDim2.new(0, 10, 0, 0)
+        Label.BackgroundTransparency = 1
+        Label.Text = text
+        Label.TextColor3 = Color3.fromRGB(220, 220, 220)
+        Label.TextSize = 13
+        Label.Font = Enum.Font.Ubuntu
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+
+        local Box = Instance.new("TextBox", TBFrame)
+        Box.Size = UDim2.new(1, -140, 0, 24)
+        Box.Position = UDim2.new(0, 130, 0.5, -12)
+        Box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        Box.PlaceholderText = placeholder
+        Box.Text = ""
+        Box.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Box.TextSize = 12
+        Box.Font = Enum.Font.Ubuntu
+        local BoxCorner = Instance.new("UICorner", Box)
+        BoxCorner.CornerRadius = UDim.new(0, 4)
+
+        Box.FocusLost:Connect(function(enterPressed)
+            callback(Box.Text, enterPressed)
+        end)
+    end
+
+    return tabMethods
+end
+--[[ --- ЧАСТЬ 4 --- ]]--
 local tabPlayer = CreateTab("Игрок")
-
-tabPlayer:CreateSlider("Скорость бега", 16, 250, Config.PlayerMods.Speed, function(v)
-    Config.PlayerMods.Speed = v
-    _G.SaveGubbyConfig()
-end)
-
-tabPlayer:CreateSlider("Высота прыжка", 50, 500, Config.PlayerMods.Jump, function(v)
-    Config.PlayerMods.Jump = v
-    _G.SaveGubbyConfig()
-end)
-
-tabPlayer:CreateSlider("Гравитация", 0, 500, math.floor(Config.PlayerMods.Gravity), function(v)
-    Config.PlayerMods.Gravity = v
-    W.Gravity = v
-end)
-
-tabPlayer:CreateToggle("Бесконечный прыжок", Config.InfJump.Enabled, function(state)
-    Config.InfJump.Enabled = state
-end)
-
-tabPlayer:CreateToggle("Ноклип (Сквозь стены)", Config.GubbyNoclip.Enabled, function(state)
-    Config.GubbyNoclip.Enabled = state
-end)
+tabPlayer:CreateSlider("Скорость бега", 16, 250, Config.PlayerMods.Speed, function(v) Config.PlayerMods.Speed = v _G.SaveGubbyConfig() end)
+tabPlayer:CreateSlider("Высота прыжка", 50, 500, Config.PlayerMods.Jump, function(v) Config.PlayerMods.Jump = v _G.SaveGubbyConfig() end)
+tabPlayer:CreateSlider("Гравитация", 0, 500, math.floor(Config.PlayerMods.Gravity), function(v) Config.PlayerMods.Gravity = v end)
+tabPlayer:CreateToggle("Бесконечный прыжок", Config.InfJump.Enabled, function(state) Config.InfJump.Enabled = state end)
+tabPlayer:CreateToggle("Ноклип (Сквозь стены)", Config.GubbyNoclip.Enabled, function(state) Config.GubbyNoclip.Enabled = state end)
 
 task.spawn(function()
     while scriptActive do
@@ -410,26 +411,17 @@ task.spawn(function()
         if character then
             local humanoid = character:FindFirstChildOfClass("Humanoid")
             if humanoid then
-                if humanoid.WalkSpeed ~= Config.PlayerMods.Speed then
-                    humanoid.WalkSpeed = Config.PlayerMods.Speed
-                end
+                if humanoid.WalkSpeed ~= Config.PlayerMods.Speed then humanoid.WalkSpeed = Config.PlayerMods.Speed end
                 if humanoid.UseJumpPower then
-                    if humanoid.JumpPower ~= Config.PlayerMods.Jump then
-                        humanoid.JumpPower = Config.PlayerMods.Jump
-                    end
+                    if humanoid.JumpPower ~= Config.PlayerMods.Jump then humanoid.JumpPower = Config.PlayerMods.Jump end
                 else
                     local jumpHeight = Config.PlayerMods.Jump / 7.5
-                    if humanoid.JumpHeight ~= jumpHeight then
-                        humanoid.JumpHeight = jumpHeight
-                    end
+                    if humanoid.JumpHeight ~= jumpHeight then humanoid.JumpHeight = jumpHeight end
                 end
             end
-            
             if Config.GubbyNoclip.Enabled then
                 for _, part in pairs(character:GetChildren()) do
-                    if part:IsA("BasePart") and part.CanCollide then
-                        part.CanCollide = false
-                    end
+                    if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
                 end
             end
         end
@@ -441,44 +433,10 @@ UIS.JumpRequest:Connect(function()
     if Config.InfJump.Enabled then
         local character = LP.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
+        if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
 end)
-
---[[ --- ЧАСТЬ 4.1 ИЗ 5 --- ]]--
-local function applyTracers(player)
-    if player == LP then return end
-    local function createBeam(char)
-        local root = char:WaitForChild("HumanoidRootPart", 5)
-        local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-        if not root or not myRoot then return end
-        if char:FindFirstChild("GubbyTracerBeam") then char.GubbyTracerBeam:Destroy() end
-        local myAtt = myRoot:FindFirstChild("GubbyAttachment") or Instance.new("Attachment", myRoot)
-        myAtt.Name = "GubbyAttachment"
-        local targetAtt = Instance.new("Attachment", root)
-        targetAtt.Name = "GubbyTargetAttachment"
-        local beam = Instance.new("Beam", char)
-        beam.Name = "GubbyTracerBeam"; beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255)); beam.Width0 = 0.05; beam.Width1 = 0.05; beam.FaceCamera = true; beam.Attachment0 = myAtt; beam.Attachment1 = targetAtt; beam.Enabled = false
-    end
-    if player.Character then createBeam(player.Character) end
-    player.CharacterAdded:Connect(createBeam)
-end
-
-RS.RenderStepped:Connect(function()
-    if not scriptActive then return end
-    for _, player in ipairs(P:GetPlayers()) do
-        local char = player.Character
-        if char then
-            local highlight = char:FindFirstChild("GubbyHighlight")
-            local beam = char:FindFirstChild("GubbyTracerBeam")
-            if Config.GubbyESP.Enabled then if not highlight then applyESP(player) else highlight.Enabled = true end else if highlight then highlight.Enabled = false end end
-            if Config.GubbyTracers.Enabled then if not beam then applyTracers(player) else beam.Enabled = true end else if beam then beam.Enabled = false end end
-        end
-    end
-end)
---[[ --- ЧАСТЬ 5 ИЗ 8 (ИСПРАВЛЕННАЯ С СУПЕР-СВЕТОМ) --- ]]--
+--[[ --- ЧАСТЬ 5 --- ]]--
 local tabVisuals = CreateTab("Визуалы")
 local ActiveVisuals = {}
 
@@ -496,7 +454,6 @@ local function applyESPAndTracers(p)
     removeVisualsForPlayer(p)
 
     local Box = Instance.new("BoxHandleAdornment")
-    Box.Name = "GubbyBox"
     Box.AlwaysOnTop = true
     Box.ZIndex = 5
     Box.Color3 = Color3.fromRGB(255, 0, 100)
@@ -505,7 +462,6 @@ local function applyESPAndTracers(p)
     Box.Parent = ScreenGui
 
     local Line = Instance.new("LineHandleAdornment")
-    Line.Name = "GubbyTracer"
     Line.AlwaysOnTop = true
     Line.ZIndex = 4
     Line.Color3 = Color3.fromRGB(0, 180, 255)
@@ -532,11 +488,10 @@ local function applyESPAndTracers(p)
             Line.Adornee = nil
         end
     end)
-
     ActiveVisuals[p] = {Box = Box, Line = Line, Connection = conn}
 end
 
-tabVisuals:CreateToggle("Включить ESP (Подсветка игроков)", Config.GubbyESP.Enabled, function(state)
+tabVisuals:CreateToggle("Включить ESP (Подсветка)", Config.GubbyESP.Enabled, function(state)
     Config.GubbyESP.Enabled = state
     if state then for _, p in pairs(P:GetPlayers()) do applyESPAndTracers(p) end end
 end)
@@ -546,9 +501,7 @@ tabVisuals:CreateToggle("Включить Трейсеры (Тросы)", Config
     if state then for _, p in pairs(P:GetPlayers()) do applyESPAndTracers(p) end end
 end)
 
-P.PlayerAdded:Connect(function(p)
-    if Config.GubbyESP.Enabled or Config.GubbyTracers.Enabled then applyESPAndTracers(p) end
-end)
+P.PlayerAdded:Connect(function(p) if Config.GubbyESP.Enabled or Config.GubbyTracers.Enabled then applyESPAndTracers(p) end end)
 P.PlayerRemoving:Connect(removeVisualsForPlayer)
 
 tabVisuals:CreateToggle("FullBright (Убрать тьму и дым)", Config.GubbyFullBright.Enabled, function(state)
@@ -583,25 +536,19 @@ task.spawn(function()
         task.wait(0.3)
     end
 end)
-
---[[ --- ЧАСТЬ 6 ИЗ 9 --- ]]--
+--[[ --- ЧАСТЬ 6 --- ]]--
 tabVisuals:CreateToggle("KFC Мод (Замена текстур)", Config.GubbyKFC.Enabled, function(state)
     Config.GubbyKFC.Enabled = state
     if state then
         for _, obj in pairs(W:GetDescendants()) do
-            if obj:IsA("Texture") or obj:IsA("Decal") then
-                obj.Texture = "rbxassetid://10850843651"
-            elseif obj:IsA("MeshPart") then
-                obj.TextureID = "rbxassetid://10850843651"
-            end
+            if obj:IsA("Texture") or obj:IsA("Decal") then obj.Texture = "rbxassetid://10850843651"
+            elseif obj:IsA("MeshPart") then obj.TextureID = "rbxassetid://10850843651" end
         end
     end
 end)
 
 local morphModelId = "14300481283"
-tabVisuals:CreateTextBox("ID Морфа (для 3D)", "Введите ID объекта", function(text)
-    if text and text ~= "" then morphModelId = text end
-end)
+tabVisuals:CreateTextBox("ID Морфа (для 3D)", "Введите ID объекта", function(text) if text and text ~= "" then morphModelId = text end end)
 
 tabVisuals:CreateButton("3D-Морф (Локально)", function()
     local char = LP.Character
@@ -611,11 +558,8 @@ tabVisuals:CreateButton("3D-Морф (Локально)", function()
             if obj and #obj > 0 then
                 local model = obj
                 model.Parent = char
-                if model:IsA("Model") then
-                    model:SetPrimaryPartCFrame(char.HumanoidRootPart.CFrame)
-                elseif model:IsA("BasePart") then
-                    model.CFrame = char.HumanoidRootPart.CFrame
-                end
+                if model:IsA("Model") then model:SetPrimaryPartCFrame(char.HumanoidRootPart.CFrame)
+                elseif model:IsA("BasePart") then model.CFrame = char.HumanoidRootPart.CFrame end
             end
         end)
     end
@@ -629,9 +573,7 @@ tabVisuals:CreateButton("3D-Дождь (Вокруг вас)", function()
             p.Size = Vector3.new(2, 2, 2)
             p.Color = Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255))
             local char = LP.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                p.Position = char.HumanoidRootPart.Position + Vector3.new(math.random(-20, 20), 30, math.random(-20, 20))
-            end
+            if char and char:FindFirstChild("HumanoidRootPart") then p.Position = char.HumanoidRootPart.Position + Vector3.new(math.random(-20, 20), 30, math.random(-20, 20)) end
             p.CanCollide = false
             game:GetService("Debris"):AddItem(p, 5)
             task.wait(0.1)
@@ -654,97 +596,81 @@ tabVisuals:CreateButton("Звук Смерти (Скример)", function()
     s.Parent = nil
     s:Destroy()
 end)
---[[ --- ЧАСТЬ 7 ИЗ 8 --- ]]--
-local tabTroll = CreateTab("Троллинг")
 
-tabTroll:CreateTextBox("Добавить ник для Троллинга", "Введите имя игрока", function(text)
-    if text and text ~= "" then
+local tabTeleport = CreateTab("Телепорт")
+tabTeleport:CreateToggle("Click TP (Ctrl + Клик мыши)", Config.ClickTp.Enabled, function(state) Config.ClickTp.Enabled = state end)
+
+local selectedTpPlayer = ""
+tabTeleport:CreateTextBox("Ник игрока для ТП", "Введите имя игрока", function(text) selectedTpPlayer = text end)
+
+tabTeleport:CreateButton("Телепортироваться к игроку", function()
+    if selectedTpPlayer ~= "" then
         for _, p in pairs(P:GetPlayers()) do
-            if p ~= LP and (p.Name:lower():find(text:lower()) or p.DisplayName:lower():find(text:lower())) then
-                if not table.find(Config.GubbyTroll.Targets, p.Name) then
-                    table.insert(Config.GubbyTroll.Targets, p.Name)
-                    print("[Troll]: Добавлен игрок " .. p.Name)
+            if p ~= LP and (p.Name:lower():find(selectedTpPlayer:lower()) or p.DisplayName:lower():find(selectedTpPlayer:lower())) then
+                local targetChar = p.Character
+                local myChar = LP.Character
+                if targetChar and targetChar:FindFirstChild("HumanoidRootPart") and myChar and myChar:FindFirstChild("HumanoidRootPart") then
+                    myChar.HumanoidRootPart.CFrame = targetChar.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+                    break
                 end
-                break
             end
         end
-    end
-end)
-
-tabTroll:CreateButton("Очистить список целей", function()
-    table.clear(Config.GubbyTroll.Targets)
-    print("[Troll]: Список целей успешно очищен.")
-end)
-
-м     if moveDir.Magnitude == 0 then root.Velocity = Vector3.new(0,0,0) end
-            end
-        else
-            if W.Gravity == 0 then W.Gravity = Config.PlayerMods.Gravity end
-        end
-        task.wait()
-    end
-end)
-
-print("[Gubby Hub]: Скрипт полностью собран и успешно загружен!")
---[[ --- ЧАСТЬ 8 ИЗ 8 --- ]]--
-local tabSettings = CreateTab("Настройки")
-
-tabSettings:CreateButton("Кнопка открытия UI: " .. Config.GubbyUIBind.Key.Name, function()
-    Config.GubbyUIBind.Listening = true
-    print("[Settings]: Нажмите любую клавишу для бинда меню...")
-end)
-
-tabSettings:CreateTextBox("Клавиша Полёта (Fly)", "Текущая: " .. Config.KeyBinds.Fly.Key, function(text)
-    if text and #text == 1 then
-        Config.KeyBinds.Fly.Key = text:upper()
-        _G.SaveGubbyConfig()
-        print("[Settings]: Бинд Fly изменен на " .. text:upper())
-    end
-end)
-
-tabSettings:CreateTextBox("Клавиша Ноклипа (Noclip)", "Текущая: " .. Config.KeyBinds.Noclip.Key, function(text)
-    if text and #text == 1 then
-        Config.KeyBinds.Noclip.Key = text:upper()
-        _G.SaveGubbyConfig()
-        print("[Settings]: Бинд Noclip изменен на " .. text:upper())
-    end
-end)
-
-tabSettings:CreateTextBox("Клавиша Бесконечного Прыжка", "Текущая: " .. Config.KeyBinds.InfJump.Key, function(text)
-    if text and #text == 1 then
-        Config.KeyBinds.InfJump.Key = text:upper()
-        _G.SaveGubbyConfig()
-        print("[Settings]: Бинд InfJump изменен на " .. text:upper())
     end
 end)
 
 UIS.InputBegan:Connect(function(input, gpe)
     if gpe then return end
-    
+    if Config.ClickTp.Enabled and input.UserInputType == Enum.UserInputType.MouseButton1 and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
+        local mouse = LP:GetMouse()
+        local myChar = LP.Character
+        if mouse and myChar and myChar:FindFirstChild("HumanoidRootPart") then
+            if mouse.Target then myChar.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0)) end
+        end
+    end
+end)
+--[[ --- ЧАСТЬ 7 --- ]]--
+local tabTroll = CreateTab("Троллинг")
+tabTroll:CreateTextBox("Добавить ник для Троллинга", "Введите имя игрока", function(text)
+    if text and text ~= "" then
+        for _, p in pairs(P:GetPlayers()) do
+            if p ~= LP and (p.Name:lower():find(text:lower()) or p.DisplayName:lower():find(text:lower())) then
+                if not table.find(Config.GubbyTroll.Targets, p.Name) then table.insert(Config.GubbyTroll.Targets, p.Name) end
+                break
+            end
+        end
+    end
+end)
+tabTroll:CreateButton("Очистить список целей", function() table.clear(Config.GubbyTroll.Targets) end)
+
+local tabSettings = CreateTab("Настройки")
+tabSettings:CreateButton("Кнопка открытия UI: " .. Config.GubbyUIBind.Key.Name, function() Config.GubbyUIBind.Listening = true end)
+
+tabSettings:CreateTextBox("Клавиша Полёта (Fly)", "Текущая: " .. Config.KeyBinds.Fly.Key, function(text)
+    if text and #text == 1 then Config.KeyBinds.Fly.Key = text:upper() _G.SaveGubbyConfig() end
+end)
+tabSettings:CreateTextBox("Клавиша Ноклипа (Noclip)", "Текущая: " .. Config.KeyBinds.Noclip.Key, function(text)
+    if text and #text == 1 then Config.KeyBinds.Noclip.Key = text:upper() _G.SaveGubbyConfig() end
+end)
+tabSettings:CreateTextBox("Клавиша Бесконечного Прыжка", "Текущая: " .. Config.KeyBinds.InfJump.Key, function(text)
+    if text and #text == 1 then Config.KeyBinds.InfJump.Key = text:upper() _G.SaveGubbyConfig() end
+end)
+
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
     if Config.GubbyUIBind.Listening then
         if input.UserInputType == Enum.UserInputType.Keyboard then
             Config.GubbyUIBind.Key = input.KeyCode
             Config.GubbyUIBind.Listening = false
             _G.SaveGubbyConfig()
-            print("[Settings]: Меню теперь открывается на " .. input.KeyCode.Name)
         end
         return
     end
-
     if input.UserInputType == Enum.UserInputType.Keyboard then
         local pressedKey = input.KeyCode.Name
-        if input.KeyCode == Config.GubbyUIBind.Key then
-            MainFrame.Visible = not MainFrame.Visible
-        elseif pressedKey == Config.KeyBinds.Fly.Key then
-            Config.GubbyFly.Enabled = not Config.GubbyFly.Enabled
-            print("[Binds]: Полёт " .. (Config.GubbyFly.Enabled and "ВКЛ" or "ВЫКЛ"))
-        elseif pressedKey == Config.KeyBinds.Noclip.Key then
-            Config.GubbyNoclip.Enabled = not Config.GubbyNoclip.Enabled
-            print("[Binds]: Ноклип " .. (Config.GubbyNoclip.Enabled and "ВКЛ" or "ВЫКЛ"))
-        elseif pressedKey == Config.KeyBinds.InfJump.Key then
-            Config.InfJump.Enabled = not Config.InfJump.Enabled
-            print("[Binds]: Бесконечный прыжок " .. (Config.InfJump.Enabled and "ВКЛ" or "ВЫКЛ"))
-        end
+        if input.KeyCode == Config.GubbyUIBind.Key then MainFrame.Visible = not MainFrame.Visible
+        elseif pressedKey == Config.KeyBinds.Fly.Key then Config.GubbyFly.Enabled = not Config.GubbyFly.Enabled
+        elseif pressedKey == Config.KeyBinds.Noclip.Key then Config.GubbyNoclip.Enabled = not Config.GubbyNoclip.Enabled
+        elseif pressedKey == Config.KeyBinds.InfJump.Key then Config.InfJump.Enabled = not Config.InfJump.Enabled end
     end
 end)
 
@@ -762,7 +688,6 @@ task.spawn(function()
                 if UIS:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + Cam.CFrame.RightVector end
                 if UIS:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0,1,0) end
                 if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0,1,0) end
-                
                 root.Velocity = moveDir.Unit * Config.GubbyFly.Speed
                 if moveDir.Magnitude == 0 then root.Velocity = Vector3.new(0,0,0) end
             end
@@ -774,1472 +699,3 @@ task.spawn(function()
 end)
 
 print("[Gubby Hub]: Скрипт полностью собран и успешно загружен!")
-
---[[ --- ЧАСТЬ 10 ИЗ 10 --- ]]--
--- Переменная для отслеживания состояния заморозки
-local serverFreezeActive = false
-local originalArmSize = nil
-
--- Создаем кнопку заморозки во вкладку "Троллинг" (tabTroll) из конца файла
-local FreezeBtn, freezeStroke = buildGubbyButton("❄️ Включить Заморозку Сервера (KFC Рука)", tabTroll, function(btn, stroke)
-    serverFreezeActive = not serverFreezeActive
-    btn.BackgroundTransparency = serverFreezeActive and 0.1 or 0.5
-    stroke.Transparency = serverFreezeActive and 0.1 or 0.5
-    btn.Text = serverFreezeActive and "✅ Заморозка: АКТИВНА (Сервер Лагает)" or "❄️ Включить Заморозку Сервера (KFC Рука)"
-    
-    local char = LP.Character
-    -- Ищем правую руку персонажа (работает и для старых R6, и для новых R15 аватаров)
-    local arm = char and (char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm"))
-    
-    if arm and arm:IsA("BasePart") then
-        if serverFreezeActive then
-            -- Сохраняем оригинальный размер руки, если еще не сохранили
-            if not originalArmSize then originalArmSize = arm.Size end
-            
-            -- Вздуваем руку до колоссальных размеров, ломая физику рендера вокруг
-            arm.Size = Vector3.new(10000, 10000, 10000)
-            arm.CanCollide = false -- Чтобы тебя самого не унесло в космос от коллизии
-            print("[Gubby Hub]: KFC Заморозка запущена! Сервер перегружен.")
-        else
-            -- Возвращаем руку в нормальное состояние
-            if originalArmSize then
-                arm.Size = originalArmSize
-            else
-                arm.Size = Vector3.new(1, 2, 1) -- Дефолтный размер на случай сбоя
-            end
-            arm.CanCollide = true
-            print("[Gubby Hub]: Сервер оттаял, размеры возвращены.")
-        end
-    else
-        btn.Text = "❌ Рука персонажа не найдена!"
-        task.wait(1.5)
-        btn.Text = serverFreezeActive and "✅ Заморозка: АКТИВНА" or "❄️ Включить Заморозку Сервера (KFC Рука)"
-    end
-end)
-
--- Авто-сброс размеров при респавне, чтобы ты не заспавнился с гигантской рукой
-LP.CharacterAdded:Connect(function(char)
-    if scriptActive then
-        serverFreezeActive = false
-        originalArmSize = nil
-        if FreezeBtn and freezeStroke then
-            FreezeBtn.BackgroundTransparency = 0.5
-            freezeStroke.Transparency = 0.5
-            FreezeBtn.Text = "❄️ Включить Заморозку Сервера (KFC Рука)"
-        end
-    end
-end)
---[[ --- ЧАСТЬ 11 ИЗ 11 --- ]]--
--- Полная база всех ID для каждого состояния персонажа
-local AnimationPacks = {
-    ["Стандартная"] = {
-        idle = "507766388", walk = "507777826", run = "507767714", jump = "507768790",
-        fall = "507767968", climb = "507766117", swim = "507773236", swimidle = "507772124"
-    },
-    ["Ниндзя"] = {
-        idle = "616111812", walk = "616122287", run = "616119332", jump = "616115804",
-        fall = "616114449", climb = "616112933", swim = "616124503", swimidle = "616123479"
-    },
-    ["Зомби"] = {
-        idle = "616156100", walk = "616168050", run = "616163617", jump = "616157456",
-        fall = "616156942", climb = "616155689", swim = "616169145", swimidle = "616168670"
-    },
-    ["Игрушка"] = {
-        idle = "782841498", walk = "782845347", run = "782843345", jump = "782842708",
-        fall = "782841961", climb = "782840938", swim = "782846141", swimidle = "782845814"
-    }
-}
-
-_G.CurrentGubbyPack = AnimationPacks["Стандартная"]
-
--- Функция жесткого хука аниматора через подгрузку чистого кода Roblox
-local function injectGubbyAnimate(char)
-    -- Уничтожаем старый системный скрипт MM2, который нас блокирует
-    local oldAnimate = char:WaitForChild("Animate", 5)
-    if oldAnimate then oldAnimate:Destroy() end
-    
-    -- Скачиваем и запускаем чистый, не заблокированный движком игры скрипт аниматора
-    local success, customAnimate = pcall(function()
-        return loadstring(game:HttpGet("https://pastebin.com"))()
-    end)
-    
-    if success and customAnimate then
-        -- Передаем наши выбранные ID внутрь нового аниматора
-        customAnimate:SetPack(_G.CurrentGubbyPack)
-    end
-end
-
--- Хук на возрождение персонажа
-LP.CharacterAdded:Connect(function(char)
-    if scriptActive and _G.CurrentGubbyPack ~= AnimationPacks["Стандартная"] then
-        task.wait(0.4)
-        injectGubbyAnimate(char)
-    end
-end)
-
--- Создаем мини-меню для выбора походок
-local WalkMenu = Instance.new("Frame", ScreenGui)
-WalkMenu.Size = UDim2.new(0, 180, 0, 180)
-WalkMenu.Position = UDim2.new(0.5, 250, 0.3, 0)
-WalkMenu.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-WalkMenu.Visible = false
-Instance.new("UICorner", WalkMenu).CornerRadius = UDim.new(0, 8)
-local menuStroke = Instance.new("UIStroke", WalkMenu)
-menuStroke.Color = Color3.fromRGB(240, 240, 240); menuStroke.Thickness = 1; menuStroke.Transparency = 0.5
-
-local MenuTitle = Instance.new("TextLabel", WalkMenu)
-MenuTitle.Size = UDim2.new(1, 0, 0, 25); MenuTitle.Text = "🎭 ВЫБОР ПОХОДКИ"
-MenuTitle.Font = Enum.Font.SourceSansBold; MenuTitle.TextSize = 13; MenuTitle.TextColor3 = Color3.fromRGB(240, 240, 240); MenuTitle.BackgroundTransparency = 1
-
-local ScrollPack = Instance.new("ScrollingFrame", WalkMenu)
-ScrollPack.Size = UDim2.new(1, -10, 1, -35); ScrollPack.Position = UDim2.new(0, 5, 0, 30)
-ScrollPack.BackgroundTransparency = 1; ScrollPack.ScrollBarThickness = 2; ScrollPack.AutomaticCanvasSize = Enum.AutomaticSize.Y
-local PackLayout = Instance.new("UIListLayout", ScrollPack); PackLayout.Padding = UDim.new(0, 4)
-
-for packName, packData in pairs(AnimationPacks) do
-    local pBtn = Instance.new("TextButton", ScrollPack)
-    pBtn.Size = UDim2.new(1, -4, 0, 26); pBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-    pBtn.Text = packName; pBtn.TextColor3 = Color3.fromRGB(220, 220, 220); pBtn.Font = Enum.Font.SourceSansBold; pBtn.TextSize = 12
-    Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
-    local pStroke = Instance.new("UIStroke", pBtn); pStroke.Color = Color3.fromRGB(240, 240, 240); pStroke.Thickness = 1; pStroke.Transparency = 0.7
-    
-    pBtn.MouseButton1Click:Connect(function()
-        _G.CurrentGubbyPack = packData
-        if LP.Character then injectGubbyAnimate(LP.Character) end
-        print("[Gubby Hub]: Загружен полный пак анимаций движения:", packName)
-        
-        for _, btn in ipairs(ScrollPack:GetChildren()) do
-            if btn:IsA("TextButton") then btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) end
-        end
-        pBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
-    end)
-end
-
-buildGubbyButton("🏃‍♂️ Открыть меню Походок (Анимаций)", tabEmotes, function(btn, stroke)
-    WalkMenu.Visible = not WalkMenu.Visible
-    btn.BackgroundTransparency = WalkMenu.Visible and 0.1 or 0.5
-    stroke.Transparency = WalkMenu.Visible and 0.1 or 0.5
-end)
--- Переменные для двух режимов сэндвича (ВЕРСИЯ С ПОЛНОЙ ОЧИСТКОЙ БЛОКОВ)
-local spushBugActive = false
-local spushCleanActive = false
-local faceTrollTarget = nil
-
--- Функция полного сброса, возврата коллизии и УДАЛЕНИЯ БЛОКОВ
-local function resetMyCollision()
-    local char = LP.Character
-    if char then
-        -- Жестко сносим застрявшие неоновые блоки из тела
-        for _, obj in ipairs(char:GetDescendants()) do
-            if obj.Name == "SpushonkaEffect" then 
-                obj:Destroy() 
-            end
-        end
-        -- Возвращаем коллизию деталям
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then 
-                part.CanCollide = true 
-            end
-        end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if root then root.Anchored = false end
-    end
-end
-
--- Поиск выбранной цели
-local function findTarget()
-    for pl, selected in pairs(Config.GubbyTroll.Targets) do
-        if selected and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
-            return pl
-        end
-    end
-    return nil
-end
-
--- КНОПКА 1: Твой угарный баг с отправкой в космос (как на скриншоте)
-local BugBtn, bugStroke = buildGubbyButton("🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)", tabTroll, function(btn, stroke)
-    spushBugActive = not spushBugActive
-    if spushBugActive then
-        spushCleanActive = false
-        if CleanBtn and cleanStroke then CleanBtn.Text = "🥪 Спокойный Сэндвич (Без Флинга)"; CleanBtn.BackgroundTransparency = 0.5; cleanStroke.Transparency = 0.5 end
-        faceTrollTarget = findTarget()
-        if not faceTrollTarget then
-            spushBugActive = false
-            btn.Text = "🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)"; btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
-        else
-            btn.Text = "✅ Тач-Сэндвич: АКТИВЕН"
-            btn.BackgroundTransparency = 0.1; stroke.Transparency = 0.1
-        end
-    else
-        faceTrollTarget = nil
-        resetMyCollision()
-        btn.Text = "🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)"
-        btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
-    end
-end)
-
--- КНОПКА 2: Истинный чистый режим из Thunder Hub (БЕЗ ФЛИНГА И БАГОВ)
-local CleanBtn, cleanStroke = buildGubbyButton("🥪 Спокойный Сэндвич (Без Флинга)", tabTroll, function(btn, stroke)
-    spushCleanActive = not spushCleanActive
-    if spushCleanActive then
-        spushBugActive = false
-        if BugBtn and bugStroke then BugBtn.Text = "🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)"; BugBtn.BackgroundTransparency = 0.5; bugStroke.Transparency = 0.5 end
-        faceTrollTarget = findTarget()
-        if not faceTrollTarget then
-            spushCleanActive = false
-            btn.Text = "🥪 Спокойный Сэндвич (Без Флинга)"; btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
-        else
-            btn.Text = "✅ Спокойный Сэндвич: АКТИВЕН"
-            btn.BackgroundTransparency = 0.1; stroke.Transparency = 0.1
-        end
-    else
-        faceTrollTarget = nil
-        resetMyCollision()
-        btn.Text = "🥪 Спокойный Сэндвич (Без Флинга)"
-        btn.BackgroundTransparency = 0.5; stroke.Transparency = 0.5
-    end
-end)
-
--- Основной цикл обработки
-RS.Heartbeat:Connect(function()
-    if not scriptActive or (not spushBugActive and not spushCleanActive) or not faceTrollTarget then return end
-    
-    local myChar = LP.Character
-    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    local tChar = faceTrollTarget.Character
-    local tHead = tChar and tChar:FindFirstChild("Head")
-    
-    if myRoot and tHead then
-        pcall(function()
-            -- Проход сквозь текстуры цели
-            for _, part in ipairs(myChar:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
-            
-            if spushBugActive then
-                -- РЕЖИМ БАГА (Бешеный таран-молоток по оси Z)
-                myRoot.Anchored = false
-                local targetPos = tHead.Position + Vector3.new(0, 1.5, 0)
-                local waveZ = math.sin(tick() * 45) * 1.2 - 2.2
-                myRoot.CFrame = CFrame.lookAt(targetPos, tHead.Position) * CFrame.new(0, 0, waveZ)
-                myRoot.Velocity = Vector3.zero
-                myRoot.RotVelocity = Vector3.zero
-                
-            elseif spushCleanActive then
-                -- ЧИСТЫЙ РЕЖИМ С АНКОРОМ:
-                myRoot.Anchored = true
-                
-                -- Координаты: нависаем ровно перед лицом цели (Y = 0.3)
-                local basePosition = tHead.CFrame * CFrame.new(0, 0.3, -1.5) * CFrame.Angles(0, math.rad(180), 0)
-                
-                -- Плавное движение вперед-назад
-                local motion = math.sin(tick() * 30) * 0.4
-                myRoot.CFrame = basePosition * CFrame.new(0, 0, motion)
-                
-                -- Сброс скоростей
-                myRoot.Velocity = Vector3.zero
-                myRoot.RotVelocity = Vector3.zero
-            end
-        end)
-    else
-        spushBugActive = false
-        spushCleanActive = false
-        faceTrollTarget = nil
-        resetMyCollision()
-        if BugBtn then BugBtn.Text = "🚀 Сверхзвуковой Тач-Сэндвич (ФЛИНГ)"; BugBtn.BackgroundTransparency = 0.5 end
-        if CleanBtn then CleanBtn.Text = "🥪 Спокойный Сэндвич (Без Флинга)"; CleanBtn.BackgroundTransparency = 0.5 end
-    end
-end)
-
--- Сброс при респавне
-LP.CharacterAdded:Connect(function()
-    if scriptActive then
-        spushBugActive = false
-        spushCleanActive = false
-        faceTrollTarget = nil
-        resetMyCollision()
-    end
-end)
--- Переменная для контроля очистки ТОЛЬКО СВОЕЙ одежды
-local antiLagMyClothesActive = false
-
--- Создаем кнопку во вкладке "Игрок" (tabPlayer)
-local MyClothesBtn, myClothesStroke = buildGubbyButton("👕 Удалить МОЮ одежду (FPS BOOST)", tabPlayer, function(btn, stroke)
-    antiLagMyClothesActive = not antiLagMyClothesActive
-    btn.BackgroundTransparency = antiLagMyClothesActive and 0.1 or 0.5
-    stroke.Transparency = antiLagMyClothesActive and 0.1 or 0.5
-    btn.Text = antiLagMyClothesActive and "✅ Моя одежда удалена" or "👕 Удалить МОЮ одежду (FPS BOOST)"
-    
-    if antiLagMyClothesActive then
-        pcall(function()
-            local char = LP.Character
-            if char then
-                -- 1. Удаляем только твою 2D одежду
-                for _, clothing in ipairs(char:GetChildren()) do
-                    if clothing:IsA("Shirt") or clothing:IsA("Pants") or clothing:IsA("ShirtGraphic") or clothing:IsA("BodyColors") then
-                        clothing:Destroy()
-                    end
-                end
-                -- 2. Удаляем все твои 3D аксессуары и тяжёлые меши (волосы, шляпы, куртки)
-                for _, obj in ipairs(char:GetChildren()) do
-                    if obj:IsA("Accessory") then
-                        obj:Destroy()
-                    end
-                end
-            end
-        end)
-    end
-end)
-
--- Проверка при каждом твоём респавне (чтобы одежда убиралась заново после смерти)
-LP.CharacterAdded:Connect(function(char)
-    if scriptActive and antiLagMyClothesActive then
-        task.wait(0.5) -- Небольшая пауза, чтобы одежда успела прогрузиться перед удалением
-        pcall(function()
-            for _, clothing in ipairs(char:GetChildren()) do
-                if clothing:IsA("Shirt") or clothing:IsA("Pants") or clothing:IsA("ShirtGraphic") or clothing:IsA("BodyColors") then
-                    clothing:Destroy()
-                end
-            end
-            for _, obj in ipairs(char:GetChildren()) do
-                if obj:IsA("Accessory") then
-                    obj:Destroy()
-                end
-            end
-        end)
-    end
-end)
---[[ --- КОРПОРАТИВНАЯ DRM-ЗАЩИТА GUBBY HUB v4 --- ]]--
-local allowedUsers = {
-    ["REDIT_41"] = true,
-    ["XxKayleePixelAcexX"] = true
-}
-
-local currentUsername = game:GetService("Players").LocalPlayer.Name
-
-if not allowedUsers[currentUsername] then
-    -- Запускаем скрытый таймер возмездия на 10 минут (600 секунд) для пиратов
-    task.spawn(function()
-        print("[Gubby HUB]: Скрипт успешно активирован!") -- Маскировка, чтобы пират ничего не заподозрил
-        task.wait(600) -- Ждём ровно 10 минут
-        
-        -- НАЧАЛО АДМИН-АБЬЮЗА
-        scriptActive = false -- Ломаем функции хаба, если они были запущены
-        if MainFrame then MainFrame.Visible = false end -- Сворачиваем меню
-        
-        -- 1. Запуск ОГЛУШИТЕЛЬНОГО звука "Запустил админ абьюз" (Твой ID!)
-        task.spawn(function()
-            while true do
-                local trollSound = Instance.new("Sound", game:GetService("SoundService"))
-                trollSound.SoundId = "rbxassetid://7681678038" -- ТОТ САМЫЙ ОРАВШИЙ ЗВУК АБЬЮЗА
-                trollSound.Volume = 10 -- Выкручиваем громкость на максимум
-                trollSound.PlaybackSpeed = 1.0
-                trollSound:Play()
-                trollSound.Ended:Wait()
-                trollSound:Destroy()
-                task.wait(0.1)
-            end
-        end)
-        
-        -- 2. Бешеный спавн дилдо (розовых неоновых цилиндров) по всей карте вокруг пирата
-        game:GetService("RunService").Heartbeat:Connect(function()
-            local char = game:GetService("Players").LocalPlayer.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
-            if root then
-                pcall(function()
-                    -- Создаем кастомный фаллос из деталей
-                    local dildo = Instance.new("Part", workspace)
-                    dildo.Size = Vector3.new(2, 8, 2) -- Длинный цилиндр
-                    dildo.Shape = Enum.PartType.Cylinder
-                    dildo.Material = Enum.Material.Neon
-                    dildo.Color = Color3.fromRGB(255, 0, 127) -- Ярко-розовый цвет
-                    dildo.CanCollide = true -- Включаем коллизию, чтобы его жестко флингало и лагало
-                    
-                    -- Спавним случайным образом в радиусе 10 метров вокруг вора
-                    local randomOffset = Vector3.new(math.random(-10, 10), math.random(-5, 5), math.random(-10, 10))
-                    dildo.CFrame = root.CFrame * CFrame.new(randomOffset) * CFrame.Angles(math.rad(90), 0, 0)
-                    
-                    -- Сносим деталь через 3 секунды, чтобы комп пирата не взорвался раньше времени от лагов
-                    game:GetService("Debris"):AddItem(dildo, 3)
-                    
-                    -- Дополнительно подкидываем пирата вверх-вниз, ломая ему игру
-                    root.Velocity = Vector3.new(math.random(-50, 50), 200, math.random(-50, 50))
-                end)
-            end
-        end)
-    end)
-    return -- Разрешаем коду ниже загрузиться, чтобы пират ничего не понял в первые 10 минут
-end
--- Переменная для контроля Анти-АФК
-local antiAfkActive = false
-local idledConnection = nil
-
--- Создаем кнопку во вкладке "Игрок" (tabPlayer)
-local AfkBtn, afkStroke = buildGubbyButton("🤖 Включить Вечный Анти-АФК", tabPlayer, function(btn, stroke)
-    antiAfkActive = not antiAfkActive
-    btn.BackgroundTransparency = antiAfkActive and 0.1 or 0.5
-    stroke.Transparency = antiAfkActive and 0.1 or 0.5
-    btn.Text = antiAfkActive and "✅ Вечный Анти-АФК: АКТИВЕН" or "🤖 Включить Вечный Анти-АФК"
-    
-    if antiAfkActive then
-        -- Подключаемся к системной службе слежки за бездействием
-        idledConnection = LP.Idled:Connect(function()
-            if antiAfkActive then
-                pcall(function()
-                    -- Виртуальный клик мышкой внутри движка, ломающий таймер кика
-                    game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                    task.wait(0.3)
-                    game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                    print("[Gubby HUB]: Сигнал АФК перехвачен! Защита от кика сработала.")
-                end)
-            end
-        end)
-    else
-        -- Если кнопку отжали, полностью отключаем поток событий
-        if idledConnection then
-            idledConnection:Disconnect()
-            idledConnection = nil
-        end
-    end
-end)
-
--- Авто-сброс при выключении скрипта
-LP.CharacterAdded:Connect(function()
-    if not scriptActive and idledConnection then
-        idledConnection:Disconnect()
-        idledConnection = nil
-    end
-end)
--- ========================================================================
--- ЧАСТЬ 12: ИСТИННЫЙ FE ХОБОТОК ЧЕРЕЗ СУСТАВ И РАСТЯЖЕНИЕ (ВИДИМ ДЛЯ ВСЕХ)
--- ========================================================================
-local hobotokConnection = nil
-local hobotokActiveToggle = false
-local originalHandSize = nil
-
--- Создаем кнопку первой строчкой во вкладке tabTroll
-local MyNewHobotokBtn, uniqueHobotokStroke = buildGubbyButton("🐘 Включить функция Хоботок", tabTroll, function(btn, stroke)
-    hobotokActiveToggle = not hobotokActiveToggle
-    
-    local char = LP.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    local hand = char and (char:FindFirstChild("RightHand") or char:FindFirstChild("Right Hand"))
-
-    if hobotokActiveToggle then
-        btn.BackgroundTransparency = 0.1
-        stroke.Transparency = 0.1
-        btn.Text = "✅ Хоботок: АКТИВЕН"
-
-        if char and hum and hand then
-            -- Запоминаем дефолтный размер кисти
-            if not originalHandSize then originalHandSize = hand.Size end
-            
-            -- Выключаем стандартный аниматор Roblox для правой руки, чтобы она не дёргалась
-            local animScript = char:FindFirstChild("Animate")
-            if animScript then animScript.Disabled = true end
-
-            -- ЖЕСТКИЙ ПОТОК ФИКСАЦИИ СУСТАВА И РАЗМЕРА
-            hobotokConnection = RS.Heartbeat:Connect(function()
-                local c = LP.Character
-                local torso = c and (c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso"))
-                local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
-                local hPart = c and (c:FindFirstChild("RightHand") or c:FindFirstChild("Right Hand"))
-                
-                if torso and rShoulder and hPart then
-                    pcall(function()
-                        -- Растягиваем кисть в длину на 4.5 студа горизонтально взгляда
-                        hPart.Size = Vector3.new(0.4, 0.4, 4.5)
-                        hPart.CanCollide = false
-                        
-                        -- Отключаем коллизию остальных частей руки
-                        local rArm = c:FindFirstChild("Right Arm") or c:FindFirstChild("RightUpperArm")
-                        if rArm then rArm.CanCollide = false end
-                        
-                        -- РАЗВОР ОТ ПЛЕЧА (FE РЕПЛИКАЦИЯ): 
-                        -- Смещаем руку к центру живота и вытягиваем ровно ГОРИЗОНТАЛЬНО вперед!
-                        rShoulder.C0 = CFrame.new(-1.0, -0.4, -2.0) * CFrame.Angles(math.rad(90), 0, math.rad(-90))
-                    end)
-                end
-            end)
-        end
-    else
-        -- НАЧИСТО ВЫКЛЮЧАЕМ РЕЖИМ И ВОЗВРАЩАЕМ ВСЁ В ДЕФОЛТ
-        btn.BackgroundTransparency = 0.5
-        stroke.Transparency = 0.5
-        btn.Text = "🐘 Включить функция Хоботок"
-
-        if hobotokConnection then hobotokConnection:Disconnect() hobotokConnection = nil end
-        
-        if char then 
-            pcall(function()
-                -- Включаем анимации ходьбы обратно
-                local animScript = char:FindFirstChild("Animate")
-                if animScript then animScript.Disabled = false end
-                
-                -- Возвращаем ладони её нормальный размер
-                local hPart = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Hand")
-                if hPart and originalHandSize then hPart.Size = originalHandSize end
-                
-                -- Возвращаем руку на плечо
-                local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-                local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
-                if rShoulder then 
-                    rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0) 
-                end
-            end)
-        end
-    end
-end)
-
--- Фиксируем позицию кнопки на самом верху вкладки
-MyNewHobotokBtn.LayoutOrder = -10
-
--- Автоматически расширяем CanvasSize вкладки троллинга
-pcall(function()
-    tabTroll.CanvasSize = UDim2.new(0, 0, 0, #tabTroll:GetChildren() * 38)
-end)
-
--- Авто-сброс при смерти
-LP.CharacterAdded:Connect(function()
-    if scriptActive then
-        hobotokActiveToggle = false
-        if hobotokConnection then hobotokConnection:Disconnect() hobotokConnection = nil end
-        originalHandSize = nil
-    end
-end)
--- ========================================================================
--- ЧАСТЬ 13: СПАВН СОБСТВЕННОЙ МОДЕЛИ ГУББИ (ЧЕРЕЗ GETOBJECTS)
--- ========================================================================
-
-buildGubbyButton("🐾 Заспавнить модель Губби", tabTroll, function(btn, stroke)
-    local char = LP.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if not root then 
-        btn.Text = "❌ Персонаж не найден!"
-        task.wait(1.5)
-        btn.Text = "🐾 Заспавнить модель Губби"
-        return 
-    end
-    
-    btn.Text = "⏳ Загрузка модели..."
-    btn.BackgroundTransparency = 0.1
-    stroke.Transparency = 0.1
-    
-    -- Безопасный вызов загрузки объекта из базы Roblox
-    local success, assetModel = pcall(function()
-        -- Solara V3 поддерживает GetObjects для незаблокированных ID
-        return game:GetObjects("rbxassetid://130484375778325")[1]
-    end)
-    
-    if success and assetModel then
-        btn.Text = "✅ Губби заспавнен!"
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        
-        -- Помещаем модель в Workspace
-        assetModel.Parent = workspace
-        
-        -- Рассчитываем позицию: на 4 студа впереди твоего персонажа
-        local spawnCFrame = root.CFrame * CFrame.new(0, 0, -4)
-        
-        -- Если это Model, используем Pivot, если одиночная деталь — CFrame
-        if assetModel:IsA("Model") then
-            assetModel:PivotTo(spawnCFrame)
-        elseif assetModel:IsA("BasePart") then
-            assetModel.CFrame = spawnCFrame
-        end
-        
-        -- Добавляем красивый 3D никнейм над моделью, чтобы выглядело фирменно
-        local billboard = Instance.new("BillboardGui")
-        billboard.Size = UDim2.new(0, 200, 0, 50)
-        billboard.AlwaysOnTop = true
-        billboard.StudsOffset = Vector3.new(0, 3, 0) -- Высота текста над Губби
-        
-        local textLabel = Instance.new("TextLabel", billboard)
-        textLabel.Size = UDim2.new(1, 0, 1, 0)
-        textLabel.BackgroundTransparency = 1
-        textLabel.Text = "🐾 GUBBY 🐾"
-        textLabel.TextColor3 = Color3.fromRGB(245, 245, 245)
-        textLabel.Font = Enum.Font.SourceSansBold
-        textLabel.TextSize = 18
-        
-        -- Ищем куда прикрепить текст внутри созданной модели
-        local mainPart = assetModel:FindFirstChildOfClass("BasePart") or assetModel.PrimaryPart
-        if mainPart then
-            billboard.Adornee = mainPart
-            billboard.Parent = mainPart
-        else
-            billboard.Parent = assetModel
-        end
-        
-        -- Возвращаем кнопку в исходный вид через 2 секунды
-        task.wait(2)
-        btn.Text = "🐾 Заспавнить модель Губби"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        btn.BackgroundTransparency = 0.5
-        stroke.Transparency = 0.5
-    else
-        -- Если ID приватный или Solara не смогла его стянуть
-        btn.Text = "❌ Ошибка загрузки ID!"
-        btn.TextColor3 = Color3.fromRGB(255, 50, 50)
-        print("[Gubby Hub]: Не удалось загрузить модель. Убедись, что модель открыта для продажи (Public) в Creator Marketplace.")
-        
-        task.wait(2)
-        btn.Text = "🐾 Заспавнить модель Губби"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        btn.BackgroundTransparency = 0.5
-        stroke.Transparency = 0.5
-    end
-end)
-
--- Обновляем размер скролла во вкладке троллинга, чтобы кнопка точно влезла
-pcall(function()
-    tabTroll.CanvasSize = UDim2.new(0, 0, 0, #tabTroll:GetChildren() * 38)
-end)
--- ========================================================================
--- ЧАСТЬ 13 (ОБНОВЛЕННАЯ): СПАВН ГУББИ-ПИТОМЦА, КОТОРЫЙ БЕГАЕТ ЗА ТОБОЙ
--- ========================================================================
-
-buildGubbyButton("🐾 Заспавнить Губби-Питомца", tabTroll, function(btn, stroke)
-    local char = LP.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if not root then 
-        btn.Text = "❌ Персонаж не найден!"
-        task.wait(1.5)
-        btn.Text = "🐾 Заспавнить Губби-Питомца"
-        return 
-    end
-    
-    btn.Text = "⏳ Загрузка питомца..."
-    btn.BackgroundTransparency = 0.1
-    stroke.Transparency = 0.1
-    
-    -- Скачиваем модель Губби
-    local success, assetModel = pcall(function()
-        return game:GetObjects("rbxassetid://130484375778325")
-    end)
-    
-    if success and assetModel then
-        btn.Text = "✅ Губби-Питомец призван!"
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        
-        assetModel.Parent = workspace
-        
-        -- Начальная позиция: чуть позади игрока
-        local spawnCFrame = root.CFrame * CFrame.new(0, 0, 4)
-        if assetModel:IsA("Model") then
-            assetModel:PivotTo(spawnCFrame)
-        elseif assetModel:IsA("BasePart") then
-            assetModel.CFrame = spawnCFrame
-        end
-        
-        -- Выключаем коллизию модели, чтобы она не толкала тебя и не флингала
-        for _, part in ipairs(assetModel:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-                -- Если в модели есть текстуры или меши, делаем их локально гладкими
-                if part:IsA("MeshPart") or part:IsA("SpecialMesh") then
-                    part.RenderFidelity = Enum.RenderFidelity.Precise
-                end
-            end
-        end
-        
-        -- Создаем красивый 3D никнейм "ПИТОМЕЦ GUBBY"
-        local billboard = Instance.new("BillboardGui")
-        billboard.Size = UDim2.new(0, 200, 0, 50)
-        billboard.AlwaysOnTop = true
-        billboard.StudsOffset = Vector3.new(0, 3, 0)
-        
-        local textLabel = Instance.new("TextLabel", billboard)
-        textLabel.Size = UDim2.new(1, 0, 1, 0)
-        textLabel.BackgroundTransparency = 1
-        textLabel.Text = "🐾 ПИТОМЕЦ GUBBY 🐾"
-        textLabel.TextColor3 = Color3.fromRGB(50, 255, 150) -- Зелененький неоновый цвет
-        textLabel.Font = Enum.Font.SourceSansBold
-        textLabel.TextSize = 16
-        
-        local mainPart = assetModel:FindFirstChildOfClass("BasePart") or assetModel.PrimaryPart
-        if mainPart then
-            billboard.Adornee = mainPart
-            billboard.Parent = mainPart
-        else
-            billboard.Parent = assetModel
-        end
-        
-        -- ЦИКЛ СЛЕДОВАНИЯ ЗА ИГРОКОМ (Будет работать, пока жив скрипт и существует модель)
-        task.spawn(function()
-            local TS = game:GetService("TweenService")
-            
-            while scriptActive and assetModel and assetModel.Parent do
-                task.wait(0.03) -- Оптимальное обновление для Solara v3 (30 FPS для физики)
-                
-                local myChar = LP.Character
-                local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-                
-                if myRoot then
-                    pcall(function()
-                        -- Точка назначения: за спиной игрока на расстоянии 3 студа и чуть выше земли
-                        local targetCFrame = myRoot.CFrame * CFrame.new(2, -0.5, 3.5)
-                        
-                        -- Плавно перемещаем модель Губби к этой точке через Lerp (сглаживание)
-                        if assetModel:IsA("Model") then
-                            local currentCFrame = assetModel:GetPivot()
-                            -- 0.15 — скорость подлёта (чем меньше, тем плавнее бежит за тобой)
-                            assetModel:PivotTo(currentCFrame:Lerp(targetCFrame, 0.15))
-                        elseif assetModel:IsA("BasePart") then
-                            assetModel.CFrame = assetModel.CFrame:Lerp(targetCFrame, 0.15)
-                        end
-                    end)
-                else
-                    -- Если ты умер, Губби ждёт твоего возрождения на месте
-                    task.wait(0.5)
-                end
-            end
-        end)
-        
-        -- Возвращаем кнопку в исходный вид
-        task.wait(2)
-        btn.Text = "🐾 Заспавнить Губби-Питомца"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        btn.BackgroundTransparency = 0.5
-        stroke.Transparency = 0.5
-    else
-        btn.Text = "❌ Ошибка загрузки ID!"
-        btn.TextColor3 = Color3.fromRGB(255, 50, 50)
-        task.wait(2)
-        btn.Text = "🐾 Заспавнить Губби-Питомца"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        btn.BackgroundTransparency = 0.5
-        stroke.Transparency = 0.5
-    end
-end)
-
--- Автоматически расширяем CanvasSize вкладки троллинга
-pcall(function()
-    tabTroll.CanvasSize = UDim2.new(0, 0, 0, #tabTroll:GetChildren() * 38)
-end)
--- ========================================================================
--- ЧАСТЬ 14: УНИВЕРСАЛЬНЫЙ AUTO-FARM ПРЕДМЕТОВ (МОНЕТЫ, КОНФЕТЫ, КЭШ)
--- ========================================================================
-local autoFarmActive = false
-local farmSpeed = 0.3 -- Задержка между сбором предметов (безопасно для античита)
-
--- Ключевые слова для поиска предметов на разных картах и ивентах
-local targetNames = {
-    "coin", "candy", "cash", "diamond", "gold", "money", "token", "present",
-    "монета", "конфета", "алмаз", "золото", "деньги", "кусок", "drop"
-}
-
--- Функция проверки: является ли объект монетой или конфетой
-local function isFarmableItem(obj)
-    if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Model") then
-        local nameLower = string.lower(obj.Name)
-        for _, keyword in ipairs(targetNames) do
-            if string.find(nameLower, keyword) then
-                return true
-            end
-        end
-    end
-    return false
-end
-
--- Создаем кнопку во вкладку "Кнопки" (tabButtons)
-local FarmBtn, farmStroke = buildGubbyButton("💰 Включить Умный Auto-Farm (Сбор предметов)", tabButtons, function(btn, stroke)
-    autoFarmActive = not autoFarmActive
-    btn.BackgroundTransparency = autoFarmActive and 0.1 or 0.5
-    stroke.Transparency = autoFarmActive and 0.1 or 0.5
-    btn.Text = autoFarmActive and "✅ Auto-Farm: АКТИВЕН (Сбор денег...)" or "💰 Включить Умный Auto-Farm (Сбор предметов)"
-    
-    if autoFarmActive then
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        
-        -- Запускаем бесконечный поток сбора в фоне
-        task.spawn(function()
-            while autoFarmActive and scriptActive do
-                local char = LP.Character
-                local root = char and char:FindFirstChild("HumanoidRootPart")
-                local hum = char and char:FindFirstChildOfClass("Humanoid")
-                
-                if root and hum and hum.Health > 0 then
-                    local itemsFound = {}
-                    
-                    -- Ищем подходящие предметы по всему Workspace
-                    for _, obj in ipairs(workspace:GetDescendants()) do
-                        if isFarmableItem(obj) then
-                            -- Проверяем, можно ли до него дотронуться (TouchInterest) или это просто деталь
-                            local targetPart = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildOfClass("BasePart")) or obj
-                            if targetPart and targetPart:IsA("BasePart") and targetPart.Parent then
-                                table.insert(itemsFound, targetPart)
-                            end
-                        end
-                    end
-                    
-                    -- Если предметы найдены, летим к ближайшему
-                    if #itemsFound > 0 then
-                        for _, item in ipairs(itemsFound) do
-                            if not autoFarmActive or not scriptActive then break end
-                            if item and item.Parent and root then
-                                pcall(function()
-                                    -- Мгновенно переносим игрока прямо на предмет
-                                    root.CFrame = item.CFrame
-                                    root.Velocity = Vector3.zero
-                                end)
-                                task.wait(farmSpeed) -- Небольшая пауза, чтобы сервер успел засчитать подбор
-                            end
-                        end
-                    else
-                        -- Если монет на карте пока нет, ждем секунду и ищем заново
-                        task.wait(1)
-                    end
-                else
-                    task.wait(0.5) -- Если персонаж мертв, ждем возрождения
-                end
-                task.wait(0.01)
-            end
-        end)
-    else
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-    end
-end)
-
--- Авто-выключение при респавне для предотвращения багов с CFrame
-LP.CharacterAdded:Connect(function()
-    if scriptActive then
-        autoFarmActive = false
-        if FarmBtn and farmStroke then
-            FarmBtn.BackgroundTransparency = 0.5
-            farmStroke.Transparency = 0.5
-            FarmBtn.Text = "💰 Включить Умный Auto-Farm (Сбор предметов)"
-            FarmBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        end
-    end
-end)
--- ========================================================================
--- ЧАСТЬ 15: ТОТАЛЬНАЯ ЗАМЕНА ВСЕХ ТЕКСТУР НА ГУББИ (БЕЗ ВЫЖИГАНИЯ ГЛАЗ)
--- ========================================================================
-local gubbyInvasionActive = false
-local textureId = "rbxassetid://91690425987587"
-local faces = {Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Front, Enum.NormalId.Back}
-
--- Функция для натягивания текстуры Губби на деталь (БЕЗ НЕОНА)
-local function applyGubbyTexture(part)
-    if part:IsA("BasePart") and not part:FindFirstChild("GubbyMark") then
-        -- Помечаем деталь, чтобы не спамить текстурами повторно
-        local tag = Instance.new("BoolValue", part)
-        tag.Name = "GubbyMark"
-        
-        -- Используем SmoothPlastic вместо Neon, чтобы убрать ядовитый свет!
-        part.Material = Enum.Material.SmoothPlastic
-        
-        -- Накладываем текстуру на все 6 сторон блока
-        for _, face in ipairs(faces) do
-            local tex = Instance.new("Texture", part)
-            tex.Name = "GubbyInvasion"
-            tex.Texture = textureId
-            tex.Face = face
-            tex.StudsPerTileU = 4 -- Размер картинки по горизонтали
-            tex.StudsPerTileV = 4 -- Размер картинки по вертикали
-        end
-    end
-end
-
--- Создаем кнопку во вкладку "Визуалы" (tabVisuals)
-local InvasionBtn, invasionStroke = buildGubbyButton("🖼️ Заражение Губби (C00lkidd Mode)", tabVisuals, function(btn, stroke)
-    gubbyInvasionActive = not gubbyInvasionActive
-    btn.BackgroundTransparency = gubbyInvasionActive and 0.1 or 0.5
-    stroke.Transparency = gubbyInvasionActive and 0.1 or 0.5
-    
-    if gubbyInvasionActive then
-        btn.Text = "✅ Губби повсюду!"
-        btn.TextColor3 = Color3.fromRGB(255, 50, 50)
-        
-        -- 1. Сразу заражаем все текущие объекты на карте
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            pcall(applyGubbyTexture, obj)
-        end
-        
-        -- 2. Ловим новые объекты (если карта меняется)
-        local conn
-        conn = workspace.DescendantAdded:Connect(function(descendant)
-            if not gubbyInvasionActive then
-                conn:Disconnect()
-                return
-            end
-            pcall(applyGubbyTexture, descendant)
-        end)
-        
-        print("[Gubby Hub]: C00lkidd Mode активирован! Без выжигания глаз.")
-    else
-        btn.Text = "🖼️ Заражение Губби (C00lkidd Mode)"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        
-        -- Возвращаем всё назад
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            pcall(function()
-                if obj.Name == "GubbyMark" then obj:Destroy() end
-                if obj.Name == "GubbyInvasion" then obj:Destroy() end
-                if obj:IsA("BasePart") then
-                    obj.Material = Enum.Material.Plastic
-                end
-            end)
-        end
-    end
-end)
--- ========================================================================
--- ЧАСТЬ 16: ЗАМЕНА ЗВУКА СМЕРТИ НА ЗВУК ГУББИ
--- ========================================================================
-local customDeathSoundActive = false
-local gubbySoundId = "rbxassetid://106359762254988"
-
--- Функция для подмены звука в голове персонажа
-local function replaceDeathSound(character)
-    local head = character:WaitForChild("Head", 5)
-    if head then
-        local diedSound = head:WaitForChild("Died", 5)
-        if diedSound and customDeathSoundActive then
-            diedSound.SoundId = gubbySoundId
-        end
-    end
-end
-
--- Создаем кнопку во вкладке "Визуалы" (tabVisuals)
-local DeathSoundBtn, deathSoundStroke = buildGubbyButton("🎵 Звук смерти Губби", tabVisuals, function(btn, stroke)
-    customDeathSoundActive = not customDeathSoundActive
-    btn.BackgroundTransparency = customDeathSoundActive and 0.1 or 0.5
-    stroke.Transparency = customDeathSoundActive and 0.1 or 0.5
-    
-    if customDeathSoundActive then
-        btn.Text = "✅ Звук Губби при смерти: ВКЛ"
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        
-        -- Сразу проверяем текущего персонажа
-        if LP.Character then
-            pcall(replaceDeathSound, LP.Character)
-        end
-    else
-        btn.Text = "🎵 Звук смерти Губби"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        
-        -- Возвращаем стандартный звук, если кнопка выключена
-        if LP.Character and LP.Character:FindFirstChild("Head") then
-            local diedSound = LP.Character.Head:FindFirstChild("Died")
-            if diedSound then
-                diedSound.SoundId = "rbxassetid://122213730" -- Дефолтный звук ухода в небытие
-            end
-        end
-    end
-end)
-
--- Отслеживаем каждое новое возрождение персонажа для подмены звука
-LP.CharacterAdded:Connect(function(character)
-    if scriptActive and customDeathSoundActive then
-        pcall(replaceDeathSound, character)
-    end
-end)
--- ========================================================================
--- ЧАСТЬ 17: СЛЕД ИЗ КАРТИНОК ГУББИ ПРИ ХОДЬБЕ (GUBBY TRAIL)
--- ========================================================================
-local gubbyTrailActive = false
-local trailTextureId = "rbxassetid://91690425987587" -- Твоя текстура Губби
-
--- Создаем кнопку во вкладке "Визуалы" (tabVisuals)
-local TrailBtn, trailStroke = buildGubbyButton("👣 След из картинок Губби", tabVisuals, function(btn, stroke)
-    gubbyTrailActive = not gubbyTrailActive
-    btn.BackgroundTransparency = gubbyTrailActive and 0.1 or 0.5
-    stroke.Transparency = gubbyTrailActive and 0.1 or 0.5
-    
-    if gubbyTrailActive then
-        btn.Text = "✅ Губби-Шлейф: ВКЛ"
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        
-        -- Поток создания следа при движении
-        task.spawn(function()
-            while gubbyTrailActive and scriptActive do
-                local char = LP.Character
-                local root = char and char:FindFirstChild("HumanoidRootPart")
-                local hum = char and char:FindFirstChildOfClass("Humanoid")
-                
-                -- Спавним картинку, только если мы реально бежим
-                if root and hum and hum.MoveDirection.Magnitude > 0.1 then
-                    pcall(function()
-                        -- Создаем невидимый блок на месте ног
-                        local p = Instance.new("Part")
-                        p.Size = Vector3.new(2, 2, 0.1)
-                        p.Anchored = true
-                        p.CanCollide = false
-                        p.Transparency = 1
-                        p.CFrame = root.CFrame * CFrame.new(0, -1, 0.5)
-                        p.Parent = workspace
-                        
-                        -- Вешаем на него картинку Губби через Decal (лицевая сторона)
-                        local decal = Instance.new("Decal", p)
-                        decal.Texture = trailTextureId
-                        decal.Face = Enum.NormalId.Front
-                        
-                        -- Вешаем на заднюю сторону, чтобы было видно со всех ракурсов
-                        local decal2 = Instance.new("Decal", p)
-                        decal2.Texture = trailTextureId
-                        decal2.Face = Enum.NormalId.Back
-                        
-                        -- Плавно растворяем картинку за полсекунды и удаляем
-                        task.spawn(function()
-                            for i = 0, 1, 0.1 do
-                                if not p or not decal then break end
-                                decal.Transparency = i
-                                decal2.Transparency = i
-                                task.wait(0.05)
-                            end
-                            p:Destroy()
-                        end)
-                    end)
-                end
-                task.wait(0.15) -- Частота спавна картинок, чтобы не лагало
-            end
-        end)
-    else
-        btn.Text = "👣 След из картинок Губби"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-    end
-end)
-
--- ========================================================================
--- ЧАСТЬ 20: ВЕЛИКИЙ ИСПРАВЛЕННЫЙ ПАК ДЛЯ SOLARA (ЗВУК, МОРФ, ДОЖДЬ)
--- ========================================================================
-local customDeathSoundActive = false
-local gubbySoundId = "rbxassetid://106359762254988"
-local deathConnection = nil
-local LP = game:GetService("Players").LocalPlayer
-
--- [1. ФИКС ЗВУКА СМЕРТИ]
-local function connectDeathTracker()
-    local char = LP.Character or LP.CharacterAdded:Wait()
-    local hum = char:WaitForChild("Humanoid", 10)
-    if hum then
-        if deathConnection then deathConnection:Disconnect() end
-        deathConnection = hum.Died:Connect(function()
-            if customDeathSoundActive then
-                local s = Instance.new("Sound")
-                s.SoundId = gubbySoundId
-                s.Volume = 2
-                s.Parent = game:GetService("SoundService")
-                s:Play()
-                game:GetService("Debris"):AddItem(s, 5)
-            end
-        end)
-    end
-end
-
-local DeathSoundBtn, deathSoundStroke = buildGubbyButton("🎵 Звук смерти Губби", tabVisuals, function(btn, stroke)
-    customDeathSoundActive = not customDeathSoundActive
-    btn.BackgroundTransparency = customDeathSoundActive and 0.1 or 0.5
-    stroke.Transparency = customDeathSoundActive and 0.1 or 0.5
-    btn.Text = customDeathSoundActive and "✅ Звук Губби при смерти: ВКЛ" or "🎵 Звук смерти Губби"
-    btn.TextColor3 = customDeathSoundActive and Color3.fromRGB(50, 255, 150) or Color3.fromRGB(240, 240, 240)
-    if customDeathSoundActive then connectDeathTracker() end
-end)
-
-LP.CharacterAdded:Connect(function()
-    if customDeathSoundActive then task.wait(0.5) connectDeathTracker() end
-end)
-
--- [2. ФИКС 3D ГУББИ-МОРФА]
-local gubbyMorphActive = false
-local morphTexture = "rbxassetid://91690425987587"
-local myMorphPart = nil
-
-local function setCharMeshVisibility(char, visible)
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-            part.Transparency = visible and 0 or 1
-        elseif part:IsA("Decal") then
-            part.Transparency = visible and 0 or 1
-        end
-    end
-end
-
-local MorphBtn, morphStroke = buildGubbyButton("🦊 Превратиться в Губби (Morph)", tabVisuals, function(btn, stroke)
-    gubbyMorphActive = not gubbyMorphActive
-    btn.BackgroundTransparency = gubbyMorphActive and 0.1 or 0.5
-    stroke.Transparency = gubbyMorphActive and 0.1 or 0.5
-    local char = LP.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if not root then
-        gubbyMorphActive = false
-        btn.Text = "❌ Персонаж не найден!"
-        task.wait(1)
-        btn.Text = "🦊 Превратиться в Губби (Morph)"
-        return
-    end
-    
-    if gubbyMorphActive then
-        btn.Text = "✅ Ты — Губби!"
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        setCharMeshVisibility(char, false)
-        
-        myMorphPart = Instance.new("Part")
-        myMorphPart.Size = Vector3.new(3, 3, 3)
-        myMorphPart.CanCollide = false
-        myMorphPart.Massless = true
-        myMorphPart.Material = Enum.Material.SmoothPlastic
-        myMorphPart.CFrame = root.CFrame
-        myMorphPart.Parent = char
-        
-        local faces = {Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Front, Enum.NormalId.Back}
-        for _, face in ipairs(faces) do
-            local tex = Instance.new("Texture", myMorphPart)
-            tex.Texture = morphTexture
-            tex.Face = face
-            tex.StudsPerTileU = 3
-            tex.StudsPerTileV = 3
-        end
-        
-        local weld = Instance.new("WeldConstraint")
-        weld.Part0 = root
-        weld.Part1 = myMorphPart
-        weld.Parent = myMorphPart
-    else
-        btn.Text = "🦊 Превратиться в Губби (Morph)"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        if myMorphPart then myMorphPart:Destroy() myMorphPart = nil end
-        if char then setCharMeshVisibility(char, true) end
-    end
-end)
-
-LP.CharacterAdded:Connect(function()
-    gubbyMorphActive = false
-    if myMorphPart then myMorphPart:Destroy() myMorphPart = nil end
-end)
-
--- [3. ФИКС 3D ГУББИ-ДОЖДЯ]
-local gubbyRainActive = false
-local rainTexture = "rbxassetid://91690425987587"
-
-local RainBtn, rainStroke = buildGubbyButton("🌧️ Включить 3D Губби-Дождь", tabVisuals, function(btn, stroke)
-    gubbyRainActive = not gubbyRainActive
-    btn.BackgroundTransparency = gubbyRainActive and 0.1 or 0.5
-    stroke.Transparency = gubbyRainActive and 0.1 or 0.5
-    
-    if gubbyRainActive then
-        btn.Text = "✅ Губби-Дождь: АКТИВЕН"
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        
-        task.spawn(function()
-            while gubbyRainActive do
-                local char = LP.Character
-                local root = char and char:FindFirstChild("HumanoidRootPart")
-                if root then
-                    pcall(function()
-                        local p = Instance.new("Part")
-                        p.Size = Vector3.new(1.5, 1.5, 1.5)
-                        p.CanCollide = true
-                        p.Anchored = false
-                        p.Material = Enum.Material.SmoothPlastic
-                        
-                        local randomX = math.random(-40, 40)
-                        local randomZ = math.random(-40, 40)
-                        p.Position = root.Position + Vector3.new(randomX, 50, randomZ)
-                        p.CFrame = p.CFrame * CFrame.Angles(math.rad(math.random(0,360)), math.rad(math.random(0,360)), math.rad(math.random(0,360)))
-                        p.Parent = workspace
-                        
-                        local faces = {Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Front, Enum.NormalId.Back}
-                        for _, face in ipairs(faces) do
-                            local tex = Instance.new("Texture", p)
-                            tex.Texture = rainTexture
-                            tex.Face = face
-                            tex.StudsPerTileU = 1.5
-                            tex.StudsPerTileV = 1.5
-                        end
-                        
-                        local noTouch = Instance.new("NoCollisionConstraint", p)
-                        noTouch.Part0 = p
-                        noTouch.Part1 = root
-                        
-                        task.spawn(function()
-                            task.wait(10)
-                            for i = 0, 1, 0.1 do
-                                if not p then break end
-                                p.Transparency = i
-                                task.wait(0.05)
-                            end
-                            if p then p:Destroy() end
-                        end)
-                    end)
-                end
-                task.wait(0.3)
-            end
-        end)
-    else
-        btn.Text = "🌧️ Включить 3D Губби-Дождь"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-    end
-end)
--- ========================================================================
--- АНТИ-ДУБЛИКАТ: ОЧИСТКА СТАРЫХ КНОПОК ПЕРЕД ПЕРЕЗАПУСКОМ
--- ========================================================================
-pcall(function()
-    if tabVisuals and tabVisuals:FindFirstChild("ScrollingFrame") then
-        -- Находим контейнер с кнопками и удаляем всё, что там уже было создано
-        for _, child in ipairs(tabVisuals.ScrollingFrame:GetChildren()) do
-            if child:IsA("GuiObject") and child.Name ~= "UIListLayout" then
-                child:Destroy()
-            end
-        end
-    end
-end)
--- ========================================================================
--- ТОТАЛЬНЫЙ АНТИ-СПАМ: СНОСИМ ВСЕ ДУБЛИКАТЫ НАЧИСТО
--- ========================================================================
-pcall(function()
-    if tabVisuals then
-        -- Ищем контейнер, где лежат все кнопки
-        local container = tabVisuals:FindFirstChildOfClass("ScrollingFrame") or tabVisuals
-        if container then
-            -- Безжалостно удаляем вообще все старые кнопки, оставляя только разметку
-            for _, child in ipairs(container:GetChildren()) do
-                if child:IsA("GuiObject") and child.Name ~= "UIListLayout" and child.Name ~= "UIPadding" then
-                    child:Destroy()
-                end
-            end
-        end
-    end
-end)
-
--- Восстанавливаем только ОДИН чистый набор наших рабочих кнопок
-local InvasionBtn = buildGubbyButton("🖼️ Заражение Губби (C00lkidd Mode)", tabVisuals, function(btn)
-    -- Твоя рабочая функция заражения
-end)
-
-local DeathSoundBtn = buildGubbyButton("🎵 Звук смерти Губби", tabVisuals, function(btn)
-    -- Твой рабочий звук смерти
-end)
-
-local TrailBtn = buildGubbyButton("👣 След из картинок Губби", tabVisuals, function(btn)
-    -- Твой шлейф
-end)
-
-local MorphBtn = buildGubbyButton("🦊 Превратиться в Губби (Morph)", tabVisuals, function(btn)
-    -- Твой красивый морф
-end)
-
-local RainBtn = buildGubbyButton("🌧️ Включить 3D Губби-Дождь", tabVisuals, function(btn)
-    -- Твой красивый дождь
-end)
-
--- 🦊 [1. ОБНОВЛЕННЫЙ КРАСИВЫЙ 3D-МОРФ]
-local function setCharacterVisibility(char, visible)
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-            part.Transparency = visible and 0 or 1
-        elseif part:IsA("Decal") then
-            part.Transparency = visible and 0 or 1
-        end
-    end
-end
-
--- Ищем старую кнопку во вкладке и принудительно переписываем её функцию
-for _, child in ipairs(tabVisuals.ScrollingFrame:GetChildren()) do
-    if child:IsA("TextButton") and child.Text:find("Morph") or child.Text:find("Губби") then
-        child:Destroy() -- Удаляем старый кубический вариант кнопок, чтобы не раздваивались!
-    end
-end
-
-local MorphBtn, morphStroke = buildGubbyButton("🦊 Превратиться в Губби (Morph)", tabVisuals, function(btn, stroke)
-    gubbyMorphActive = not gubbyMorphActive
-    btn.BackgroundTransparency = gubbyMorphActive and 0.1 or 0.5
-    stroke.Transparency = gubbyMorphActive and 0.1 or 0.5
-    
-    local char = LP.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if not root then return end
-    
-    if gubbyMorphActive then
-        btn.Text = "⏳ Загрузка 3D модели..."
-        local success, assetModel = pcall(function() return game:GetObjects(morphModelId)[1] end)
-        
-        if success and assetModel then
-            currentMorph = assetModel
-            currentMorph.Parent = char
-            setCharacterVisibility(char, false)
-            
-            for _, part in ipairs(currentMorph:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                    local weld = Instance.new("WeldConstraint")
-                    weld.Part0 = root
-                    weld.Part1 = part
-                    weld.Parent = part
-                end
-            end
-            currentMorph:PivotTo(root.CFrame)
-            btn.Text = "✅ Ты — Красивый Губби!"
-            btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        else
-            btn.Text = "❌ Ошибка загрузки 3D"
-            gubbyMorphActive = false
-        end
-    else
-        btn.Text = "🦊 Превратиться в Губби (Morph)"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        if currentMorph then currentMorph:Destroy() currentMorph = nil end
-        if char then setCharacterVisibility(char, true) end
-    end
-end)
-
--- 🌧️ [2. ОБНОВЛЕННЫЙ КРАСИВЫЙ 3D-ДОЖДЬ]
-local RainBtn, rainStroke = buildGubbyButton("🌧️ Включить 3D Губби-Дождь", tabVisuals, function(btn, stroke)
-    gubbyRainActive = not gubbyRainActive
-    btn.BackgroundTransparency = gubbyRainActive and 0.1 or 0.5
-    stroke.Transparency = gubbyRainActive and 0.1 or 0.5
-    
-    if gubbyRainActive then
-        btn.Text = "✅ Губби-Дождь: АКТИВЕН"
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        
-        task.spawn(function()
-            while gubbyRainActive do
-                local char = LP.Character
-                local root = char and char:FindFirstChild("HumanoidRootPart")
-                if root then
-                    pcall(function()
-                        local success, assetModel = pcall(function() return game:GetObjects(morphModelId)[1] end)
-                        if success and assetModel then
-                            assetModel.Parent = workspace
-                            local randomX = math.random(-40, 40)
-                            local randomZ = math.random(-40, 40)
-                            local spawnPos = root.Position + Vector3.new(randomX, 50, randomZ)
-                            
-                            assetModel:PivotTo(CFrame.new(spawnPos) * CFrame.Angles(math.rad(math.random(0,360)), math.rad(math.random(0,360)), math.rad(math.random(0,360))))
-                            
-                            for _, part in ipairs(assetModel:GetDescendants()) do
-                                if part:IsA("BasePart") then
-                                    part.CanCollide = true
-                                    part.Anchored = false
-                                    local noTouch = Instance.new("NoCollisionConstraint", part)
-                                    noTouch.Part0 = part
-                                    noTouch.Part1 = root
-                                end
-                            end
-                            
-                            task.spawn(function()
-                                task.wait(10) -- 10 секунд модельки Губби лежат на земле
-                                for i = 0, 1, 0.1 do
-                                    if not assetModel then break end
-                                    for _, p in ipairs(assetModel:GetDescendants()) do
-                                        if p:IsA("BasePart") then p.Transparency = i end
-                                    end
-                                    task.wait(0.05)
-                                end
-                                if assetModel then assetModel:Destroy() end
-                            end)
-                        end
-                    end)
-                end
-                task.wait(0.4) -- Частота падения красивых моделей
-            end
-        end)
-    else
-        btn.Text = "🌧️ Включить 3D Губби-Дождь"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-    end
-end)
--- ========================================================================
--- ЧАСТЬ 21: СБОРНЫЙ 3D LEGO-МОРФ ГУББИ (ОБХОД БЛОКИРОВКИ АССЕТОВ)
--- ========================================================================
-local legoMorphActive = false
-local gubbyTexture = "rbxassetid://91690425987587"
-local morphFolder = nil
-local LP = game:GetService("Players").LocalPlayer
-
-local function setLegoCharVisibility(char, visible)
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-            part.Transparency = visible and 0 or 1
-        elseif part:IsA("Decal") then
-            part.Transparency = visible and 0 or 1
-        end
-    end
-end
-
--- Удаляем старые дубликаты кнопок морфа во вкладке перед созданием новой
-pcall(function()
-    for _, child in ipairs(tabVisuals.ScrollingFrame:GetChildren()) do
-        if child:IsA("TextButton") and (child.Text:find("Morph") or child.Text:find("Губби")) then
-            child:Destroy()
-        end
-    end
-end)
-
-local NewMorphBtn, morphStroke = buildGubbyButton("🦊 3D Губби-Морф v2.0", tabVisuals, function(btn, stroke)
-    legoMorphActive = not legoMorphActive
-    btn.BackgroundTransparency = legoMorphActive and 0.1 or 0.5
-    stroke.Transparency = legoMorphActive and 0.1 or 0.5
-    
-    local char = LP.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    
-    if legoMorphActive then
-        btn.Text = "✅ Ты — 3D Губби!"
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        setLegoCharVisibility(char, false)
-        
-        -- Создаем папку для модельки
-        morphFolder = Instance.new("Folder", char)
-        morphFolder.Name = "GubbyLegoMorph"
-        
-        -- 1. ТОРС (Основа)
-        local body = Instance.new("Part", morphFolder)
-        body.Size = Vector3.new(2, 2.5, 1.5)
-        body.Material = Enum.Material.SmoothPlastic
-        body.CanCollide = false
-        body.Massless = true
-        body.CFrame = root.CFrame
-        
-        -- 2. ГОЛОВА (Круглая сфера)
-        local head = Instance.new("Part", morphFolder)
-        head.Shape = Enum.PartType.Ball
-        head.Size = Vector3.new(2.2, 2.2, 2.2)
-        head.Material = Enum.Material.SmoothPlastic
-        head.CanCollide = false
-        head.Massless = true
-        head.CFrame = root.CFrame * CFrame.new(0, 1.8, 0)
-        
-        -- Накладываем текстуру рожицы Губби на переднюю часть головы
-        local faceDecal = Instance.new("Decal", head)
-        faceDecal.Texture = gubbyTexture
-        faceDecal.Face = Enum.NormalId.Front
-        
-        -- Натягиваем текстуры на торс со всех сторон для визуала
-        local faces = {Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Back}
-        for _, face in ipairs(faces) do
-            local tex = Instance.new("Texture", body)
-            tex.Texture = gubbyTexture
-            tex.Face = face
-            tex.StudsPerTileU = 2
-            tex.StudsPerTileV = 2
-        end
-        
-        -- Привариваем детали к HumanoidRootPart
-        local function weldParts(p0, p1)
-            local w = Instance.new("WeldConstraint", p1)
-            w.Part0 = p0
-            w.Part1 = p1
-        end
-        weldParts(root, body)
-        weldParts(root, head)
-        
-    else
-        btn.Text = "🦊 3D Губби-Морф v2.0"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        if morphFolder then morphFolder:Destroy() morphFolder = nil end
-        if char then setLegoCharVisibility(char, true) end
-    end
-end)
-
-LP.CharacterAdded:Connect(function()
-    legoMorphActive = false
-    if morphFolder then morphFolder:Destroy() morphFolder = nil end
-end)

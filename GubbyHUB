@@ -584,45 +584,75 @@ task.spawn(function()
     end
 end)
 
---[[ --- ЧАСТЬ 6 ИЗ 8 --- ]]--
-local tabTeleport = CreateTab("Телепорт")
-
-tabTeleport:CreateToggle("Click TP (Ctrl + Клик мыши)", Config.ClickTp.Enabled, function(state)
-    Config.ClickTp.Enabled = state
+--[[ --- ЧАСТЬ 6 ИЗ 9 --- ]]--
+tabVisuals:CreateToggle("KFC Мод (Замена текстур)", Config.GubbyKFC.Enabled, function(state)
+    Config.GubbyKFC.Enabled = state
+    if state then
+        for _, obj in pairs(W:GetDescendants()) do
+            if obj:IsA("Texture") or obj:IsA("Decal") then
+                obj.Texture = "rbxassetid://10850843651"
+            elseif obj:IsA("MeshPart") then
+                obj.TextureID = "rbxassetid://10850843651"
+            end
+        end
+    end
 end)
 
-local selectedTpPlayer = ""
-tabTeleport:CreateTextBox("Ник игрока для ТП", "Введите имя игрока", function(text)
-    selectedTpPlayer = text
+local morphModelId = "14300481283"
+tabVisuals:CreateTextBox("ID Морфа (для 3D)", "Введите ID объекта", function(text)
+    if text and text ~= "" then morphModelId = text end
 end)
 
-tabTeleport:CreateButton("Телепортироваться к игроку", function()
-    if selectedTpPlayer ~= "" then
-        for _, p in pairs(P:GetPlayers()) do
-            if p ~= LP and (p.Name:lower():find(selectedTpPlayer:lower()) or p.DisplayName:lower():find(selectedTpPlayer:lower())) then
-                local targetChar = p.Character
-                local myChar = LP.Character
-                if targetChar and targetChar:FindFirstChild("HumanoidRootPart") and myChar and myChar:FindFirstChild("HumanoidRootPart") then
-                    myChar.HumanoidRootPart.CFrame = targetChar.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
-                    print("[Teleport]: Успешно телепортирован к " .. p.Name)
-                    break
+tabVisuals:CreateButton("3D-Морф (Локально)", function()
+    local char = LP.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        pcall(function()
+            local obj = game:GetObjects("rbxassetid://" .. morphModelId)
+            if obj and #obj > 0 then
+                local model = obj
+                model.Parent = char
+                if model:IsA("Model") then
+                    model:SetPrimaryPartCFrame(char.HumanoidRootPart.CFrame)
+                elseif model:IsA("BasePart") then
+                    model.CFrame = char.HumanoidRootPart.CFrame
                 end
             end
-        end
+        end)
     end
 end)
 
-UIS.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if Config.ClickTp.Enabled and input.UserInputType == Enum.UserInputType.MouseButton1 and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
-        local mouse = LP:GetMouse()
-        local myChar = LP.Character
-        if mouse and myChar and myChar:FindFirstChild("HumanoidRootPart") then
-            if mouse.Target then
-                myChar.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+tabVisuals:CreateButton("3D-Дождь (Вокруг вас)", function()
+    task.spawn(function()
+        for i = 1, 30 do
+            if not scriptActive then break end
+            local p = Instance.new("Part", W)
+            p.Size = Vector3.new(2, 2, 2)
+            p.Color = Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255))
+            local char = LP.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                p.Position = char.HumanoidRootPart.Position + Vector3.new(math.random(-20, 20), 30, math.random(-20, 20))
             end
+            p.CanCollide = false
+            game:GetService("Debris"):AddItem(p, 5)
+            task.wait(0.1)
         end
-    end
+    end)
+end)
+
+tabVisuals:CreateButton("Эффект Заражения (Экран)", function()
+    local cc = Instance.new("ColorCorrectionEffect", L)
+    cc.TintColor = Color3.fromRGB(0, 255, 100)
+    cc.Saturation = 2
+    game:GetService("Debris"):AddItem(cc, 4)
+end)
+
+tabVisuals:CreateButton("Звук Смерти (Скример)", function()
+    local s = Instance.new("Sound", W)
+    s.SoundId = "rbxassetid://9069609268"
+    s.Volume = 5
+    s.PlayOnRemove = true
+    s.Parent = nil
+    s:Destroy()
 end)
 
 --[[ --- ЧАСТЬ 7 ИЗ 8 --- ]]--

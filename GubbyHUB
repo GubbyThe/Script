@@ -654,7 +654,6 @@ tabVisuals:CreateButton("Звук Смерти (Скример)", function()
     s.Parent = nil
     s:Destroy()
 end)
-
 --[[ --- ЧАСТЬ 7 ИЗ 8 --- ]]--
 local tabTroll = CreateTab("Троллинг")
 
@@ -677,7 +676,17 @@ tabTroll:CreateButton("Очистить список целей", function()
     print("[Troll]: Список целей успешно очищен.")
 end)
 
+м     if moveDir.Magnitude == 0 then root.Velocity = Vector3.new(0,0,0) end
+            end
+        else
+            if W.Gravity == 0 then W.Gravity = Config.PlayerMods.Gravity end
+        end
+        task.wait()
+    end
+end)
 
+print("[Gubby Hub]: Скрипт полностью собран и успешно загружен!")
+--[[ --- ЧАСТЬ 8 ИЗ 8 --- ]]--
 local tabSettings = CreateTab("Настройки")
 
 tabSettings:CreateButton("Кнопка открытия UI: " .. Config.GubbyUIBind.Key.Name, function()
@@ -738,70 +747,6 @@ UIS.InputBegan:Connect(function(input, gpe)
         end
     end
 end)
---[[ --- ЧАСТЬ 8 ИЗ 8 --- ]]--
-local function createEspElements(player)
-    if player == LP then return end
-    
-    local Box = Instance.new("BoxHandleAdornment")
-    Box.Name = "GubbyBox"
-    Box.AlwaysOnTop = true
-    Box.ZIndex = 5
-    Box.Adornee = nil
-    Box.Color3 = Color3.fromRGB(255, 0, 100)
-    Box.Transparency = 0.5
-    Box.Size = Vector3.new(4, 5.5, 1.5)
-    Box.Parent = ScreenGui
-
-    local Line = Instance.new("LineHandleAdornment")
-    Line.Name = "GubbyTracer"
-    Line.AlwaysOnTop = true
-    Line.ZIndex = 4
-    Line.Adornee = nil
-    Line.Color3 = Color3.fromRGB(0, 180, 255)
-    Line.Thickness = 2
-    Line.Parent = ScreenGui
-
-    local function updateVisuals()
-        if not scriptActive then
-            Box:Destroy()
-            Line:Destroy()
-            return
-        end
-
-        local char = player.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        local myChar = LP.Character
-        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-
-        if root and myRoot and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChildOfClass("Humanoid").Health > 0 then
-            if Config.GubbyESP.Enabled then
-                Box.Adornee = root
-            else
-                Box.Adornee = nil
-            end
-
-            if Config.GubbyTracers.Enabled then
-                Line.Adornee = root
-                Line.Length = (myRoot.Position - root.Position).Magnitude
-                Line.CFrame = CFrame.lookAt(myRoot.Position, root.Position)
-            else
-                Line.Adornee = nil
-            end
-        else
-            Box.Adornee = nil
-            Line.Adornee = nil
-        end
-    end
-
-    local conn = RS.RenderStepped:Connect(updateVisuals)
-    player.CharacterRemoving:Connect(function()
-        Box.Adornee = nil
-        Line.Adornee = nil
-    end)
-end
-
-for _, p in pairs(P:GetPlayers()) do createEspElements(p) end
-P.PlayerAdded:Connect(createEspElements)
 
 task.spawn(function()
     while scriptActive do

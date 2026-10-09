@@ -1909,196 +1909,7 @@ local TrailBtn, trailStroke = buildGubbyButton("👣 След из картин�
         btn.TextColor3 = Color3.fromRGB(240, 240, 240)
     end
 end)
--- ========================================================================
--- ЧАСТЬ 18: 3D GUBBY MORPH (ПРЕВРАЩЕНИЕ ПЕРСОНАЖА В МОДЕЛЕК ГУББИ)
--- ========================================================================
-local gubbyMorphActive = false
-local morphModelId = "rbxassetid://130484375778325"
-local currentMorph = nil
 
--- Функция для скрытия/показа стандартного тела игрока
-local function setCharacterVisibility(char, visible)
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-            part.Transparency = visible and 0 or 1
-        elseif part:IsA("Decal") then
-            part.Transparency = visible and 0 or 1
-        end
-    end
-end
-
--- Создаем кнопку во вкладку "Визуалы" (tabVisuals)
-local MorphBtn, morphStroke = buildGubbyButton("🦊 Превратиться в Губби (Morph)", tabVisuals, function(btn, stroke)
-    gubbyMorphActive = not gubbyMorphActive
-    btn.BackgroundTransparency = gubbyMorphActive and 0.1 or 0.5
-    stroke.Transparency = gubbyMorphActive and 0.1 or 0.5
-    
-    local char = LP.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if not root then
-        btn.Text = "❌ Персонаж не найден!"
-        gubbyMorphActive = false
-        task.wait(1)
-        btn.Text = "🦊 Превратиться в Губби (Morph)"
-        return
-    end
-    
-    if gubbyMorphActive then
-        btn.Text = "⏳ Загрузка морфа..."
-        
-        -- Скачиваем модель Губби
-        local success, assetModel = pcall(function()
-            return game:GetObjects(morphModelId)
-        end)
-        
-        if success and assetModel and assetModel[1] then
-            currentMorph = assetModel[1]
-            currentMorph.Parent = char
-            
-            -- Скрываем твой стандартный скин
-            setCharacterVisibility(char, false)
-            
-            -- Настраиваем физику модели Губби, чтобы она не толкала тебя
-            for _, part in ipairs(currentMorph:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                    -- Привариваем детали морфа к твоему HumanoidRootPart
-                    local weld = Instance.new("WeldConstraint")
-                    weld.Part0 = root
-                    weld.Part1 = part
-                    weld.Parent = part
-                end
-            end
-            
-            -- Позиционируем морф ровно по центру твоего игрока
-            if currentMorph:IsA("Model") then
-                currentMorph:PivotTo(root.CFrame)
-            elseif currentMorph:IsA("BasePart") then
-                currentMorph.CFrame = root.CFrame
-            end
-            
-            btn.Text = "✅ Ты — Губби!"
-            btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        else
-            btn.Text = "❌ Ошибка загрузки модели"
-            btn.TextColor3 = Color3.fromRGB(255, 50, 50)
-            gubbyMorphActive = false
-            task.wait(1.5)
-            btn.Text = "🦊 Превратиться в Губби (Morph)"
-            btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        end
-    else
-        btn.Text = "🦊 Превратиться в Губби (Morph)"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        
-        -- Возвращаем скин игрока назад и удаляем морф
-        if currentMorph then
-            currentMorph:Destroy()
-            currentMorph = nil
-        end
-        if char then
-            setCharacterVisibility(char, true)
-        end
-    end
-end)
-
--- Авто-сброс морфа при респавне, чтобы ничего не забагалось
-LP.CharacterAdded:Connect(function(char)
-    if scriptActive then
-        gubbyMorphActive = false
-        currentMorph = nil
-        if MorphBtn and morphStroke then
-            MorphBtn.BackgroundTransparency = 0.5
-            morphStroke.Transparency = 0.5
-            MorphBtn.Text = "🦊 Превратиться в Губби (Morph)"
-            MorphBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
-        end
-    end
-end)
--- ========================================================================
--- ЧАСТЬ 19: РЕАЛИСТИЧНЫЙ 3D ГУББИ-ДОЖДЬ С ФИЗИКОЙ (GUBBY RAIN)
--- ========================================================================
-local gubbyRainActive = false
-local rainModelId = "rbxassetid://130484375778325"
-
--- Создаем кнопку во вкладке "Визуалы" (tabVisuals)
-local RainBtn, rainStroke = buildGubbyButton("🌧️ Включить 3D Губби-Дождь", tabVisuals, function(btn, stroke)
-    gubbyRainActive = not gubbyRainActive
-    btn.BackgroundTransparency = gubbyRainActive and 0.1 or 0.5
-    stroke.Transparency = gubbyRainActive and 0.1 or 0.5
-    
-    if gubbyRainActive then
-        btn.Text = "✅ Губби-Дождь: АКТИВЕН"
-        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
-        
-        -- Поток генерации падающих моделей
-        task.spawn(function()
-            while gubbyRainActive and scriptActive do
-                local char = LP.Character
-                local root = char and char:FindFirstChild("HumanoidRootPart")
-                
-                if root then
-                    pcall(function()
-                        -- Скачиваем копию модели Губби
-                        local success, assetModel = pcall(function()
-                            return game:GetObjects(rainModelId)
-                        end)
-                        
-                        if success and assetModel then
-                            assetModel.Parent = workspace
-                            
-                            -- Генерируем случайные координаты вокруг игрока в радиусе 40 студов
-                            local randomX = math.random(-40, 40)
-                            local randomZ = math.random(-40, 40)
-                            -- Спавним высоко в небе (на 50 студов выше игрока)
-                            local spawnPos = root.Position + Vector3.new(randomX, 50, randomZ)
-                            
-                            if assetModel:IsA("Model") then
-                                assetModel:PivotTo(CFrame.new(spawnPos) * CFrame.Angles(math.rad(math.random(0,360)), math.rad(math.random(0,360)), math.rad(math.random(0,360))))
-                            elseif assetModel:IsA("BasePart") then
-                                assetModel.CFrame = CFrame.new(spawnPos)
-                            end
-                            
-                            -- Включаем физику и гравитацию, чтобы они падали и сталкивались с картой
-                            for _, part in ipairs(assetModel:GetDescendants()) do
-                                if part:IsA("BasePart") then
-                                    part.CanCollide = true -- Губби будут биться о землю и лежать!
-                                    part.Anchored = false
-                                    -- Выключаем коллизию только с твоим персонажем, чтобы дождь тебя не пинал
-                                    local noTouch = Instance.new("NoCollisionConstraint", part)
-                                    noTouch.Part0 = part
-                                    noTouch.Part1 = root
-                                end
-                            end
-                            
-                            -- Поток для отсчета времени после падения
-                            task.spawn(function()
-                                -- Ждем, пока модель упадет, а затем держим её на земле 10 секунд
-                                task.wait(12) 
-                                
-                                -- Плавно растворяем детали перед удалением
-                                for i = 0, 1, 0.1 do
-                                    if not assetModel then break end
-                                    for _, part in ipairs(assetModel:GetDescendants()) do
-                                        if part:IsA("BasePart") then part.Transparency = i end
-                                    end
-                                    task.wait(0.05)
-                                end
-                                
-                                if assetModel then assetModel:Destroy() end
-                            end)
-                        end
-                    end)
-                end
-                task.wait(0.4) -- Скорость падения капель (каждые 0.4 сек летит новый Губби)
-            end
-        end)
-    else
-        btn.Text = "🌧️ Включить 3D Губби-Дождь"
-        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-    end
-end)
 -- ========================================================================
 -- ЧАСТЬ 20: ВЕЛИКИЙ ИСПРАВЛЕННЫЙ ПАК ДЛЯ SOLARA (ЗВУК, МОРФ, ДОЖДЬ)
 -- ========================================================================
@@ -2440,4 +2251,102 @@ local RainBtn, rainStroke = buildGubbyButton("🌧️ Включить 3D Губ
         btn.Text = "🌧️ Включить 3D Губби-Дождь"
         btn.TextColor3 = Color3.fromRGB(240, 240, 240)
     end
+end)
+-- ========================================================================
+-- ЧАСТЬ 21: СБОРНЫЙ 3D LEGO-МОРФ ГУББИ (ОБХОД БЛОКИРОВКИ АССЕТОВ)
+-- ========================================================================
+local legoMorphActive = false
+local gubbyTexture = "rbxassetid://91690425987587"
+local morphFolder = nil
+local LP = game:GetService("Players").LocalPlayer
+
+local function setLegoCharVisibility(char, visible)
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.Transparency = visible and 0 or 1
+        elseif part:IsA("Decal") then
+            part.Transparency = visible and 0 or 1
+        end
+    end
+end
+
+-- Удаляем старые дубликаты кнопок морфа во вкладке перед созданием новой
+pcall(function()
+    for _, child in ipairs(tabVisuals.ScrollingFrame:GetChildren()) do
+        if child:IsA("TextButton") and (child.Text:find("Morph") or child.Text:find("Губби")) then
+            child:Destroy()
+        end
+    end
+end)
+
+local NewMorphBtn, morphStroke = buildGubbyButton("🦊 3D Губби-Морф v2.0", tabVisuals, function(btn, stroke)
+    legoMorphActive = not legoMorphActive
+    btn.BackgroundTransparency = legoMorphActive and 0.1 or 0.5
+    stroke.Transparency = legoMorphActive and 0.1 or 0.5
+    
+    local char = LP.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    if legoMorphActive then
+        btn.Text = "✅ Ты — 3D Губби!"
+        btn.TextColor3 = Color3.fromRGB(50, 255, 150)
+        setLegoCharVisibility(char, false)
+        
+        -- Создаем папку для модельки
+        morphFolder = Instance.new("Folder", char)
+        morphFolder.Name = "GubbyLegoMorph"
+        
+        -- 1. ТОРС (Основа)
+        local body = Instance.new("Part", morphFolder)
+        body.Size = Vector3.new(2, 2.5, 1.5)
+        body.Material = Enum.Material.SmoothPlastic
+        body.CanCollide = false
+        body.Massless = true
+        body.CFrame = root.CFrame
+        
+        -- 2. ГОЛОВА (Круглая сфера)
+        local head = Instance.new("Part", morphFolder)
+        head.Shape = Enum.PartType.Ball
+        head.Size = Vector3.new(2.2, 2.2, 2.2)
+        head.Material = Enum.Material.SmoothPlastic
+        head.CanCollide = false
+        head.Massless = true
+        head.CFrame = root.CFrame * CFrame.new(0, 1.8, 0)
+        
+        -- Накладываем текстуру рожицы Губби на переднюю часть головы
+        local faceDecal = Instance.new("Decal", head)
+        faceDecal.Texture = gubbyTexture
+        faceDecal.Face = Enum.NormalId.Front
+        
+        -- Натягиваем текстуры на торс со всех сторон для визуала
+        local faces = {Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Back}
+        for _, face in ipairs(faces) do
+            local tex = Instance.new("Texture", body)
+            tex.Texture = gubbyTexture
+            tex.Face = face
+            tex.StudsPerTileU = 2
+            tex.StudsPerTileV = 2
+        end
+        
+        -- Привариваем детали к HumanoidRootPart
+        local function weldParts(p0, p1)
+            local w = Instance.new("WeldConstraint", p1)
+            w.Part0 = p0
+            w.Part1 = p1
+        end
+        weldParts(root, body)
+        weldParts(root, head)
+        
+    else
+        btn.Text = "🦊 3D Губби-Морф v2.0"
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        if morphFolder then morphFolder:Destroy() morphFolder = nil end
+        if char then setLegoCharVisibility(char, true) end
+    end
+end)
+
+LP.CharacterAdded:Connect(function()
+    legoMorphActive = false
+    if morphFolder then morphFolder:Destroy() morphFolder = nil end
 end)

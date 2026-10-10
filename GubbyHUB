@@ -392,3 +392,25 @@ UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
 end)
 print("[GubbyHUB] Полный запуск успешно завершен!")
+-- [[ ДОПОЛНЕНИЕ В КОНЕЦ: Безопасный Ноклип ]] --
+local RunService = game:GetService("RunService")
+local noclipConnection = nil
+
+PlayerTab.AddToggle("Проход сквозь стены (Noclip)", function(state)
+    if state then
+        noclipConnection = RunService.Stepped:Connect(function()
+            if LocalPlayer.Character then
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide and part.Name ~= "HumanoidRootPart" and part.Name ~= "LeftLeg" and part.Name ~= "RightLeg" then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+    end
+end)

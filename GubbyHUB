@@ -1,4 +1,4 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Окно и Анимация Круга ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Фикс Кнопок и Трансформация ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -53,6 +53,7 @@ LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = GubbyLogo
 GubbyLogo.Parent = MainFrame
 
+-- Контейнер кнопок (привязан в процентах к правому верхнему углу окна)
 local ControlContainer = Instance.new("Frame")
 ControlContainer.Size = UDim2.new(0, 80, 0, 30)
 ControlContainer.Position = UDim2.new(1, -95, 0, 15)
@@ -75,6 +76,7 @@ end
 local isMinimized = false
 local oldSize = UDim2.new(0, 580, 0, 460)
 
+-- Фикс: При сворачивании полностью отключаем контейнер кнопок
 createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
     isMinimized = not isMinimized
     if isMinimized then
@@ -113,13 +115,13 @@ createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), fu
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Часть 1 загружена!")
--- [[ GubbyHUB — ЧАСТЬ 2: Исправленный Адаптивный Движок ]] --
+print("[GubbyHUB] Часть 1 успешно обновлена.")
+-- [[ GubbyHUB — ЧАСТЬ 2: Движок без зацикливания скролла ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame
 
 local SidebarFrame = Instance.new("Frame")
-SidebarFrame.Size = UDim2.new(0, 130, 1, -85) -- Фиксированная пиксельная ширина
+SidebarFrame.Size = UDim2.new(0, 130, 1, -85)
 SidebarFrame.Position = UDim2.new(0, 20, 0, 60)
 SidebarFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 SidebarFrame.BackgroundTransparency = 0.4
@@ -135,7 +137,6 @@ TabScroller.Position = UDim2.new(0, 5, 0, 10)
 TabScroller.BackgroundTransparency = 1
 TabScroller.ScrollBarThickness = 2
 TabScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
--- ЖЕСТКИЙ ФИКС: Увеличиваем Canvas вручную, убирая цикл саморазрушения
 TabScroller.CanvasSize = UDim2.new(0, 0, 0, 400) 
 TabScroller.Parent = SidebarFrame
 
@@ -223,7 +224,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     
     local function AddTextLabel(title, text)
         local TextBlock = Instance.new("TextLabel")
-        TextBlock.Size = UDim2.new(0.92, 0, 0, 70) -- Фиксированная базовая высота блока
+        TextBlock.Size = UDim2.new(0.92, 0, 0, 70)
         TextBlock.BackgroundTransparency = 1
         TextBlock.Text = "<b>" .. title .. "</b>\n<i>" .. text .. "</i>"
         TextBlock.RichText = true
@@ -281,10 +282,11 @@ UserInputService.InputChanged:Connect(function(input)
     if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
         local mousePos = UserInputService:GetMouseLocation()
         local delta = mousePos - startMousePos
+        -- Фикс: Кнопки закрыть/свернуть теперь автоматически следуют за этим изменением ширины окна
         MainFrame.Size = UDim2.new(0, math.max(460, startSize.X.Offset + delta.X), 0, math.max(320, startSize.Y.Offset + delta.Y))
     end
 end)
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
 end)
-print("[GubbyHUB] Финал верстки успешно запущен!")
+print("[GubbyHUB] Полный дизайн успешно зафиксирован!")

@@ -1,4 +1,4 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Настоящий Круг Губби ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Исправление Локации Круга и Ассета ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -42,16 +42,17 @@ HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.Parent = MainFrame
 
--- ОТДЕЛЬНЫЙ КРУЖОК ГУББИ
+-- ТОТ САМЫЙ КРУЖОК ГУББИ (Жестко вверху по центру!)
 local GubbyCircle = Instance.new("TextButton")
 GubbyCircle.Name = "GubbyCircle"
 GubbyCircle.Size = UDim2.new(0, 60, 0, 60)
+GubbyCircle.Position = UDim2.new(0.5, -30, 0.05, 0) -- Вверху по центру экрана
 GubbyCircle.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 GubbyCircle.BackgroundTransparency = 0.25
 GubbyCircle.Text = ""
 GubbyCircle.Visible = false
 GubbyCircle.Active = true
-GubbyCircle.Draggable = true
+GubbyCircle.Draggable = true -- Кружок тоже можно таскать
 GubbyCircle.ZIndex = 100
 GubbyCircle.Parent = GubbyScreenGui
 
@@ -64,11 +65,12 @@ CircleStroke.Color = Color3.fromRGB(255, 255, 255)
 CircleStroke.Thickness = 1.5
 CircleStroke.Parent = GubbyCircle
 
+-- Картинка внутри кружка (Гарантированный URL для инжекторов)
 local GubbyImage = Instance.new("ImageLabel")
 GubbyImage.Size = UDim2.new(0, 50, 0, 50)
 GubbyImage.Position = UDim2.new(0.5, -25, 0.5, -25)
 GubbyImage.BackgroundTransparency = 1
-GubbyImage.Image = "rbxassetid://76480973785909"
+GubbyImage.Image = "https://roblox.com"
 local ImageCorner = Instance.new("UICorner")
 ImageCorner.CornerRadius = UDim.new(1, 0)
 ImageCorner.Parent = GubbyImage
@@ -91,16 +93,17 @@ local function createTopButton(name, color, position, callback)
     corner.CornerRadius = UDim.new(0, 7)
     corner.Parent = btn
     btn.MouseButton1Click:Connect(callback)
+    btn.ZIndex = 10
     btn.Parent = ControlContainer
 end
 
--- Сворачивание: Переносим круг на место окна и гасим прямоугольник полностью!
+-- Сворачивание
 createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
-    GubbyCircle.Position = UDim2.new(0, MainFrame.AbsolutePosition.X + (MainFrame.AbsoluteSize.X/2) - 30, 0, MainFrame.AbsolutePosition.Y + 15)
     MainFrame.Visible = false
     GubbyCircle.Visible = true
 end)
 
+-- Разворачивание
 GubbyCircle.MouseButton1Click:Connect(function()
     GubbyCircle.Visible = false
     MainFrame.Visible = true
@@ -115,7 +118,7 @@ MainFrame:GetPropertyChangedSignal("Size"):Connect(function()
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Часть 1 готова.")
+print("[GubbyHUB] Часть 1 пропатчена!")
 -- [[ GubbyHUB — ЧАСТЬ 2: Вырезана старая логика сжатия ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame

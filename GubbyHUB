@@ -1,8 +1,7 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Сворачивание строго в Круг Губби ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Настоящий Круг Губби ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
 getgenv().GubbyCore = {}
 
@@ -13,14 +12,14 @@ GubbyScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 if syn and syn.protect_gui then syn.protect_gui(GubbyScreenGui) end
 GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
--- Главное прямоугольное окно (25% прозрачности)
+-- Главное прямоугольное окно
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 580, 0, 460)
 MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 MainFrame.BackgroundTransparency = 0.25
 MainFrame.Active = true
-MainFrame.Draggable = true -- Окно можно свободно перетаскивать
+MainFrame.Draggable = true
 MainFrame.Parent = GubbyScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -43,22 +42,21 @@ HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.Parent = MainFrame
 
--- ТОТ САМЫЙ КРУЖОК ГУББИ (Появляется вместо окна)
+-- ОТДЕЛЬНЫЙ КРУЖОК ГУББИ
 local GubbyCircle = Instance.new("TextButton")
 GubbyCircle.Name = "GubbyCircle"
 GubbyCircle.Size = UDim2.new(0, 60, 0, 60)
-GubbyCircle.Position = UDim2.new(0.5, -30, 0.1, 0) -- По умолчанию вверху по центру
 GubbyCircle.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 GubbyCircle.BackgroundTransparency = 0.25
 GubbyCircle.Text = ""
-GubbyCircle.Visible = false -- Скрыт, пока открыто главное окно
+GubbyCircle.Visible = false
 GubbyCircle.Active = true
-GubbyCircle.Draggable = true -- Кружок тоже можно перетаскивать по экрану!
+GubbyCircle.Draggable = true
 GubbyCircle.ZIndex = 100
 GubbyCircle.Parent = GubbyScreenGui
 
 local CircleCorner = Instance.new("UICorner")
-CircleCorner.CornerRadius = UDim.new(1, 0) -- Идеальный круг
+CircleCorner.CornerRadius = UDim.new(1, 0)
 CircleCorner.Parent = GubbyCircle
 
 local CircleStroke = Instance.new("UIStroke")
@@ -66,18 +64,16 @@ CircleStroke.Color = Color3.fromRGB(255, 255, 255)
 CircleStroke.Thickness = 1.5
 CircleStroke.Parent = GubbyCircle
 
--- Картинка внутри кружка
 local GubbyImage = Instance.new("ImageLabel")
 GubbyImage.Size = UDim2.new(0, 50, 0, 50)
 GubbyImage.Position = UDim2.new(0.5, -25, 0.5, -25)
 GubbyImage.BackgroundTransparency = 1
-GubbyImage.Image = "rbxassetid://76480973785909" -- Твой ID
+GubbyImage.Image = "rbxassetid://76480973785909"
 local ImageCorner = Instance.new("UICorner")
 ImageCorner.CornerRadius = UDim.new(1, 0)
 ImageCorner.Parent = GubbyImage
 GubbyImage.Parent = GubbyCircle
 
--- Контейнер для кнопок управления в главном окне
 local ControlContainer = Instance.new("Frame")
 ControlContainer.Size = UDim2.new(0, 80, 0, 30)
 ControlContainer.Position = UDim2.new(1, -95, 0, 15)
@@ -95,40 +91,37 @@ local function createTopButton(name, color, position, callback)
     corner.CornerRadius = UDim.new(0, 7)
     corner.Parent = btn
     btn.MouseButton1Click:Connect(callback)
-    btn.ZIndex = 10
     btn.Parent = ControlContainer
 end
 
--- Кнопка СВЕРНУТЬ: Полностью прячет окно и включает кружок Губби
+-- Сворачивание: Переносим круг на место окна и гасим прямоугольник полностью!
 createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
-    -- Переносим кружок туда, где сейчас находится центр главного окна, чтобы он появлялся на том же месте
     GubbyCircle.Position = UDim2.new(0, MainFrame.AbsolutePosition.X + (MainFrame.AbsoluteSize.X/2) - 30, 0, MainFrame.AbsolutePosition.Y + 15)
-    
     MainFrame.Visible = false
     GubbyCircle.Visible = true
 end)
 
--- Клик по кружку Губби: прячет кружок и возвращает полноценное окно
 GubbyCircle.MouseButton1Click:Connect(function()
     GubbyCircle.Visible = false
     MainFrame.Visible = true
 end)
 
--- Кнопка ЗАКРЫТЬ
 createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), function()
     GubbyScreenGui:Destroy()
 end)
 
--- Фикс: Кнопки управления всегда следуют за правым верхним краем при растягивании
 MainFrame:GetPropertyChangedSignal("Size"):Connect(function()
     ControlContainer.Position = UDim2.new(1, -95, 0, 15)
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Часть 1 полностью исправлена!")
--- [[ GubbyHUB — ЧАСТЬ 2: Движок без зацикливания скролла ]] --
+print("[GubbyHUB] Часть 1 готова.")
+-- [[ GubbyHUB — ЧАСТЬ 2: Вырезана старая логика сжатия ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame
+
+-- УНИЧТОЖЕНО: Больше нет функции TogglePanels, которая сжимала окно в колбасу!
+getgenv().GubbyCore.TogglePanels = nil 
 
 local SidebarFrame = Instance.new("Frame")
 SidebarFrame.Size = UDim2.new(0, 130, 1, -85)
@@ -147,7 +140,7 @@ TabScroller.Position = UDim2.new(0, 5, 0, 10)
 TabScroller.BackgroundTransparency = 1
 TabScroller.ScrollBarThickness = 2
 TabScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
-TabScroller.CanvasSize = UDim2.new(0, 0, 0, 400) 
+TabScroller.CanvasSize = UDim2.new(0, 0, 0, 400)
 TabScroller.Parent = SidebarFrame
 
 local TabLayout = Instance.new("UIListLayout")
@@ -169,11 +162,6 @@ local ContainerLayout = Instance.new("UIListLayout")
 ContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
 ContainerLayout.Padding = UDim.new(0, 12)
 ContainerLayout.Parent = ContainerScroller
-
-getgenv().GubbyCore.HidePanels = function(state)
-    SidebarFrame.Visible = state
-    ContainerScroller.Visible = state
-end
 
 local pages = {}
 local firstPage = true
@@ -249,7 +237,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     
     return {AddInfo = AddTextLabel}
 end
-print("[GubbyHUB] Часть 2 стабильна!")
+print("[GubbyHUB] Часть 2 полностью очищена от багов.")
 -- [[ GubbyHUB — ЧАСТЬ 3: Контент и Ресайз ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 2!") end
 local CreateTab = getgenv().GubbyCore.CreateTab

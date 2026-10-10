@@ -1,8 +1,7 @@
--- [[ GubbyHUB — ТОЛЬКО ЧАСТЬ 1: Окончательный фикс кнопок и ресайза ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Исправление подвижности и кнопок ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
 getgenv().GubbyCore = {}
 
@@ -13,14 +12,15 @@ GubbyScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 if syn and syn.protect_gui then syn.protect_gui(GubbyScreenGui) end
 GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
+-- Главное окно: 25% прозрачности, свободное перемещение включено
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 580, 0, 460)
 MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 MainFrame.BackgroundTransparency = 0.25
 MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.ClipsDescendants = true -- Жестко обрезает всё лишнее при сворачивании!
+MainFrame.Draggable = true -- Возвращаем железное перетягивание окна!
+MainFrame.ClipsDescendants = true
 MainFrame.Parent = GubbyScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -44,7 +44,7 @@ HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.ZIndex = 5
 HubTitle.Parent = MainFrame
 
--- Аватарка Губби выше всех элементов (ZIndex = 100)
+-- Круглая аватарка Губби поверх всего
 local GubbyLogo = Instance.new("ImageLabel")
 GubbyLogo.Name = "GubbyLogo"
 GubbyLogo.Size = UDim2.new(0, 36, 0, 36)
@@ -52,15 +52,16 @@ GubbyLogo.Position = UDim2.new(0.5, -18, 0, 7)
 GubbyLogo.BackgroundTransparency = 1
 GubbyLogo.Image = "rbxassetid://76480973785909"
 GubbyLogo.ImageTransparency = 1
-GubbyLogo.ZIndex = 100 -- Всегда поверх окон и кнопок!
+GubbyLogo.ZIndex = 100
 local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = GubbyLogo
 GubbyLogo.Parent = MainFrame
 
+-- Контейнер для кнопок (Теперь жестко привязан к правому краю, не улетит!)
 local ControlContainer = Instance.new("Frame")
 ControlContainer.Size = UDim2.new(0, 80, 0, 30)
-ControlContainer.Position = UDim2.new(1, -95, 0, 15)
+ControlContainer.Position = UDim2.new(1, -95, 0, 15) -- Использование Scale для адаптации при ресайзе
 ControlContainer.BackgroundTransparency = 1
 ControlContainer.ZIndex = 10
 ControlContainer.Parent = MainFrame
@@ -79,13 +80,13 @@ local function createTopButton(name, color, position, callback)
     btn.Parent = ControlContainer
 end
 
+-- Кнопка Свернуть: Сворачивает в аккуратную колбаску с логотипом
 createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
     local isMinimized = (MainFrame.Size.Y.Offset < 100)
     local targetHeight = isMinimized and 460 or 50
     local logoTrans = isMinimized and 1 or 0
     local titleTrans = isMinimized and 0 or 1
     
-    -- Передаем сигнал Части 2 спрятать панели
     if getgenv().GubbyCore.TogglePanels then
         getgenv().GubbyCore.TogglePanels(isMinimized)
     end
@@ -99,8 +100,13 @@ createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), fu
     GubbyScreenGui:Destroy()
 end)
 
+-- Авто-обновление позиции кнопок при растягивании окна мыжкой
+MainFrame:GetPropertyChangedSignal("Size"):Connect(function()
+    ControlContainer.Position = UDim2.new(1, -95, 0, 15)
+end)
+
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Часть 1 успешно updated.")
+print("[GubbyHUB] Часть 1 успешно исправлена.")
 -- [[ GubbyHUB — ЧАСТЬ 2: Движок без зацикливания скролла ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame

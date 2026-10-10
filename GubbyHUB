@@ -1,13 +1,16 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Окно, Монохром 25% ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Фикс Сворачивания и ZIndex ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 getgenv().GubbyCore = {}
 
 local GubbyScreenGui = Instance.new("ScreenGui")
-GubbyScreenGui.Name = "GubbyHUB_DesignBase"
+GubbyScreenGui.Name = "GubbyHUB_Premium"
 GubbyScreenGui.ResetOnSpawn = false
+GubbyScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+if syn and syn.protect_gui then syn.protect_gui(GubbyScreenGui) end
 GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
@@ -17,6 +20,7 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 MainFrame.BackgroundTransparency = 0.25
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true -- Жестко обрезает всё лишнее при сворачивании!
 MainFrame.Parent = GubbyScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -37,14 +41,18 @@ HubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 HubTitle.Font = Enum.Font.FredokaOne
 HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
+HubTitle.ZIndex = 5
 HubTitle.Parent = MainFrame
 
+-- Аватарка Губби выше всех элементов (ZIndex = 100)
 local GubbyLogo = Instance.new("ImageLabel")
+GubbyLogo.Name = "GubbyLogo"
 GubbyLogo.Size = UDim2.new(0, 36, 0, 36)
 GubbyLogo.Position = UDim2.new(0.5, -18, 0, 7)
 GubbyLogo.BackgroundTransparency = 1
 GubbyLogo.Image = "rbxassetid://76480973785909"
 GubbyLogo.ImageTransparency = 1
+GubbyLogo.ZIndex = 100 -- Всегда поверх окон и кнопок!
 local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = GubbyLogo
@@ -54,6 +62,7 @@ local ControlContainer = Instance.new("Frame")
 ControlContainer.Size = UDim2.new(0, 80, 0, 30)
 ControlContainer.Position = UDim2.new(1, -95, 0, 15)
 ControlContainer.BackgroundTransparency = 1
+ControlContainer.ZIndex = 10
 ControlContainer.Parent = MainFrame
 
 local function createTopButton(name, color, position, callback)
@@ -66,6 +75,7 @@ local function createTopButton(name, color, position, callback)
     corner.CornerRadius = UDim.new(0, 7)
     corner.Parent = btn
     btn.MouseButton1Click:Connect(callback)
+    btn.ZIndex = 10
     btn.Parent = ControlContainer
 end
 
@@ -74,6 +84,12 @@ createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), fun
     local targetHeight = isMinimized and 460 or 50
     local logoTrans = isMinimized and 1 or 0
     local titleTrans = isMinimized and 0 or 1
+    
+    -- Передаем сигнал Части 2 спрятать панели
+    if getgenv().GubbyCore.TogglePanels then
+        getgenv().GubbyCore.TogglePanels(isMinimized)
+    end
+    
     TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, targetHeight)}):Play()
     TweenService:Create(GubbyLogo, TweenInfo.new(0.2), {ImageTransparency = logoTrans}):Play()
     TweenService:Create(HubTitle, TweenInfo.new(0.2), {TextTransparency = titleTrans}):Play()
@@ -84,17 +100,17 @@ createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), fu
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Часть 1 успешно загружена.")
--- [[ GubbyHUB — ЧАСТЬ 2: Финал Верстки (Без функций) ]] --
+print("[GubbyHUB] Часть 1 успешно обновлена.")
+-- [[ GubbyHUB — ЧАСТЬ 2: Адаптивность и Скрытие сайдбара ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame
 
--- САЙДБАР: Высота теперь строго с учетом верхнего отступа, низ никогда не вылезет
 local SidebarFrame = Instance.new("Frame")
-SidebarFrame.Size = UDim2.new(0.24, 0, 1, -85) -- Авто-вычитание пикселей из высоты окна!
+SidebarFrame.Size = UDim2.new(0.24, 0, 1, -85)
 SidebarFrame.Position = UDim2.new(0, 20, 0, 60)
 SidebarFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 SidebarFrame.BackgroundTransparency = 0.4
+SidebarFrame.ZIndex = 2
 SidebarFrame.Parent = MainFrame
 
 local SidebarCorner = Instance.new("UICorner")
@@ -108,6 +124,7 @@ TabScroller.BackgroundTransparency = 1
 TabScroller.ScrollBarThickness = 2
 TabScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
 TabScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+TabScroller.ZIndex = 3
 TabScroller.Parent = SidebarFrame
 
 local TabLayout = Instance.new("UIListLayout")
@@ -120,13 +137,13 @@ TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- ПРАВАЯ ЗОНА КОНТЕНТА: Тоже имеет жесткий нижний ограничитель высоты
 local ContainerScroller = Instance.new("ScrollingFrame")
 ContainerScroller.Size = UDim2.new(0.66, 0, 1, -85)
 ContainerScroller.Position = UDim2.new(0.29, 0, 0, 60)
 ContainerScroller.BackgroundTransparency = 1
 ContainerScroller.ScrollBarThickness = 3
 ContainerScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
+ContainerScroller.ZIndex = 2
 ContainerScroller.Parent = MainFrame
 
 local ContainerLayout = Instance.new("UIListLayout")
@@ -137,6 +154,12 @@ ContainerLayout.Parent = ContainerScroller
 ContainerLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     ContainerScroller.CanvasSize = UDim2.new(0, 0, 0, ContainerLayout.AbsoluteContentSize.Y + 10)
 end)
+
+-- Функция скрытия элементов, чтобы они не торчали из "колбаски"
+getgenv().GubbyCore.TogglePanels = function(visibleState)
+    SidebarFrame.Visible = visibleState
+    ContainerScroller.Visible = visibleState
+end
 
 local pages = {}
 local firstPage = true
@@ -149,6 +172,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     TabButton.TextColor3 = Color3.fromRGB(150, 150, 155)
     TabButton.Font = Enum.Font.SourceSansBold
     TabButton.TextSize = 14
+    TabButton.ZIndex = 4
     
     local ButtonCorner = Instance.new("UICorner")
     ButtonCorner.CornerRadius = UDim.new(0, 12)
@@ -163,6 +187,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     PageFrame.Size = UDim2.new(1, 0, 1, 0)
     PageFrame.BackgroundTransparency = 1
     PageFrame.Visible = false
+    PageFrame.ZIndex = 3
     PageFrame.Parent = ContainerScroller
     
     local PageLayout = Instance.new("UIListLayout")
@@ -195,7 +220,6 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         firstPage = false
     end
     
-    -- Убрали функцию AddToggle полностью! Оставили только текст
     local function AddTextLabel(title, text)
         local TextBlock = Instance.new("TextLabel")
         TextBlock.Size = UDim2.new(0.92, 0, 0, 0)
@@ -209,6 +233,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         TextBlock.TextWrapped = true
         TextBlock.TextXAlignment = Enum.TextXAlignment.Left
         TextBlock.TextYAlignment = Enum.TextYAlignment.Top
+        TextBlock.ZIndex = 4
         
         local Padding = Instance.new("UIPadding")
         Padding.PaddingRight = UDim.new(0, 5)
@@ -219,7 +244,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     
     return {AddInfo = AddTextLabel}
 end
-print("[GubbyHUB] Чистая Часть 2 с жестким ограничителем высоты готова!")
+print("[GubbyHUB] Часть 2 успешно настроена на скрытие панелей.")
 -- [[ GubbyHUB — ЧАСТЬ 3: Чистые Вкладки и Ресайз ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 2!") end
 local CreateTab = getgenv().GubbyCore.CreateTab

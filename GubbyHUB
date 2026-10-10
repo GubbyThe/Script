@@ -392,27 +392,97 @@ UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
 end)
 print("[GubbyHUB] Полный запуск успешно завершен!")
--- [[ ДОПОЛНЕНИЕ В КОНЕЦ: Рабочий переключатель Noclip ]] --
+-- [[ ДОПОЛНЕНИЕ В КОНЕЦ: Полное создание тумблера и Ноклипа с нуля ]] --
 local RunService = game:GetService("RunService")
-local noclipConnection = nil
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- Создаем тумблер прямо внутри интерфейса во вкладке Игрок
-PlayerTab.AddToggle("Проход сквозь стены (Noclip)", function(state)
-    if state then
-        noclipConnection = RunService.Stepped:Connect(function()
-            if LocalPlayer.Character then
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    -- Отключаем коллизию, но оставляем ноги, чтобы не падать под пол
-                    if part:IsA("BasePart") and part.CanCollide and part.Name ~= "HumanoidRootPart" and part.Name ~= "LeftLeg" and part.Name ~= "RightLeg" then
-                        part.CanCollide = false
+-- Находим контейнер страницы "Игрок" в твоем запущенном интерфейсе
+local ContainerScroller = game:GetService("CoreGui"):FindFirstChild("ContainerScroller", true) or (MainFrame and MainFrame:FindFirstChild("ContainerScroller"))
+local PlayerPage = ContainerScroller and ContainerScroller:FindFirstChildOfClass("Frame") -- Самая первая страница
+
+if PlayerPage then
+    -- 1. Создаем длинную закругленную плашку тумблера в стиле твоего монохрома
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Size = UDim2.new(0.95, 0, 0, 52)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    ToggleFrame.BackgroundTransparency = 0.2
+    ToggleFrame.Parent = PlayerPage
+    
+    local TFCorner = Instance.new("UICorner")
+    TFCorner.CornerRadius = UDim.new(0, 12)
+    TFCorner.Parent = ToggleFrame
+    
+    local TFStroke = Instance.new("UIStroke")
+    TFStroke.Color = Color3.fromRGB(65, 65, 70)
+    TFStroke.Parent = ToggleFrame
+    
+    -- 2. Текст названия функции
+    local ToggleLabel = Instance.new("TextLabel")
+    ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
+    ToggleLabel.Position = UDim2.new(0, 15, 0, 0)
+    ToggleLabel.BackgroundTransparency = 1
+    ToggleLabel.Text = "Проход сквозь стены (Noclip)"
+    ToggleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+    ToggleLabel.Font = Enum.Font.SourceSansBold
+    ToggleLabel.TextSize = 16
+    ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ToggleLabel.Parent = ToggleFrame
+    
+    -- 3. Овальный переключатель справа
+    local SwitchBtn = Instance.new("TextButton")
+    SwitchBtn.Size = UDim2.new(0, 42, 0, 20)
+    SwitchBtn.Position = UDim2.new(1, -55, 0.5, -10)
+    SwitchBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    SwitchBtn.Text = ""
+    
+    local SwitchCorner = Instance.new("UICorner")
+    SwitchCorner.CornerRadius = UDim.new(0, 10)
+    SwitchCorner.Parent = SwitchBtn
+    
+    -- Шарик внутри тумблера
+    local Circle = Instance.new("Frame")
+    Circle.Size = UDim2.new(0, 14, 0, 14)
+    Circle.Position = UDim2.new(0, 3, 0.5, -7)
+    Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    
+    local CircleCorner = Instance.new("UICorner")
+    CircleCorner.CornerRadius = UDim.new(0, 7)
+    CircleCorner.Parent = Circle
+    Circle.Parent = SwitchBtn
+    SwitchBtn.Parent = ToggleFrame
+    
+    -- 4. Логика работы Ноклипа и монохромной анимации тумблера
+    local noclipConnection = nil
+    local enabled = false
+    
+    SwitchBtn.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        if enabled then
+            -- Анимация включения (Белый тумблер, черный шарик)
+            TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+            TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
+            
+            -- Активация Ноклипа
+            noclipConnection = RunService.Stepped:Connect(function()
+                if LocalPlayer.Character then
+                    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                        if part:IsA("BasePart") and part.CanCollide and part.Name ~= "HumanoidRootPart" and part.Name ~= "LeftLeg" and part.Name ~= "RightLeg" then
+                            part.CanCollide = false
+                        end
                     end
                 end
+            end)
+        else
+            -- Анимация выключения (Серый тумблер, белый шарик)
+            TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
+            TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+            
+            -- Отключение Ноклипа
+            if noclipConnection then
+                noclipConnection:Disconnect()
+                noclipConnection = nil
             end
-        end)
-    else
-        if noclipConnection then
-            noclipConnection:Disconnect()
-            noclipConnection = nil
         end
-    end
-end)
+    end)
+end

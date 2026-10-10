@@ -1,12 +1,13 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Белый Губби по рисунку ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Настоящий Белый Губби с пришитыми ушами ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 
 getgenv().GubbyCore = {}
 
+-- Новое имя, чтобы Роблокс полностью обновил интерфейс в игре!
 local GubbyScreenGui = Instance.new("ScreenGui")
-GubbyScreenGui.Name = "GubbyHUB_Premium"
+GubbyScreenGui.Name = "GubbyHUB_WhiteEdition"
 GubbyScreenGui.ResetOnSpawn = false
 GubbyScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 if syn and syn.protect_gui then syn.protect_gui(GubbyScreenGui) end
@@ -42,19 +43,19 @@ HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.Parent = MainFrame
 
--- ТЕПЕРЬ ОН БЕЛЫЙ! Голова Губби при сворачивании
+-- ТОТ САМЫЙ КРУЖОК ГУББИ (ЖЕЛЕЗНО БЕЛЫЙ)
 local GubbyCircle = Instance.new("TextButton")
 GubbyCircle.Name = "GubbyCircle"
 GubbyCircle.Size = UDim2.new(0, 60, 0, 60)
 GubbyCircle.Position = UDim2.new(0.5, -30, 0.08, 0)
-GubbyCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Чисто белый цвет лица!
+GubbyCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- ИДЕАЛЬНО БЕЛЫЙ ФОН ЛИЦА
 GubbyCircle.BackgroundTransparency = 0
 GubbyCircle.Text = ""
 GubbyCircle.Visible = false
 GubbyCircle.Active = true
 GubbyCircle.Draggable = false
 GubbyCircle.ZIndex = 100
-GubbyCircle.ClipsDescendants = false
+GubbyCircle.ClipsDescendants = false -- Чтобы уши торчали, но не улетали
 GubbyCircle.Parent = GubbyScreenGui
 
 local CircleCorner = Instance.new("UICorner")
@@ -62,7 +63,7 @@ CircleCorner.CornerRadius = UDim.new(1, 0)
 CircleCorner.Parent = GubbyCircle
 
 local CircleStroke = Instance.new("UIStroke")
-CircleStroke.Color = Color3.fromRGB(0, 0, 0) -- Черный контур головы
+CircleStroke.Color = Color3.fromRGB(0, 0, 0) -- Черная обводка лица
 CircleStroke.Thickness = 2
 CircleStroke.Parent = GubbyCircle
 
@@ -73,51 +74,51 @@ FaceContainer.BackgroundTransparency = 1
 FaceContainer.ZIndex = 101
 FaceContainer.Parent = GubbyCircle
 
--- Левое Ухо (Белое с черным контуром)
+-- Левое Ухо (Опущено вниз на -12, теперь оно плотно сидит на голове)
 local LeftEar = Instance.new("Frame")
-LeftEar.Size = UDim2.new(0, 14, 0, 22)
-LeftEar.Position = UDim2.new(0.25, -7, 0, -20)
-LeftEar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+LeftEar.Size = UDim2.new(0, 14, 0, 24)
+LeftEar.Position = UDim2.new(0.25, -7, 0, -12) -- Фикс позиции
+LeftEar.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Черное ухо как на рисунке
 LeftEar.ZIndex = 99
 LeftEar.Parent = FaceContainer
 local LEStroke = Instance.new("UIStroke")
-LEStroke.Color = Color3.fromRGB(0, 0, 0)
-LEStroke.Thickness = 2
+LEStroke.Color = Color3.fromRGB(255, 255, 255) -- Белая обводка уха для контраста
+LEStroke.Thickness = 1
 LEStroke.Parent = LeftEar
 
--- Правое Ухо (Белое с черным контуром)
+-- Правое Ухо (Опущено вниз на -12)
 local RightEar = Instance.new("Frame")
-RightEar.Size = UDim2.new(0, 14, 0, 22)
-RightEar.Position = UDim2.new(0.75, -7, 0, -20)
-RightEar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RightEar.Size = UDim2.new(0, 14, 0, 24)
+RightEar.Position = UDim2.new(0.75, -7, 0, -12) -- Фикс позиции
+RightEar.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Черное ухо
 RightEar.ZIndex = 99
 RightEar.Parent = FaceContainer
 local REStroke = Instance.new("UIStroke")
-REStroke.Color = Color3.fromRGB(0, 0, 0)
-REStroke.Thickness = 2
+REStroke.Color = Color3.fromRGB(255, 255, 255)
+REStroke.Thickness = 1
 REStroke.Parent = RightEar
 
--- Левый раскосый черный глаз
+-- Левый раскосый черный глаз щелочкой
 local LeftEye = Instance.new("Frame")
-LeftEye.Size = UDim2.new(0, 12, 0, 4)
+LeftEye.Size = UDim2.new(0, 12, 0, 3.5)
 LeftEye.Position = UDim2.new(0.32, -6, 0.42, -1)
-LeftEye.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Черный цвет
+LeftEye.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 LeftEye.Rotation = 45
 LeftEye.ZIndex = 102
 LeftEye.Parent = FaceContainer
 Instance.new("UICorner", LeftEye).CornerRadius = UDim.new(1, 0)
 
--- Правый раскосый черный глаз
+-- Правый раскосый черный глаз щелочкой
 local RightEye = Instance.new("Frame")
-RightEye.Size = UDim2.new(0, 12, 0, 4)
+RightEye.Size = UDim2.new(0, 12, 0, 3.5)
 RightEye.Position = UDim2.new(0.68, -6, 0.42, -1)
-RightEye.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Черный цвет
+RightEye.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 RightEye.Rotation = -45
 RightEye.ZIndex = 102
 RightEye.Parent = FaceContainer
 Instance.new("UICorner", RightEye).CornerRadius = UDim.new(1, 0)
 
--- РОТ ВОЛНОЙ (Черные полоски зигзагом)
+-- РОТ ВОЛНОЙ ЗИГЗАГОМ (Черные плотные линии)
 local MouthPart1 = Instance.new("Frame")
 MouthPart1.Size = UDim2.new(0, 14, 0, 3)
 MouthPart1.Position = UDim2.new(0.42, -5, 0.65, 0)
@@ -136,7 +137,7 @@ MouthPart2.ZIndex = 102
 MouthPart2.Parent = FaceContainer
 Instance.new("UICorner", MouthPart2).CornerRadius = UDim.new(1, 0)
 
--- КНОПКИ УПРАВЛЕНИЯ
+-- КНОПКИ УПРАВЛЕНИЯ ОКНОМ
 local ControlContainer = Instance.new("Frame")
 ControlContainer.Size = UDim2.new(0, 80, 0, 30)
 ControlContainer.Position = UDim2.new(1, -95, 0, 15)
@@ -177,7 +178,7 @@ MainFrame:GetPropertyChangedSignal("Size"):Connect(function()
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Белый Губби успешно скомпилирован!")
+print("[GubbyHUB] Белая маска Губби железно исправлена!")
 -- [[ GubbyHUB — ЧАСТЬ 2: Вырезана старая логика сжатия ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame

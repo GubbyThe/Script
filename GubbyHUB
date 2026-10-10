@@ -1,4 +1,4 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Умное Сворачивание в Круг ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Окно и Анимация Круга ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -11,7 +11,6 @@ GubbyScreenGui.ResetOnSpawn = false
 GubbyScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
--- Главное окно (25% прозрачности)
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 580, 0, 460)
 MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
@@ -41,14 +40,13 @@ HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.Parent = MainFrame
 
--- Аватарка Губби чётко по центру (ZIndex = 100)
 local GubbyLogo = Instance.new("ImageLabel")
 GubbyLogo.Name = "GubbyLogo"
 GubbyLogo.Size = UDim2.new(0, 50, 0, 50)
 GubbyLogo.Position = UDim2.new(0.5, -25, 0.5, -25)
 GubbyLogo.BackgroundTransparency = 1
 GubbyLogo.Image = "rbxassetid://76480973785909"
-GubbyLogo.ImageTransparency = 1 -- Скрыта, пока окно открыто
+GubbyLogo.ImageTransparency = 1
 GubbyLogo.ZIndex = 100
 local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(1, 0)
@@ -74,19 +72,16 @@ local function createTopButton(name, color, position, callback)
     btn.Parent = ControlContainer
 end
 
--- Логика трансформации прямоугольника в круг на месте
 local isMinimized = false
 local oldSize = UDim2.new(0, 580, 0, 460)
 
 createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
     isMinimized = not isMinimized
     if isMinimized then
-        oldSize = MainFrame.Size -- Запоминаем размер перед сворачиванием
+        oldSize = MainFrame.Size
         if getgenv().GubbyCore.HidePanels then getgenv().GubbyCore.HidePanels(false) end
         HubTitle.Visible = false
         ControlContainer.Visible = false
-        
-        -- Плавно сжимаем в круг 60x60
         TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 60, 0, 60)}):Play()
         TweenService:Create(MainCorner, TweenInfo.new(0.3), {CornerRadius = UDim.new(1, 0)}):Play()
         task.wait(0.2)
@@ -94,7 +89,6 @@ createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), fun
     end
 end)
 
--- Клик по свернутому окну разворачивает его обратно в исходное состояние
 local ClickTrigger = Instance.new("TextButton")
 ClickTrigger.Size = UDim2.new(1, 0, 1, 0)
 ClickTrigger.BackgroundTransparency = 1
@@ -105,12 +99,9 @@ ClickTrigger.MouseButton1Click:Connect(function()
     if isMinimized then
         isMinimized = false
         TweenService:Create(GubbyLogo, TweenInfo.new(0.1), {ImageTransparency = 1}):Play()
-        
-        -- Возвращаем прямоугольную форму со старым размером Губби
         TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = oldSize}):Play()
         TweenService:Create(MainCorner, TweenInfo.new(0.3), {CornerRadius = UDim.new(0, 20)}):Play()
         task.wait(0.3)
-        
         HubTitle.Visible = true
         ControlContainer.Visible = true
         if getgenv().GubbyCore.HidePanels then getgenv().GubbyCore.HidePanels(true) end
@@ -122,13 +113,13 @@ createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), fu
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Часть 1 успешно загружена.")
--- [[ GubbyHUB — ЧАСТЬ 2: Полная Адаптивность и Скрытие ]] --
+print("[GubbyHUB] Часть 1 загружена!")
+-- [[ GubbyHUB — ЧАСТЬ 2: Исправленный Адаптивный Движок ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame
 
 local SidebarFrame = Instance.new("Frame")
-SidebarFrame.Size = UDim2.new(0, 130, 1, -85) -- Сайдбар заблокирован в пикселях по ширине, он больше не сожмется!
+SidebarFrame.Size = UDim2.new(0, 130, 1, -85) -- Фиксированная пиксельная ширина
 SidebarFrame.Position = UDim2.new(0, 20, 0, 60)
 SidebarFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 SidebarFrame.BackgroundTransparency = 0.4
@@ -144,7 +135,8 @@ TabScroller.Position = UDim2.new(0, 5, 0, 10)
 TabScroller.BackgroundTransparency = 1
 TabScroller.ScrollBarThickness = 2
 TabScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
-TabScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+-- ЖЕСТКИЙ ФИКС: Увеличиваем Canvas вручную, убирая цикл саморазрушения
+TabScroller.CanvasSize = UDim2.new(0, 0, 0, 400) 
 TabScroller.Parent = SidebarFrame
 
 local TabLayout = Instance.new("UIListLayout")
@@ -153,17 +145,13 @@ TabLayout.Padding = UDim.new(0, 8)
 TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 TabLayout.Parent = TabScroller
 
-TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
-end)
-
--- Правая зона: теперь отталкивается от пиксельной ширины сайдбара, исключая кашу
 local ContainerScroller = Instance.new("ScrollingFrame")
 ContainerScroller.Size = UDim2.new(1, -185, 1, -85)
 ContainerScroller.Position = UDim2.new(0, 165, 0, 60)
 ContainerScroller.BackgroundTransparency = 1
 ContainerScroller.ScrollBarThickness = 3
 ContainerScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
+ContainerScroller.CanvasSize = UDim2.new(0, 0, 0, 500)
 ContainerScroller.Parent = MainFrame
 
 local ContainerLayout = Instance.new("UIListLayout")
@@ -171,11 +159,6 @@ ContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
 ContainerLayout.Padding = UDim.new(0, 12)
 ContainerLayout.Parent = ContainerScroller
 
-ContainerLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    ContainerScroller.CanvasSize = UDim2.new(0, 0, 0, ContainerLayout.AbsoluteContentSize.Y + 10)
-end)
-
--- Глобальная функция: намертво выключает видимость элементов при круглой форме
 getgenv().GubbyCore.HidePanels = function(state)
     SidebarFrame.Visible = state
     ContainerScroller.Visible = state
@@ -240,8 +223,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     
     local function AddTextLabel(title, text)
         local TextBlock = Instance.new("TextLabel")
-        TextBlock.Size = UDim2.new(0.94, 0, 0, 0)
-        TextBlock.AutomaticSize = Enum.AutomaticSize.Y
+        TextBlock.Size = UDim2.new(0.92, 0, 0, 70) -- Фиксированная базовая высота блока
         TextBlock.BackgroundTransparency = 1
         TextBlock.Text = "<b>" .. title .. "</b>\n<i>" .. text .. "</i>"
         TextBlock.RichText = true
@@ -251,18 +233,13 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         TextBlock.TextWrapped = true
         TextBlock.TextXAlignment = Enum.TextXAlignment.Left
         TextBlock.TextYAlignment = Enum.TextYAlignment.Top
-        
-        local Padding = Instance.new("UIPadding")
-        Padding.PaddingRight = UDim.new(0, 8)
-        Padding.Parent = TextBlock
-        
         TextBlock.Parent = PageFrame
     end
     
     return {AddInfo = AddTextLabel}
 end
-print("[GubbyHUB] Часть 2 успешно настроена.")
--- [[ GubbyHUB — ЧАСТЬ 3: Финал Дизайна и Уголок Ресайза ]] --
+print("[GubbyHUB] Часть 2 стабильна!")
+-- [[ GubbyHUB — ЧАСТЬ 3: Контент и Ресайз ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 2!") end
 local CreateTab = getgenv().GubbyCore.CreateTab
 local MainFrame = getgenv().GubbyCore.MainFrame
@@ -304,11 +281,10 @@ UserInputService.InputChanged:Connect(function(input)
     if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
         local mousePos = UserInputService:GetMouseLocation()
         local delta = mousePos - startMousePos
-        -- Ограничиваем минимальный размер, чтобы скроллбар никогда физически не сжался в кашу!
         MainFrame.Size = UDim2.new(0, math.max(460, startSize.X.Offset + delta.X), 0, math.max(320, startSize.Y.Offset + delta.Y))
     end
 end)
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
 end)
-print("[GubbyHUB] Полный дизайн успешно зафиксирован!")
+print("[GubbyHUB] Финал верстки успешно запущен!")

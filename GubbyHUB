@@ -1,4 +1,4 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Исправление Локации Круга и Ассета ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Рисование Мордашки Губби Фигурами ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -42,17 +42,17 @@ HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.Parent = MainFrame
 
--- ТОТ САМЫЙ КРУЖОК ГУББИ (Жестко вверху по центру!)
+-- ТОТ САМЫЙ КРУЖОК ГУББИ
 local GubbyCircle = Instance.new("TextButton")
 GubbyCircle.Name = "GubbyCircle"
 GubbyCircle.Size = UDim2.new(0, 60, 0, 60)
-GubbyCircle.Position = UDim2.new(0.5, -30, 0.05, 0) -- Вверху по центру экрана
-GubbyCircle.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-GubbyCircle.BackgroundTransparency = 0.25
+GubbyCircle.Position = UDim2.new(0.5, -30, 0.05, 0)
+GubbyCircle.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+GubbyCircle.BackgroundTransparency = 0.1 -- Чуть плотнее, чтобы фигурки выделялись
 GubbyCircle.Text = ""
 GubbyCircle.Visible = false
 GubbyCircle.Active = true
-GubbyCircle.Draggable = true -- Кружок тоже можно таскать
+GubbyCircle.Draggable = true
 GubbyCircle.ZIndex = 100
 GubbyCircle.Parent = GubbyScreenGui
 
@@ -65,17 +65,46 @@ CircleStroke.Color = Color3.fromRGB(255, 255, 255)
 CircleStroke.Thickness = 1.5
 CircleStroke.Parent = GubbyCircle
 
--- Картинка внутри кружка (Гарантированный URL для инжекторов)
-local GubbyImage = Instance.new("ImageLabel")
-GubbyImage.Size = UDim2.new(0, 50, 0, 50)
-GubbyImage.Position = UDim2.new(0.5, -25, 0.5, -25)
-GubbyImage.BackgroundTransparency = 1
-GubbyImage.Image = "https://roblox.com"
-local ImageCorner = Instance.new("UICorner")
-ImageCorner.CornerRadius = UDim.new(1, 0)
-ImageCorner.Parent = GubbyImage
-GubbyImage.Parent = GubbyCircle
+-- [[ РИСУЕМ МОРДАШКУ ИЗ ВЕКТОРНЫХ ФИГУР ]] --
 
+-- Контейнер для лица
+local FaceContainer = Instance.new("Frame")
+FaceContainer.Size = UDim2.new(1, 0, 1, 0)
+FaceContainer.BackgroundTransparency = 1
+FaceContainer.ZIndex = 101
+FaceContainer.Parent = GubbyCircle
+
+-- Левый Глаз (Белый круг)
+local LeftEye = Instance.new("Frame")
+LeftEye.Size = UDim2.new(0, 8, 0, 8)
+LeftEye.Position = UDim2.new(0.3, -4, 0.4, -4)
+LeftEye.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+LeftEye.ZIndex = 102
+LeftEye.Parent = FaceContainer
+local LEPoly = Instance.new("UICorner") LEPoly.CornerRadius = UDim.new(1,0) LEPoly.Parent = LeftEye
+
+-- Правый Глаз (Белый круг)
+local RightEye = Instance.new("Frame")
+RightEye.Size = UDim2.new(0, 8, 0, 8)
+RightEye.Position = UDim2.new(0.7, -4, 0.4, -4)
+RightEye.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RightEye.ZIndex = 102
+RightEye.Parent = FaceContainer
+local REPoly = Instance.new("UICorner") REPoly.CornerRadius = UDim.new(1,0) REPoly.Parent = RightEye
+
+-- Улыбающийся Рот (Кастомная дуга с использованием текстового символа)
+local Mouth = Instance.new("TextLabel")
+Mouth.Size = UDim2.new(0, 20, 0, 15)
+Mouth.Position = UDim2.new(0.5, -10, 0.55, -5)
+Mouth.BackgroundTransparency = 1
+Mouth.Text = "‿" -- Ровный скругленный рот-улыбка из символов юникода
+Mouth.TextColor3 = Color3.fromRGB(255, 255, 255)
+Mouth.Font = Enum.Font.SourceSansBold
+Mouth.TextSize = 22
+Mouth.ZIndex = 102
+Mouth.Parent = FaceContainer
+
+-- УПРАВЛЕНИЕ ОКНОМ
 local ControlContainer = Instance.new("Frame")
 ControlContainer.Size = UDim2.new(0, 80, 0, 30)
 ControlContainer.Position = UDim2.new(1, -95, 0, 15)
@@ -97,13 +126,11 @@ local function createTopButton(name, color, position, callback)
     btn.Parent = ControlContainer
 end
 
--- Сворачивание
 createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
     MainFrame.Visible = false
     GubbyCircle.Visible = true
 end)
 
--- Разворачивание
 GubbyCircle.MouseButton1Click:Connect(function()
     GubbyCircle.Visible = false
     MainFrame.Visible = true
@@ -118,7 +145,7 @@ MainFrame:GetPropertyChangedSignal("Size"):Connect(function()
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Часть 1 пропатчена!")
+print("[GubbyHUB] Векторная маска Губби успешно собрана!")
 -- [[ GubbyHUB — ЧАСТЬ 2: Вырезана старая логика сжатия ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame

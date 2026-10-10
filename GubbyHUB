@@ -1,14 +1,16 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Фикс Кнопок и Трансформация ]] --
+-- [[ GubbyHUB — ТОЛЬКО ЧАСТЬ 1: Окончательный фикс кнопок и ресайза ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 getgenv().GubbyCore = {}
 
 local GubbyScreenGui = Instance.new("ScreenGui")
-GubbyScreenGui.Name = "GubbyHUB_Official"
+GubbyScreenGui.Name = "GubbyHUB_Premium"
 GubbyScreenGui.ResetOnSpawn = false
 GubbyScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+if syn and syn.protect_gui then syn.protect_gui(GubbyScreenGui) end
 GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
@@ -18,6 +20,7 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 MainFrame.BackgroundTransparency = 0.25
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true -- Жестко обрезает всё лишнее при сворачивании!
 MainFrame.Parent = GubbyScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -38,26 +41,28 @@ HubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 HubTitle.Font = Enum.Font.FredokaOne
 HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
+HubTitle.ZIndex = 5
 HubTitle.Parent = MainFrame
 
+-- Аватарка Губби выше всех элементов (ZIndex = 100)
 local GubbyLogo = Instance.new("ImageLabel")
 GubbyLogo.Name = "GubbyLogo"
-GubbyLogo.Size = UDim2.new(0, 50, 0, 50)
-GubbyLogo.Position = UDim2.new(0.5, -25, 0.5, -25)
+GubbyLogo.Size = UDim2.new(0, 36, 0, 36)
+GubbyLogo.Position = UDim2.new(0.5, -18, 0, 7)
 GubbyLogo.BackgroundTransparency = 1
 GubbyLogo.Image = "rbxassetid://76480973785909"
 GubbyLogo.ImageTransparency = 1
-GubbyLogo.ZIndex = 100
+GubbyLogo.ZIndex = 100 -- Всегда поверх окон и кнопок!
 local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = GubbyLogo
 GubbyLogo.Parent = MainFrame
 
--- Контейнер кнопок (привязан в процентах к правому верхнему углу окна)
 local ControlContainer = Instance.new("Frame")
 ControlContainer.Size = UDim2.new(0, 80, 0, 30)
 ControlContainer.Position = UDim2.new(1, -95, 0, 15)
 ControlContainer.BackgroundTransparency = 1
+ControlContainer.ZIndex = 10
 ControlContainer.Parent = MainFrame
 
 local function createTopButton(name, color, position, callback)
@@ -70,44 +75,24 @@ local function createTopButton(name, color, position, callback)
     corner.CornerRadius = UDim.new(0, 7)
     corner.Parent = btn
     btn.MouseButton1Click:Connect(callback)
+    btn.ZIndex = 10
     btn.Parent = ControlContainer
 end
 
-local isMinimized = false
-local oldSize = UDim2.new(0, 580, 0, 460)
-
--- Фикс: При сворачивании полностью отключаем контейнер кнопок
 createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
-    isMinimized = not isMinimized
-    if isMinimized then
-        oldSize = MainFrame.Size
-        if getgenv().GubbyCore.HidePanels then getgenv().GubbyCore.HidePanels(false) end
-        HubTitle.Visible = false
-        ControlContainer.Visible = false
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 60, 0, 60)}):Play()
-        TweenService:Create(MainCorner, TweenInfo.new(0.3), {CornerRadius = UDim.new(1, 0)}):Play()
-        task.wait(0.2)
-        TweenService:Create(GubbyLogo, TweenInfo.new(0.2), {ImageTransparency = 0}):Play()
+    local isMinimized = (MainFrame.Size.Y.Offset < 100)
+    local targetHeight = isMinimized and 460 or 50
+    local logoTrans = isMinimized and 1 or 0
+    local titleTrans = isMinimized and 0 or 1
+    
+    -- Передаем сигнал Части 2 спрятать панели
+    if getgenv().GubbyCore.TogglePanels then
+        getgenv().GubbyCore.TogglePanels(isMinimized)
     end
-end)
-
-local ClickTrigger = Instance.new("TextButton")
-ClickTrigger.Size = UDim2.new(1, 0, 1, 0)
-ClickTrigger.BackgroundTransparency = 1
-ClickTrigger.Text = ""
-ClickTrigger.Parent = MainFrame
-
-ClickTrigger.MouseButton1Click:Connect(function()
-    if isMinimized then
-        isMinimized = false
-        TweenService:Create(GubbyLogo, TweenInfo.new(0.1), {ImageTransparency = 1}):Play()
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = oldSize}):Play()
-        TweenService:Create(MainCorner, TweenInfo.new(0.3), {CornerRadius = UDim.new(0, 20)}):Play()
-        task.wait(0.3)
-        HubTitle.Visible = true
-        ControlContainer.Visible = true
-        if getgenv().GubbyCore.HidePanels then getgenv().GubbyCore.HidePanels(true) end
-    end
+    
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, targetHeight)}):Play()
+    TweenService:Create(GubbyLogo, TweenInfo.new(0.2), {ImageTransparency = logoTrans}):Play()
+    TweenService:Create(HubTitle, TweenInfo.new(0.2), {TextTransparency = titleTrans}):Play()
 end)
 
 createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), function()
@@ -115,7 +100,7 @@ createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), fu
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Часть 1 успешно обновлена.")
+print("[GubbyHUB] Часть 1 успешно updated.")
 -- [[ GubbyHUB — ЧАСТЬ 2: Движок без зацикливания скролла ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame

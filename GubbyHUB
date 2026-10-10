@@ -1,13 +1,12 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Окно и Логотип ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Окно, Монохром 25% ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
 getgenv().GubbyCore = {}
 
 local GubbyScreenGui = Instance.new("ScreenGui")
-GubbyScreenGui.Name = "GubbyHUB_Premium"
+GubbyScreenGui.Name = "GubbyHUB_DesignBase"
 GubbyScreenGui.ResetOnSpawn = false
 GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
@@ -15,7 +14,7 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 580, 0, 460)
 MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-MainFrame.BackgroundTransparency = 0.25 -- 25% Прозрачности
+MainFrame.BackgroundTransparency = 0.25
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = GubbyScreenGui
@@ -40,7 +39,6 @@ HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.Parent = MainFrame
 
--- Круглая аватарка Губби
 local GubbyLogo = Instance.new("ImageLabel")
 GubbyLogo.Size = UDim2.new(0, 36, 0, 36)
 GubbyLogo.Position = UDim2.new(0.5, -18, 0, 7)
@@ -86,8 +84,8 @@ createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), fu
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Часть 1 успешно внедрена.")
--- [[ GubbyHUB — ЧАСТЬ 2: Адаптивность и Скролл ]] --
+print("[GubbyHUB] Часть 1 успешно загружена.")
+-- [[ GubbyHUB — ЧАСТЬ 2: Адаптивность без вылетов за края ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame
 local TweenService = game:GetService("TweenService")
@@ -196,7 +194,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         firstPage = false
     end
     
-    local function AddRealToggle(text, callback)
+    local function AddRealToggle(text)
         local ToggleFrame = Instance.new("Frame")
         ToggleFrame.Size = UDim2.new(0.96, 0, 0, 52)
         ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
@@ -250,37 +248,41 @@ getgenv().GubbyCore.CreateTab = function(tabName)
                 TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
                 TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
             end
-            if callback then pcall(callback, enabled) end
         end)
     end
     
-    -- ФИКС ДЛЯ АВТО-ВЫСОТЫ ТЕКСТА (БОЛЬШЕ НЕ НАПОЛЗАЕТ!)
     local function AddTextLabel(title, text)
         local TextBlock = Instance.new("TextLabel")
-        TextBlock.Size = UDim2.new(0.96, 0, 0, 0)
-        TextBlock.AutomaticSize = Enum.AutomaticSize.Y -- Сама считает высоту
+        TextBlock.Size = UDim2.new(0.92, 0, 0, 0) -- Строго 92% ширины, чтобы не лез на скроллбар!
+        TextBlock.AutomaticSize = Enum.AutomaticSize.Y
         TextBlock.BackgroundTransparency = 1
         TextBlock.Text = "<b>" .. title .. "</b>\n<i>" .. text .. "</i>"
         TextBlock.RichText = true
         TextBlock.TextColor3 = Color3.fromRGB(240, 240, 245)
         TextBlock.Font = Enum.Font.SourceSans
         TextBlock.TextSize = 16
-        TextBlock.TextWrapped = true -- Перенос слов включен
+        TextBlock.TextWrapped = true
         TextBlock.TextXAlignment = Enum.TextXAlignment.Left
         TextBlock.TextYAlignment = Enum.TextYAlignment.Top
+        
+        -- Внутренний микро-отступ для безопасности текста
+        local Padding = Instance.new("UIPadding")
+        Padding.PaddingRight = UDim.new(0, 5)
+        Padding.Parent = TextBlock
+        
         TextBlock.Parent = PageFrame
     end
     
     return {AddToggle = AddRealToggle, AddInfo = AddTextLabel}
 end
-print("[GubbyHUB] Часть 2 исправлена!")
--- [[ GubbyHUB — ЧАСТЬ 3: Контент и Ресайзер ]] --
+print("[GubbyHUB] Часть 2 успешно загружена.")
+-- [[ GubbyHUB — ЧАСТЬ 3: Чистые Вкладки и Ресайз ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 2!") end
 local CreateTab = getgenv().GubbyCore.CreateTab
 local MainFrame = getgenv().GubbyCore.MainFrame
-local LocalPlayer = game:GetService("Players").LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 
+-- Чистые пустые вкладки
 local PlayerTab   = CreateTab("Игрок")
 local TrollTab    = CreateTab("Тролл")
 local CombatTab   = CreateTab("Комбат")
@@ -289,32 +291,7 @@ local MiscTab     = CreateTab("Смешанное")
 local FarmTab     = CreateTab("Авто фарм")
 local InfoTab     = CreateTab("Инфо")
 
-PlayerTab.AddToggle("Супер Скорость", function(state)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = state and 120 or 16
-    end
-end)
-PlayerTab.AddToggle("Высокий Прыжок", function(state)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.UseJumpPower = true
-        LocalPlayer.Character.Humanoid.JumpPower = state and 150 or 50
-    end
-end)
-PlayerTab.AddToggle("Бесконечные Прыжки", function(state)
-    getgenv().InfJump = state
-    game:GetService("UserInputService").JumpRequest:Connect(function()
-        if getgenv().InfJump and LocalPlayer.Character then
-            LocalPlayer.Character:FindFirstChildOfClass('Humanoid'):ChangeState("Jumping")
-        end
-    end)
-end)
-
-TrollTab.AddToggle("Троллинг функция 1")
-CombatTab.AddToggle("Комбат функция 1")
-TeleportTab.AddToggle("Телепорт функция 1")
-MiscTab.AddToggle("Смешанная функция 1")
-FarmTab.AddToggle("Авто-фарм функция 1")
-
+-- Вкладка Инфо (Наш единственный текст)
 InfoTab.AddInfo("Разработчик проекта:", "Губби (Gubby) — главный дизайнер и автор оригинального концепта в Фотошопе.")
 InfoTab.AddInfo("Нейро-Ассистент:", "Джимини — напарник по коду. Мы лепили этот проект заново, как скульпторы!")
 InfoTab.AddInfo("Стиль и Фичи:", "Премиальный Monochrome Glass UI (25% прозрачности). Окно поддерживает свободное растягивание мышкой за уголок. При сворачивании по центру выводится персональный круглый логотип Губби.")
@@ -349,4 +326,4 @@ end)
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
 end)
-print("[GubbyHUB] Полный запуск завершен успешно!")
+print("[GubbyHUB] Чистый дизайн без функций успешно запущен!")

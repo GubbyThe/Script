@@ -350,31 +350,105 @@ UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
 end)
 print("[GubbyHUB] Полный дизайн успешно зафиксирован!")
--- [[ GubbyHUB — Дополнение: Рабочие Ползунки Скорости и Прыжка ]] --
+-- [[ GubbyHUB — Дозапись движка слайдеров и наполнение ]] --
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
-local PlayerTab = getgenv().GubbyCore and getgenv().GubbyCore.Tabs and getgenv().GubbyCore.Tabs["Игрок"]
 
--- Если глобальная таблица вкладок доступна, добавляем ползунки напрямую
-if getgenv().GubbyCore and getgenv().GubbyCore.CreateTab then
-    -- На всякий случай берем движок создания элементов, если вкладки регистрировались через него
-    local TargetTab = getgenv().GubbyCore.PlayerTabInstance or getgenv().GubbyCore.CurrentPlayerTab
-    
-    -- Ползунок СКОРОСТИ (WalkSpeed) от 16 до 250
-    getgenv().GubbyCore.MainPlayerTab.AddSlider("Скорость бега персонажа", 16, 250, 16, function(value)
+-- Находим контейнер страницы "Игрок" в запущенном GubbyHUB
+local ContainerScroller = MainFrame and MainFrame:FindFirstChild("ContainerScroller") or game:GetService("CoreGui"):FindFirstChild("ContainerScroller", true)
+local PlayerPage = ContainerScroller and ContainerScroller:FindFirstChild("Frame") -- Первая вкладка
+
+if PlayerPage then
+    -- Функция создания СЛАЙДЕРА (Ползунка) кодом прямо на твой макет
+    local function InjectSlider(text, min, max, default, callback)
+        local SliderFrame = Instance.new("Frame")
+        SliderFrame.Size = UDim2.new(0.95, 0, 0, 60)
+        SliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+        SliderFrame.BackgroundTransparency = 0.2
+        SliderFrame.Parent = PlayerPage
+        
+        Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 12)
+        local SFStroke = Instance.new("UIStroke")
+        SFStroke.Color = Color3.fromRGB(65, 65, 70)
+        SFStroke.Parent = SliderFrame
+        
+        local SliderLabel = Instance.new("TextLabel")
+        SliderLabel.Size = UDim2.new(0.6, 0, 0, 30)
+        SliderLabel.Position = UDim2.new(0, 15, 0, 5)
+        SliderLabel.BackgroundTransparency = 1
+        SliderLabel.Text = text
+        SliderLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+        SliderLabel.Font = Enum.Font.SourceSansBold
+        SliderLabel.TextSize = 16
+        SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+        SliderLabel.Parent = SliderFrame
+        
+        local ValueLabel = Instance.new("TextLabel")
+        ValueLabel.Size = UDim2.new(0.3, 0, 0, 30)
+        ValueLabel.Position = UDim2.new(0.65, 0, 0, 5)
+        ValueLabel.BackgroundTransparency = 1
+        ValueLabel.Text = tostring(default)
+        ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ValueLabel.Font = Enum.Font.SourceSansBold
+        ValueLabel.TextSize = 16
+        ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+        ValueLabel.Parent = SliderFrame
+        
+        local SliderTrack = Instance.new("TextButton")
+        SliderTrack.Size = UDim2.new(1, -30, 0, 6)
+        SliderTrack.Position = UDim2.new(0, 15, 0, 42)
+        SliderTrack.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+        SliderTrack.Text = ""
+        SliderTrack.Parent = SliderFrame
+        Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(1, 0)
+        
+        local SliderFill = Instance.new("Frame")
+        SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+        SliderFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        SliderFill.BorderSizePixel = 0
+        SliderFill.Parent = SliderTrack
+        Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+        
+        local sliding = false
+        local function updateSlider(input)
+            local currentX = input.Position.X
+            local trackX = SliderTrack.AbsolutePosition.X
+            local trackWidth = SliderTrack.AbsoluteSize.X
+            local percentage = math.clamp((currentX - trackX) / trackWidth, 0, 1)
+            
+            SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+            local calculatedValue = math.floor(min + (max - min) * percentage)
+            ValueLabel.Text = tostring(calculatedValue)
+            
+            if callback then pcall(callback, calculatedValue) end
+        end
+        
+        SliderTrack.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true updateSlider(input) end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(input) end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end
+        end)
+    end
+
+    -- Создаем ползунки прямо в запущенную вкладку Игрок
+    InjectSlider("Скорость бега персонажа", 16, 250, 16, function(value)
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid.WalkSpeed = value
         end
     end)
 
-    -- Ползунок ПРЫЖКА (JumpPower) от 50 до 300
-    getgenv().GubbyCore.MainPlayerTab.AddSlider("Высота прыжка персонажа", 50, 300, 50, function(value)
+    InjectSlider("Высота прыжка персонажа", 50, 300, 50, function(value)
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid.UseJumpPower = true
             LocalPlayer.Character.Humanoid.JumpPower = value
         end
     end)
-    
-    print("[GubbyHUB] Ползунки успешно дозаписаны в конец скрипта!")
+
+    print("[GubbyHUB] Ползунки успешно внедрены во вкладку 'Игрок'!")
 else
-    error("Ошибка: Базовый дизайн GubbyHUB не запущен в игре!")
+    error("GubbyHUB не найден на экране! Сначала запусти базовые части скрипта.")
 end

@@ -1,28 +1,21 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Ядро и Основа Дизайна ]] --
-
+-- [[ GubbyHUB — ЧАСТЬ 1: Стеклянное Окно и Управление ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 
--- Создание глобальной таблицы, чтобы Часть 2 видела функцию создания вкладок
 getgenv().GubbyCore = {}
 
--- Создание ScreenGui
 local GubbyScreenGui = Instance.new("ScreenGui")
-GubbyScreenGui.Name = "GubbyHUB_CoreUI"
+GubbyScreenGui.Name = "GubbyHUB_Glass"
 GubbyScreenGui.ResetOnSpawn = false
-GubbyScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
 if syn and syn.protect_gui then syn.protect_gui(GubbyScreenGui) end
 GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
--- 1. ГЛАВНОЕ ОКНО
 local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 580, 0, 460)
 MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
-MainFrame.BackgroundColor3 = Color3.fromRGB(220, 222, 225)
-MainFrame.BorderSizePixel = 0
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+MainFrame.BackgroundTransparency = 0.56 -- Ровно 56% прозрачности
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = GubbyScreenGui
@@ -32,30 +25,32 @@ MainCorner.CornerRadius = UDim.new(0, 24)
 MainCorner.Parent = MainFrame
 
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(170, 172, 175)
+MainStroke.Color = Color3.fromRGB(160, 32, 255) -- Фиолетовый неон
 MainStroke.Thickness = 1.5
 MainStroke.Parent = MainFrame
 
--- 2. КНОПКИ УПРАВЛЕНИЯ ОКНОМ
+local HubTitle = Instance.new("TextLabel")
+HubTitle.Size = UDim2.new(0, 200, 0, 35)
+HubTitle.Position = UDim2.new(0, 25, 0, 12)
+HubTitle.BackgroundTransparency = 1
+HubTitle.Text = "GubbyHUB"
+HubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+HubTitle.Font = Enum.Font.FredokaOne
+HubTitle.TextSize = 24
+HubTitle.TextXAlignment = Enum.TextXAlignment.Left
+HubTitle.Parent = MainFrame
+
 local ControlContainer = Instance.new("Frame")
 ControlContainer.Size = UDim2.new(0, 80, 0, 30)
 ControlContainer.Position = UDim2.new(1, -95, 0, 15)
 ControlContainer.BackgroundTransparency = 1
 ControlContainer.Parent = MainFrame
 
-local ControlLayout = Instance.new("UIListLayout")
-ControlLayout.FillDirection = Enum.FillDirection.Horizontal
-ControlLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-ControlLayout.Padding = UDim.new(0, 8)
-ControlLayout.Parent = ControlContainer
-
 local function createTopButton(name, color, callback)
     local btn = Instance.new("TextButton")
-    btn.Name = name
     btn.Size = UDim2.new(0, 26, 0, 14)
     btn.BackgroundColor3 = color
     btn.Text = ""
-    btn.BorderSizePixel = 0
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 7)
     corner.Parent = btn
@@ -63,42 +58,37 @@ local function createTopButton(name, color, callback)
     btn.Parent = ControlContainer
 end
 
-local minimized = false
-createTopButton("MinimizeBtn", Color3.fromRGB(240, 190, 60), function()
-    minimized = not minimized
-    if minimized then
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 580, 0, 50)}):Play()
-    else
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 580, 0, 460)}):Play()
-    end
+createTopButton("Min", Color3.fromRGB(240, 190, 60), function()
+    local target = (MainFrame.Size.Y.Offset == 460) and 50 or 460
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 580, 0, target)}):Play()
 end)
 
-createTopButton("CloseBtn", Color3.fromRGB(230, 70, 70), function()
+createTopButton("Close", Color3.fromRGB(230, 70, 70), function()
     GubbyScreenGui:Destroy()
 end)
 
--- 3. САЙДБАР
+getgenv().GubbyCore.MainFrame = MainFrame
+print("[GubbyHUB] Часть 1 успешно запущена!")
+-- [[ GubbyHUB — ЧАСТЬ 2: Скроллбары и Логика элементов ]] --
+if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
+local MainFrame = getgenv().GubbyCore.MainFrame
+local TweenService = game:GetService("TweenService")
+
 local SidebarFrame = Instance.new("Frame")
-SidebarFrame.Name = "SidebarFrame"
-SidebarFrame.Size = UDim2.new(0, 130, 0, 390)
-SidebarFrame.Position = UDim2.new(0, 20, 0, 45)
-SidebarFrame.BackgroundColor3 = Color3.fromRGB(195, 198, 202)
-SidebarFrame.BorderSizePixel = 0
+SidebarFrame.Size = UDim2.new(0, 130, 0, 375)
+SidebarFrame.Position = UDim2.new(0, 20, 0, 60)
+SidebarFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+SidebarFrame.BackgroundTransparency = 0.3
 SidebarFrame.Parent = MainFrame
 
 local SidebarCorner = Instance.new("UICorner")
 SidebarCorner.CornerRadius = UDim.new(0, 20)
 SidebarCorner.Parent = SidebarFrame
 
-local SidebarStroke = Instance.new("UIStroke")
-SidebarStroke.Color = Color3.fromRGB(175, 178, 182)
-SidebarStroke.Parent = SidebarFrame
-
 local TabScroller = Instance.new("ScrollingFrame")
 TabScroller.Size = UDim2.new(1, -10, 1, -20)
 TabScroller.Position = UDim2.new(0, 5, 0, 10)
 TabScroller.BackgroundTransparency = 1
-TabScroller.BorderSizePixel = 0
 TabScroller.ScrollBarThickness = 3
 TabScroller.ScrollBarImageColor3 = Color3.fromRGB(160, 32, 255)
 TabScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -114,12 +104,10 @@ TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- 4. ОСНОВНАЯ ЗОНА СЛЕВА
 local ContainerScroller = Instance.new("ScrollingFrame")
 ContainerScroller.Size = UDim2.new(0, 390, 0, 370)
 ContainerScroller.Position = UDim2.new(0, 170, 0, 65)
 ContainerScroller.BackgroundTransparency = 1
-ContainerScroller.BorderSizePixel = 0
 ContainerScroller.ScrollBarThickness = 4
 ContainerScroller.ScrollBarImageColor3 = Color3.fromRGB(160, 32, 255)
 ContainerScroller.Parent = MainFrame
@@ -133,16 +121,15 @@ ContainerLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function
     ContainerScroller.CanvasSize = UDim2.new(0, 0, 0, ContainerLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- Глобальная функция создания вкладки для Части 2
 local pages = {}
 local firstPage = true
 
 getgenv().GubbyCore.CreateTab = function(tabName)
     local TabButton = Instance.new("TextButton")
     TabButton.Size = UDim2.new(0, 110, 0, 45)
-    TabButton.BackgroundColor3 = Color3.fromRGB(180, 183, 188)
+    TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     TabButton.Text = tabName
-    TabButton.TextColor3 = Color3.fromRGB(60, 60, 65)
+    TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
     TabButton.Font = Enum.Font.SourceSansBold
     TabButton.TextSize = 15
     
@@ -151,7 +138,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     ButtonCorner.Parent = TabButton
     
     local ButtonStroke = Instance.new("UIStroke")
-    ButtonStroke.Color = Color3.fromRGB(160, 162, 165)
+    ButtonStroke.Color = Color3.fromRGB(60, 60, 70)
     ButtonStroke.Parent = TabButton
     TabButton.Parent = TabScroller
     
@@ -161,11 +148,6 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     PageFrame.Visible = false
     PageFrame.Parent = ContainerScroller
     
-    local PageLayout = Instance.new("UIListLayout")
-    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    PageLayout.Padding = UDim.new(0, 10)
-    PageLayout.Parent = PageFrame
-    
     pages[tabName] = PageFrame
     
     TabButton.MouseButton1Click:Connect(function()
@@ -173,43 +155,40 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         PageFrame.Visible = true
         for _, b in pairs(TabScroller:GetChildren()) do
             if b:IsA("TextButton") then
-                b.BackgroundColor3 = Color3.fromRGB(180, 183, 188)
-                b.TextColor3 = Color3.fromRGB(60, 60, 65)
-                b:FindFirstChildOfClass("UIStroke").Color = Color3.fromRGB(160, 162, 165)
+                b.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+                b.TextColor3 = Color3.fromRGB(200, 200, 200)
+                b:FindFirstChildOfClass("UIStroke").Color = Color3.fromRGB(60, 60, 70)
             end
         end
         TabButton.BackgroundColor3 = Color3.fromRGB(160, 32, 255)
         TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        ButtonStroke.Color = Color3.fromRGB(200, 100, 255)
+        ButtonStroke.Color = Color3.fromRGB(220, 100, 255)
     end)
     
     if firstPage then
         PageFrame.Visible = true
         TabButton.BackgroundColor3 = Color3.fromRGB(160, 32, 255)
         TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        ButtonStroke.Color = Color3.fromRGB(200, 100, 255)
+        ButtonStroke.Color = Color3.fromRGB(220, 100, 255)
         firstPage = false
     end
     
-    local function AddEmptyToggle(text)
+    local function AddRealToggle(text, callback)
         local ToggleFrame = Instance.new("Frame")
         ToggleFrame.Size = UDim2.new(1, -10, 0, 55)
-        ToggleFrame.BackgroundColor3 = Color3.fromRGB(195, 198, 202)
+        ToggleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        ToggleFrame.BackgroundTransparency = 0.2
         
         local TFCorner = Instance.new("UICorner")
         TFCorner.CornerRadius = UDim.new(0, 16)
         TFCorner.Parent = ToggleFrame
-        
-        local TFStroke = Instance.new("UIStroke")
-        TFStroke.Color = Color3.fromRGB(175, 178, 182)
-        TFStroke.Parent = ToggleFrame
         
         local ToggleLabel = Instance.new("TextLabel")
         ToggleLabel.Size = UDim2.new(0, 250, 1, 0)
         ToggleLabel.Position = UDim2.new(0, 20, 0, 0)
         ToggleLabel.BackgroundTransparency = 1
         ToggleLabel.Text = text
-        ToggleLabel.TextColor3 = Color3.fromRGB(40, 40, 45)
+        ToggleLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
         ToggleLabel.Font = Enum.Font.SourceSansBold
         ToggleLabel.TextSize = 18
         ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -218,7 +197,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         local SwitchBtn = Instance.new("TextButton")
         SwitchBtn.Size = UDim2.new(0, 45, 0, 22)
         SwitchBtn.Position = UDim2.new(1, -65, 0.5, -11)
-        SwitchBtn.BackgroundColor3 = Color3.fromRGB(160, 163, 168)
+        SwitchBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
         SwitchBtn.Text = ""
         
         local SwitchCorner = Instance.new("UICorner")
@@ -244,25 +223,45 @@ getgenv().GubbyCore.CreateTab = function(tabName)
                 TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(160, 32, 255)}):Play()
                 TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(1, -19, 0.5, -8)}):Play()
             else
-                TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(160, 163, 168)}):Play()
+                TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 65)}):Play()
                 TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -8)}):Play()
             end
+            if callback then pcall(callback, enabled) end
         end)
     end
     
-    return {AddToggle = AddEmptyToggle}
-end
-print("Часть 1 успешно загружена!")
--- [[ GubbyHUB — ЧАСТЬ 2: Подключение вкладок ]] --
+    local function AddTextLabel(title, text)
+        local TitleLbl = Instance.new("TextLabel")
+        TitleLbl.Size = UDim2.new(1, -10, 0, 25)
+        TitleLbl.BackgroundTransparency = 1
+        TitleLbl.Text = title
+        TitleLbl.TextColor3 = Color3.fromRGB(160, 32, 255)
+        TitleLbl.Font = Enum.Font.SourceSansBold
+        TitleLbl.TextSize = 20
+        TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+        TitleLbl.Parent = PageFrame
 
--- Проверяем, что Часть 1 была успешно запущена
-if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab then
-    error("Ошибка: Сначала нужно запустить Часть 1!")
+        local DescLbl = Instance.new("TextLabel")
+        DescLbl.Size = UDim2.new(1, -10, 0, 60)
+        DescLbl.BackgroundTransparency = 1
+        DescLbl.Text = text
+        DescLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+        DescLbl.Font = Enum.Font.SourceSansItalic
+        DescLbl.TextSize = 16
+        DescLbl.TextWrapped = true
+        DescLbl.TextXAlignment = Enum.TextXAlignment.Left
+        DescLbl.TextYAlignment = Enum.TextYAlignment.Top
+        DescLbl.Parent = PageFrame
+    end
+    
+    return {AddToggle = AddRealToggle, AddInfo = AddTextLabel}
 end
-
+print("[GubbyHUB] Часть 2 успешно запущена!")
+-- [[ GubbyHUB — ЧАСТЬ 3: Наполнение Вкладок ]] --
+if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab then error("Запусти сначала Часть 2!") end
 local CreateTab = getgenv().GubbyCore.CreateTab
+local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- Создаем вкладки строго в твоем порядке
 local PlayerTab   = CreateTab("Игрок")
 local TrollTab    = CreateTab("Тролл")
 local CombatTab   = CreateTab("Комбат")
@@ -271,10 +270,38 @@ local MiscTab     = CreateTab("Смешанное")
 local FarmTab     = CreateTab("Авто фарм")
 local InfoTab     = CreateTab("Инфо")
 
--- Заполняем первую вкладку пустыми плашками для теста макета
-PlayerTab.AddToggle("Функция 1")
-PlayerTab.AddToggle("Функция 2")
-PlayerTab.AddToggle("Функция 3")
-PlayerTab.AddToggle("Функция 4")
+-- Вкладка Игрок (С реальными скриптами!)
+PlayerTab.AddToggle("Супер Скорость", function(state)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = state and 120 or 16
+    end
+end)
 
-print("Часть 2 успешно применена! GubbyHUB готов к работе.")
+PlayerTab.AddToggle("Высокий Прыжок", function(state)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.UseJumpPower = true
+        LocalPlayer.Character.Humanoid.JumpPower = state and 150 or 50
+    end
+end)
+
+PlayerTab.AddToggle("Бесконечные Прыжки", function(state)
+    getgenv().InfJump = state
+    game:GetService("UserInputService").JumpRequest:Connect(function()
+        if getgenv().InfJump and LocalPlayer.Character then
+            LocalPlayer.Character:FindFirstChildOfClass('Humanoid'):ChangeState("Jumping")
+        end
+    end)
+end)
+
+-- Пустые плашки для дизайна остальных вкладок
+TrollTab.AddToggle("Троллинг функция 1")
+CombatTab.AddToggle("Комбат функция 1")
+TeleportTab.AddToggle("Телепорт функция 1")
+MiscTab.AddToggle("Смешанная функция 1")
+FarmTab.AddToggle("Авто-фарм функция 1")
+
+-- ТВОЯ КАСТОМНАЯ ВКЛАДКА ИНФО
+InfoTab.AddInfo("Разработчик проекта:", "Губби (Gubby) — автор идеи, главный дизайнер и создатель макета интерфейса в Фотошопе.")
+InfoTab.AddInfo("Нейро-Ассистент:", "Джимини — напарник по коду. Помог собрать всё воедино. Мы лепили этот проект вместе, как скульпторы!")
+InfoTab.AddInfo("О скрипте:", "GubbyHUB — приватный чит-лаунчер на базе Glassmorphic UI с 56% прозрачностью. Оптимизирован под Solara.")
+print("[GubbyHUB] Все 3 части успешно загружены. ХАБ ГОТОВ!")

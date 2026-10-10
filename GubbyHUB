@@ -1,4 +1,4 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Монохром 25% + Ресайз ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Окно и Логотип ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -9,14 +9,13 @@ getgenv().GubbyCore = {}
 local GubbyScreenGui = Instance.new("ScreenGui")
 GubbyScreenGui.Name = "GubbyHUB_Premium"
 GubbyScreenGui.ResetOnSpawn = false
-if syn and syn.protect_gui then syn.protect_gui(GubbyScreenGui) end
 GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 580, 0, 460)
 MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-MainFrame.BackgroundTransparency = 0.25 -- Твои 25% прозрачности
+MainFrame.BackgroundTransparency = 0.25 -- 25% Прозрачности
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = GubbyScreenGui
@@ -26,7 +25,7 @@ MainCorner.CornerRadius = UDim.new(0, 20)
 MainCorner.Parent = MainFrame
 
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(255, 255, 255) -- Только белый контур
+MainStroke.Color = Color3.fromRGB(255, 255, 255)
 MainStroke.Thickness = 1.5
 MainStroke.Parent = MainFrame
 
@@ -41,16 +40,15 @@ HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.Parent = MainFrame
 
--- Круглая аватарка Губби (по центру сверху при сворачивании)
+-- Круглая аватарка Губби
 local GubbyLogo = Instance.new("ImageLabel")
-GubbyLogo.Name = "GubbyLogo"
 GubbyLogo.Size = UDim2.new(0, 36, 0, 36)
 GubbyLogo.Position = UDim2.new(0.5, -18, 0, 7)
 GubbyLogo.BackgroundTransparency = 1
-GubbyLogo.Image = "rbxassetid://76480973785909" -- Твой ID!
-GubbyLogo.ImageTransparency = 1 -- Скрыта по умолчанию
+GubbyLogo.Image = "rbxassetid://76480973785909"
+GubbyLogo.ImageTransparency = 1
 local LogoCorner = Instance.new("UICorner")
-LogoCorner.CornerRadius = UDim.new(1, 0) -- Делает аватарку идеально круглой
+LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = GubbyLogo
 GubbyLogo.Parent = MainFrame
 
@@ -73,13 +71,11 @@ local function createTopButton(name, color, position, callback)
     btn.Parent = ControlContainer
 end
 
--- Кнопка СВЕРНУТЬ с появлением аватарки Губби
 createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
     local isMinimized = (MainFrame.Size.Y.Offset < 100)
     local targetHeight = isMinimized and 460 or 50
     local logoTrans = isMinimized and 1 or 0
     local titleTrans = isMinimized and 0 or 1
-    
     TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, targetHeight)}):Play()
     TweenService:Create(GubbyLogo, TweenInfo.new(0.2), {ImageTransparency = logoTrans}):Play()
     TweenService:Create(HubTitle, TweenInfo.new(0.2), {TextTransparency = titleTrans}):Play()
@@ -89,48 +85,15 @@ createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), fu
     GubbyScreenGui:Destroy()
 end)
 
--- ЗОНА СВОБОДНОГО РАСТЯГИВАНИЯ ОКНА НА ◢
-local ResizeBtn = Instance.new("TextButton")
-ResizeBtn.Size = UDim2.new(0, 20, 0, 20)
-ResizeBtn.Position = UDim2.new(1, -20, 1, -20)
-ResizeBtn.BackgroundTransparency = 1
-ResizeBtn.Text = "◢"
-ResizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ResizeBtn.TextSize = 14
-ResizeBtn.ZIndex = 10
-ResizeBtn.Parent = MainFrame
-
-local resizing = false
-local startSize, startMousePos
-
-ResizeBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        resizing = true
-        startSize = MainFrame.Size
-        startMousePos = UserInputService:GetMouseLocation()
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local mousePos = UserInputService:GetMouseLocation()
-        local delta = mousePos - startMousePos
-        MainFrame.Size = UDim2.new(0, math.max(420, startSize.X.Offset + delta.X), 0, math.max(250, startSize.Y.Offset + delta.Y))
-    end
-end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
-end)
-
 getgenv().GubbyCore.MainFrame = MainFrame
 print("[GubbyHUB] Часть 1 успешно внедрена.")
--- [[ GubbyHUB — ЧАСТЬ 2: Полная адаптивность элементов ]] --
+-- [[ GubbyHUB — ЧАСТЬ 2: Адаптивность и Скролл ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame
 local TweenService = game:GetService("TweenService")
 
--- САЙДБАР: Теперь строго занимает 23% ширины окна и 80% высоты, никуда не улетит!
 local SidebarFrame = Instance.new("Frame")
-SidebarFrame.Size = UDim2.new(0.23, 0, 0.8, 0)
+SidebarFrame.Size = UDim2.new(0.24, 0, 0.8, 0)
 SidebarFrame.Position = UDim2.new(0, 20, 0, 60)
 SidebarFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 SidebarFrame.BackgroundTransparency = 0.4
@@ -159,10 +122,9 @@ TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- ОСНОВНОЙ КОНТЕНТ: Занимает всю оставшуюся правую часть окна автоматически (68% ширины)
 local ContainerScroller = Instance.new("ScrollingFrame")
-ContainerScroller.Size = UDim2.new(0.68, 0, 0.8, 0)
-ContainerScroller.Position = UDim2.new(0.28, 0, 0, 60)
+ContainerScroller.Size = UDim2.new(0.66, 0, 0.8, 0)
+ContainerScroller.Position = UDim2.new(0.29, 0, 0, 60)
 ContainerScroller.BackgroundTransparency = 1
 ContainerScroller.ScrollBarThickness = 3
 ContainerScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
@@ -182,7 +144,7 @@ local firstPage = true
 
 getgenv().GubbyCore.CreateTab = function(tabName)
     local TabButton = Instance.new("TextButton")
-    TabButton.Size = UDim2.new(0.9, 0, 0, 40) -- Кнопки теперь подстраиваются под ширину сайдбара!
+    TabButton.Size = UDim2.new(0.92, 0, 0, 42)
     TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     TabButton.Text = tabName
     TabButton.TextColor3 = Color3.fromRGB(150, 150, 155)
@@ -190,7 +152,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     TabButton.TextSize = 14
     
     local ButtonCorner = Instance.new("UICorner")
-    ButtonCorner.CornerRadius = UDim.new(0, 10)
+    ButtonCorner.CornerRadius = UDim.new(0, 12)
     ButtonCorner.Parent = TabButton
     
     local ButtonStroke = Instance.new("UIStroke")
@@ -206,7 +168,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     
     local PageLayout = Instance.new("UIListLayout")
     PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    PageLayout.Padding = UDim.new(0, 10)
+    PageLayout.Padding = UDim.new(0, 14)
     PageLayout.Parent = PageFrame
     
     pages[tabName] = PageFrame
@@ -236,11 +198,11 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     
     local function AddRealToggle(text, callback)
         local ToggleFrame = Instance.new("Frame")
-        ToggleFrame.Size = UDim2.new(0.96, 0, 0, 50) -- Адаптивная ширина плашки
+        ToggleFrame.Size = UDim2.new(0.96, 0, 0, 52)
         ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
         
         local TFCorner = Instance.new("UICorner")
-        TFCorner.CornerRadius = UDim.new(0, 12)
+        TFCorner.CornerRadius = UDim.new(0, 14)
         TFCorner.Parent = ToggleFrame
         
         local TFStroke = Instance.new("UIStroke")
@@ -249,7 +211,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         
         local ToggleLabel = Instance.new("TextLabel")
         ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
-        ToggleLabel.Position = UDim2.new(0, 15)
+        ToggleLabel.Position = UDim2.new(0, 15, 0, 0)
         ToggleLabel.BackgroundTransparency = 1
         ToggleLabel.Text = text
         ToggleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
@@ -259,7 +221,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         ToggleLabel.Parent = ToggleFrame
         
         local SwitchBtn = Instance.new("TextButton")
-        SwitchBtn.Size = UDim2.new(0, 40, 0, 20)
+        SwitchBtn.Size = UDim2.new(0, 42, 0, 20)
         SwitchBtn.Position = UDim2.new(1, -55, 0.5, -10)
         SwitchBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
         SwitchBtn.Text = ""
@@ -292,18 +254,18 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         end)
     end
     
-    -- ФИКС ТЕКСТА: Теперь это один контейнер, где высота автоматически рассчитывается под длину слов
+    -- ФИКС ДЛЯ АВТО-ВЫСОТЫ ТЕКСТА (БОЛЬШЕ НЕ НАПОЛЗАЕТ!)
     local function AddTextLabel(title, text)
         local TextBlock = Instance.new("TextLabel")
-        TextBlock.Size = UDim2.new(0.95, 0, 0, 70) -- Авто-перенос включен ниже
+        TextBlock.Size = UDim2.new(0.96, 0, 0, 0)
+        TextBlock.AutomaticSize = Enum.AutomaticSize.Y -- Сама считает высоту
         TextBlock.BackgroundTransparency = 1
-        -- Соединяем жирный заголовок и описание через перенос строки
         TextBlock.Text = "<b>" .. title .. "</b>\n<i>" .. text .. "</i>"
-        TextBlock.RichText = true -- Разрешает использовать теги <b> и <i>
+        TextBlock.RichText = true
         TextBlock.TextColor3 = Color3.fromRGB(240, 240, 245)
         TextBlock.Font = Enum.Font.SourceSans
         TextBlock.TextSize = 16
-        TextBlock.TextWrapped = true -- УБИРАЕТ МАКАРОНИНУ! Текст переносится по словам
+        TextBlock.TextWrapped = true -- Перенос слов включен
         TextBlock.TextXAlignment = Enum.TextXAlignment.Left
         TextBlock.TextYAlignment = Enum.TextYAlignment.Top
         TextBlock.Parent = PageFrame
@@ -311,11 +273,13 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     
     return {AddToggle = AddRealToggle, AddInfo = AddTextLabel}
 end
-print("[GubbyHUB] Часть 2 полностью пересобрана под ресайз!")
-- [[ GubbyHUB — ЧАСТЬ 3: Чистый перезапуск вкладок ]] --
-if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab then error("Запусти сначала Часть 2!") end
+print("[GubbyHUB] Часть 2 исправлена!")
+-- [[ GubbyHUB — ЧАСТЬ 3: Контент и Ресайзер ]] --
+if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 2!") end
 local CreateTab = getgenv().GubbyCore.CreateTab
+local MainFrame = getgenv().GubbyCore.MainFrame
 local LocalPlayer = game:GetService("Players").LocalPlayer
+local UserInputService = game:GetService("UserInputService")
 
 local PlayerTab   = CreateTab("Игрок")
 local TrollTab    = CreateTab("Тролл")
@@ -325,7 +289,6 @@ local MiscTab     = CreateTab("Смешанное")
 local FarmTab     = CreateTab("Авто фарм")
 local InfoTab     = CreateTab("Инфо")
 
--- Вкладка Игрок
 PlayerTab.AddToggle("Супер Скорость", function(state)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = state and 120 or 16
@@ -352,8 +315,38 @@ TeleportTab.AddToggle("Телепорт функция 1")
 MiscTab.AddToggle("Смешанная функция 1")
 FarmTab.AddToggle("Авто-фарм функция 1")
 
--- ТЕКСТ ТЕПЕРЬ БУДЕТ СТРОГО ДРУГ ПОД ДРУГОМ!
 InfoTab.AddInfo("Разработчик проекта:", "Губби (Gubby) — главный дизайнер и автор оригинального концепта в Фотошопе.")
 InfoTab.AddInfo("Нейро-Ассистент:", "Джимини — напарник по коду. Мы лепили этот проект заново, как скульпторы!")
 InfoTab.AddInfo("Стиль и Фичи:", "Премиальный Monochrome Glass UI (25% прозрачности). Окно поддерживает свободное растягивание мышкой за уголок. При сворачивании по центру выводится персональный круглый логотип Губби.")
-print("[GubbyHUB] Текст во вкладках успешно распределен!")
+
+-- КНОПКА РАСТЯГИВАНИЯ ОКНА ◢
+local ResizeBtn = Instance.new("TextButton")
+ResizeBtn.Size = UDim2.new(0, 20, 0, 20)
+ResizeBtn.Position = UDim2.new(1, -20, 1, -20)
+ResizeBtn.BackgroundTransparency = 1
+ResizeBtn.Text = "◢"
+ResizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ResizeBtn.TextSize = 14
+ResizeBtn.ZIndex = 10
+ResizeBtn.Parent = MainFrame
+
+local resizing = false
+local startSize, startMousePos
+ResizeBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        resizing = true
+        startSize = MainFrame.Size
+        startMousePos = UserInputService:GetMouseLocation()
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mousePos = UserInputService:GetMouseLocation()
+        local delta = mousePos - startMousePos
+        MainFrame.Size = UDim2.new(0, math.max(420, startSize.X.Offset + delta.X), 0, math.max(250, startSize.Y.Offset + delta.Y))
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
+end)
+print("[GubbyHUB] Полный запуск завершен успешно!")

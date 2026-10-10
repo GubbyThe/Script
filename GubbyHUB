@@ -85,13 +85,13 @@ end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
 print("[GubbyHUB] Часть 1 успешно загружена.")
--- [[ GubbyHUB — ЧАСТЬ 2: Адаптивность без вылетов за края ]] --
+-- [[ GubbyHUB — ЧАСТЬ 2: Финал Верстки (Без функций) ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame
-local TweenService = game:GetService("TweenService")
 
+-- САЙДБАР: Высота теперь строго с учетом верхнего отступа, низ никогда не вылезет
 local SidebarFrame = Instance.new("Frame")
-SidebarFrame.Size = UDim2.new(0.24, 0, 0.8, 0)
+SidebarFrame.Size = UDim2.new(0.24, 0, 1, -85) -- Авто-вычитание пикселей из высоты окна!
 SidebarFrame.Position = UDim2.new(0, 20, 0, 60)
 SidebarFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 SidebarFrame.BackgroundTransparency = 0.4
@@ -120,8 +120,9 @@ TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
 end)
 
+-- ПРАВАЯ ЗОНА КОНТЕНТА: Тоже имеет жесткий нижний ограничитель высоты
 local ContainerScroller = Instance.new("ScrollingFrame")
-ContainerScroller.Size = UDim2.new(0.66, 0, 0.8, 0)
+ContainerScroller.Size = UDim2.new(0.66, 0, 1, -85)
 ContainerScroller.Position = UDim2.new(0.29, 0, 0, 60)
 ContainerScroller.BackgroundTransparency = 1
 ContainerScroller.ScrollBarThickness = 3
@@ -194,66 +195,10 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         firstPage = false
     end
     
-    local function AddRealToggle(text)
-        local ToggleFrame = Instance.new("Frame")
-        ToggleFrame.Size = UDim2.new(0.96, 0, 0, 52)
-        ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-        
-        local TFCorner = Instance.new("UICorner")
-        TFCorner.CornerRadius = UDim.new(0, 14)
-        TFCorner.Parent = ToggleFrame
-        
-        local TFStroke = Instance.new("UIStroke")
-        TFStroke.Color = Color3.fromRGB(65, 65, 70)
-        TFStroke.Parent = ToggleFrame
-        
-        local ToggleLabel = Instance.new("TextLabel")
-        ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
-        ToggleLabel.Position = UDim2.new(0, 15, 0, 0)
-        ToggleLabel.BackgroundTransparency = 1
-        ToggleLabel.Text = text
-        ToggleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
-        ToggleLabel.Font = Enum.Font.SourceSansBold
-        ToggleLabel.TextSize = 16
-        ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        ToggleLabel.Parent = ToggleFrame
-        
-        local SwitchBtn = Instance.new("TextButton")
-        SwitchBtn.Size = UDim2.new(0, 42, 0, 20)
-        SwitchBtn.Position = UDim2.new(1, -55, 0.5, -10)
-        SwitchBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-        SwitchBtn.Text = ""
-        local SwitchCorner = Instance.new("UICorner")
-        SwitchCorner.CornerRadius = UDim.new(0, 10)
-        SwitchCorner.Parent = SwitchBtn
-        
-        local Circle = Instance.new("Frame")
-        Circle.Size = UDim2.new(0, 14, 0, 14)
-        Circle.Position = UDim2.new(0, 3, 0.5, -7)
-        Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        local CircleCorner = Instance.new("UICorner")
-        CircleCorner.CornerRadius = UDim.new(0, 7)
-        CircleCorner.Parent = Circle
-        Circle.Parent = SwitchBtn
-        SwitchBtn.Parent = ToggleFrame
-        ToggleFrame.Parent = PageFrame
-        
-        local enabled = false
-        SwitchBtn.MouseButton1Click:Connect(function()
-            enabled = not enabled
-            if enabled then
-                TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
-            else
-                TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
-                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-            end
-        end)
-    end
-    
+    -- Убрали функцию AddToggle полностью! Оставили только текст
     local function AddTextLabel(title, text)
         local TextBlock = Instance.new("TextLabel")
-        TextBlock.Size = UDim2.new(0.92, 0, 0, 0) -- Строго 92% ширины, чтобы не лез на скроллбар!
+        TextBlock.Size = UDim2.new(0.92, 0, 0, 0)
         TextBlock.AutomaticSize = Enum.AutomaticSize.Y
         TextBlock.BackgroundTransparency = 1
         TextBlock.Text = "<b>" .. title .. "</b>\n<i>" .. text .. "</i>"
@@ -265,7 +210,6 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         TextBlock.TextXAlignment = Enum.TextXAlignment.Left
         TextBlock.TextYAlignment = Enum.TextYAlignment.Top
         
-        -- Внутренний микро-отступ для безопасности текста
         local Padding = Instance.new("UIPadding")
         Padding.PaddingRight = UDim.new(0, 5)
         Padding.Parent = TextBlock
@@ -273,9 +217,9 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         TextBlock.Parent = PageFrame
     end
     
-    return {AddToggle = AddRealToggle, AddInfo = AddTextLabel}
+    return {AddInfo = AddTextLabel}
 end
-print("[GubbyHUB] Часть 2 успешно загружена.")
+print("[GubbyHUB] Чистая Часть 2 с жестким ограничителем высоты готова!")
 -- [[ GubbyHUB — ЧАСТЬ 3: Чистые Вкладки и Ресайз ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 2!") end
 local CreateTab = getgenv().GubbyCore.CreateTab

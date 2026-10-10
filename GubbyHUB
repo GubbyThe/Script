@@ -1,7 +1,9 @@
--- [[ GubbyHUB — ФАЙЛ 1: Окно и Аватар Губби ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Окно и Аватар ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 getgenv().GubbyCore = {}
 
@@ -42,159 +44,101 @@ HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.Parent = MainFrame
 
 local GubbyCircle = Instance.new("TextButton")
-GubbyCircle.Name = "GubbyCircle"
 GubbyCircle.Size = UDim2.new(0, 60, 0, 60)
 GubbyCircle.Position = UDim2.new(0.5, -30, 0.08, 0)
 GubbyCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 GubbyCircle.Text = ""
 GubbyCircle.Visible = false
 GubbyCircle.Active = true
-GubbyCircle.Draggable = false
 GubbyCircle.ZIndex = 100
-GubbyCircle.ClipsDescendants = false
 GubbyCircle.Parent = GubbyScreenGui
 
 Instance.new("UICorner", GubbyCircle).CornerRadius = UDim.new(1, 0)
-local CircleStroke = Instance.new("UIStroke")
+local CircleStroke = Instance.new("UIStroke", GubbyCircle)
 CircleStroke.Color = Color3.fromRGB(0, 0, 0)
 CircleStroke.Thickness = 2
-CircleStroke.Parent = GubbyCircle
 
-local FaceContainer = Instance.new("Frame")
+local FaceContainer = Instance.new("Frame", GubbyCircle)
 FaceContainer.Size = UDim2.new(1, 0, 1, 0)
 FaceContainer.BackgroundTransparency = 1
 FaceContainer.ZIndex = 101
-FaceContainer.Parent = GubbyCircle
 
 local function createEar(pos)
-    local ear = Instance.new("Frame")
+    local ear = Instance.new("Frame", FaceContainer)
     ear.Size = UDim2.new(0, 14, 0, 24)
     ear.Position = UDim2.new(pos, -7, 0, -12)
     ear.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     ear.ZIndex = 99
-    local s = Instance.new("UIStroke")
-    s.Color = Color3.fromRGB(0, 0, 0)
-    s.Thickness = 2
-    s.Parent = ear
-    ear.Parent = FaceContainer
+    Instance.new("UIStroke", ear).Color = Color3.fromRGB(0, 0, 0)
 end
-createEar(0.25)
-createEar(0.75)
+createEar(0.25) createEar(0.75)
 
 local function createEye(pos, rot)
-    local eye = Instance.new("Frame")
+    local eye = Instance.new("Frame", FaceContainer)
     eye.Size = UDim2.new(0, 12, 0, 3.5)
     eye.Position = UDim2.new(pos, -6, 0.42, -1)
     eye.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     eye.Rotation = rot
     eye.ZIndex = 102
     Instance.new("UICorner", eye).CornerRadius = UDim.new(1, 0)
-    eye.Parent = FaceContainer
 end
-createEye(0.32, 45)
-createEye(0.68, -45)
+createEye(0.32, 45) createEye(0.68, -45)
 
-local function createMouthPart(pos, rot)
-    local m = Instance.new("Frame")
+local function createMouth(pos, rot)
+    local m = Instance.new("Frame", FaceContainer)
     m.Size = UDim2.new(0, 14, 0, 3)
     m.Position = UDim2.new(pos, -5, 0.65, 0)
     m.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     m.Rotation = rot
     m.ZIndex = 102
     Instance.new("UICorner", m).CornerRadius = UDim.new(1, 0)
-    m.Parent = FaceContainer
 end
-createMouthPart(0.42, -20)
-createMouthPart(0.58, 20)
-
-local ControlContainer = Instance.new("Frame")
-ControlContainer.Size = UDim2.new(0, 80, 0, 30)
-ControlContainer.Position = UDim2.new(1, -95, 0, 15)
-ControlContainer.BackgroundTransparency = 1
-ControlContainer.ZIndex = 10
-ControlContainer.Parent = MainFrame
-
-local function createTopButton(name, color, position, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 26, 0, 14)
-    btn.Position = position
-    btn.BackgroundColor3 = color
-    btn.Text = ""
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 7)
-    corner.Parent = btn
-    btn.MouseButton1Click:Connect(callback)
-    btn.ZIndex = 10
-    btn.Parent = ControlContainer
-end
-
-createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
-    MainFrame.Visible = false
-    GubbyCircle.Visible = true
-end)
-
-GubbyCircle.MouseButton1Click:Connect(function()
-    GubbyCircle.Visible = false
-    MainFrame.Visible = true
-end)
-
-createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), function()
-    GubbyScreenGui:Destroy()
-end)
-
-MainFrame:GetPropertyChangedSignal("Size"):Connect(function()
-    ControlContainer.Position = UDim2.new(1, -95, 0, 15)
-end)
+createMouth(0.42, -20) createMouth(0.58, 20)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Файл 1 загружен!")
--- [[ GubbyHUB — ФАЙЛ 2: Адаптивный Движок ]] --
-if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Файл 1!") end
+getgenv().GubbyCore.GubbyCircle = GubbyCircle
+getgenv().GubbyCore.HubTitle = HubTitle
+-- [[ GubbyHUB — ЧАСТЬ 2: Скроллбары и Слайдеры ]] --
 local MainFrame = getgenv().GubbyCore.MainFrame
-local UserInputService = game:GetService("UserInputService")
+local GubbyCircle = getgenv().GubbyCore.GubbyCircle
+local HubTitle = getgenv().GubbyCore.HubTitle
+local TweenService = game:GetService("TweenService")
 
-local SidebarFrame = Instance.new("Frame")
+local SidebarFrame = Instance.new("Frame", MainFrame)
 SidebarFrame.Size = UDim2.new(0, 130, 1, -85)
 SidebarFrame.Position = UDim2.new(0, 20, 0, 60)
 SidebarFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 SidebarFrame.BackgroundTransparency = 0.4
-SidebarFrame.Parent = MainFrame
 Instance.new("UICorner", SidebarFrame).CornerRadius = UDim.new(0, 16)
 
-local TabScroller = Instance.new("ScrollingFrame")
+local TabScroller = Instance.new("ScrollingFrame", SidebarFrame)
 TabScroller.Size = UDim2.new(1, -10, 1, -20)
 TabScroller.Position = UDim2.new(0, 5, 0, 10)
 TabScroller.BackgroundTransparency = 1
 TabScroller.ScrollBarThickness = 2
-TabScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
 TabScroller.CanvasSize = UDim2.new(0, 0, 0, 400)
-TabScroller.Parent = SidebarFrame
 
-local TabLayout = Instance.new("UIListLayout")
+local TabLayout = Instance.new("UIListLayout", TabScroller)
 TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 TabLayout.Padding = UDim.new(0, 8)
 TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-TabLayout.Parent = TabScroller
 
-local ContainerScroller = Instance.new("ScrollingFrame")
+local ContainerScroller = Instance.new("ScrollingFrame", MainFrame)
 ContainerScroller.Size = UDim2.new(1, -185, 1, -85)
 ContainerScroller.Position = UDim2.new(0, 165, 0, 60)
 ContainerScroller.BackgroundTransparency = 1
 ContainerScroller.ScrollBarThickness = 3
-ContainerScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
 ContainerScroller.CanvasSize = UDim2.new(0, 0, 0, 500)
-ContainerScroller.Parent = MainFrame
 
-local ContainerLayout = Instance.new("UIListLayout")
+local ContainerLayout = Instance.new("UIListLayout", ContainerScroller)
 ContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
 ContainerLayout.Padding = UDim.new(0, 12)
-ContainerLayout.Parent = ContainerScroller
 
 local pages = {}
 local firstPage = true
 
 getgenv().GubbyCore.CreateTab = function(tabName)
-    local TabButton = Instance.new("TextButton")
+    local TabButton = Instance.new("TextButton", TabScroller)
     TabButton.Size = UDim2.new(0, 110, 0, 42)
     TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     TabButton.Text = tabName
@@ -202,21 +146,14 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     TabButton.Font = Enum.Font.SourceSansBold
     TabButton.TextSize = 14
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 12)
-    local bs = Instance.new("UIStroke")
+    local bs = Instance.new("UIStroke", TabButton)
     bs.Color = Color3.fromRGB(55, 55, 60)
-    bs.Parent = TabButton
-    TabButton.Parent = TabScroller
     
-    local PageFrame = Instance.new("Frame")
+    local PageFrame = Instance.new("Frame", ContainerScroller)
     PageFrame.Size = UDim2.new(1, 0, 1, 0)
     PageFrame.BackgroundTransparency = 1
     PageFrame.Visible = false
-    PageFrame.Parent = ContainerScroller
-    
-    local PageLayout = Instance.new("UIListLayout")
-    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    PageLayout.Padding = UDim.new(0, 14)
-    PageLayout.Parent = PageFrame
+    Instance.new("UIListLayout", PageFrame).Padding = UDim.new(0, 14)
     pages[tabName] = PageFrame
     
     TabButton.MouseButton1Click:Connect(function()
@@ -243,17 +180,14 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     end
     
     local function AddSlider(text, min, max, default, callback)
-        local SliderFrame = Instance.new("Frame")
+        local SliderFrame = Instance.new("Frame", PageFrame)
         SliderFrame.Size = UDim2.new(0.95, 0, 0, 60)
         SliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
         SliderFrame.BackgroundTransparency = 0.2
-        SliderFrame.Parent = PageFrame
         Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 12)
-        local sfs = Instance.new("UIStroke")
-        sfs.Color = Color3.fromRGB(65, 65, 70)
-        sfs.Parent = SliderFrame
+        Instance.new("UIStroke", SliderFrame).Color = Color3.fromRGB(65, 65, 70)
         
-        local SliderLabel = Instance.new("TextLabel")
+        local SliderLabel = Instance.new("TextLabel", SliderFrame)
         SliderLabel.Size = UDim2.new(0.6, 0, 0, 30)
         SliderLabel.Position = UDim2.new(0, 15, 0, 5)
         SliderLabel.BackgroundTransparency = 1
@@ -262,9 +196,8 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         SliderLabel.Font = Enum.Font.SourceSansBold
         SliderLabel.TextSize = 16
         SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-        SliderLabel.Parent = SliderFrame
         
-        local ValueLabel = Instance.new("TextLabel")
+        local ValueLabel = Instance.new("TextLabel", SliderFrame)
         ValueLabel.Size = UDim2.new(0.3, 0, 0, 30)
         ValueLabel.Position = UDim2.new(0.65, 0, 0, 5)
         ValueLabel.BackgroundTransparency = 1
@@ -273,21 +206,17 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         ValueLabel.Font = Enum.Font.SourceSansBold
         ValueLabel.TextSize = 16
         ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
-        ValueLabel.Parent = SliderFrame
         
-        local SliderTrack = Instance.new("TextButton")
+        local SliderTrack = Instance.new("TextButton", SliderFrame)
         SliderTrack.Size = UDim2.new(1, -30, 0, 6)
         SliderTrack.Position = UDim2.new(0, 15, 0, 42)
         SliderTrack.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
         SliderTrack.Text = ""
-        SliderTrack.Parent = SliderFrame
         Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(1, 0)
         
-        local SliderFill = Instance.new("Frame")
+        local SliderFill = Instance.new("Frame", SliderTrack)
         SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
         SliderFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        SliderFill.BorderSizePixel = 0
-        SliderFill.Parent = SliderTrack
         Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
         
         local sliding = false
@@ -302,16 +231,16 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         SliderTrack.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true updateSlider(input) end
         end)
-        UserInputService.InputChanged:Connect(function(input)
+        game:GetService("UserInputService").InputChanged:Connect(function(input)
             if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(input) end
         end)
-        UserInputService.InputEnded:Connect(function(input)
+        game:GetService("UserInputService").InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end
         end)
     end
     
     local function AddTextLabel(title, text)
-        local TextBlock = Instance.new("TextLabel")
+        local TextBlock = Instance.new("TextLabel", PageFrame)
         TextBlock.Size = UDim2.new(0.92, 0, 0, 70)
         TextBlock.BackgroundTransparency = 1
         TextBlock.Text = "<b>" .. title .. "</b>\n<i>" .. text .. "</i>"
@@ -322,19 +251,16 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         TextBlock.TextWrapped = true
         TextBlock.TextXAlignment = Enum.TextXAlignment.Left
         TextBlock.TextYAlignment = Enum.TextYAlignment.Top
-        TextBlock.Parent = PageFrame
     end
     
-    return {AddSlider = AddSlider, AddInfo = AddTextLabel}
+    return {AddSlider = AddSlider, AddInfo = AddTextLabel, RawPage = PageFrame}
 end
-getgenv().GubbyCore.CreateTab = getgenv().GubbyCore.CreateTab
-print("[GubbyHUB] Файл 2 загружен!")
--- [[ GubbyHUB — ФАЙЛ 3: Контент и Ресайз ]] --
-if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Файл 2!") end
+-- [[ GubbyHUB — ЧАСТЬ 3: Слайдеры, Ноклип и Ресайз ]] --
 local CreateTab = getgenv().GubbyCore.CreateTab
 local MainFrame = getgenv().GubbyCore.MainFrame
+local GubbyCircle = getgenv().GubbyCore.GubbyCircle
+local HubTitle = getgenv().GubbyCore.HubTitle
 local LocalPlayer = game:GetService("Players").LocalPlayer
-local UserInputService = game:GetService("UserInputService")
 
 local PlayerTab   = CreateTab("Игрок")
 local TrollTab    = CreateTab("Тролл")
@@ -344,25 +270,106 @@ local MiscTab     = CreateTab("Смешанное")
 local FarmTab     = CreateTab("Авто фарм")
 local InfoTab     = CreateTab("Инфо")
 
--- Реальные рабочие ползунки во вкладке "Игрок"!
-PlayerTab.AddSlider("Скорость бега персонажа", 16, 250, 16, function(value)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = value
+PlayerTab.AddSlider("Скорость бега персонажа", 16, 250, 16, function(v)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = v end
+end)
+
+PlayerTab.AddSlider("Высота прыжка персонажа", 50, 300, 50, function(v)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then 
+        LocalPlayer.Character.Humanoid.UseJumpPower = true LocalPlayer.Character.Humanoid.JumpPower = v 
     end
 end)
 
-PlayerTab.AddSlider("Высота прыжка персонажа", 50, 300, 50, function(value)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.UseJumpPower = true
-        LocalPlayer.Character.Humanoid.JumpPower = value
+-- ЖЕЛЕЗОБЕТОННЫЙ РАБОЧИЙ ТУМБЛЕР НОКЛИПА ИЗ СТАНДАРТНЫХ ФИГУР КОДОМ!
+local TFrame = Instance.new("Frame", PlayerTab.RawPage)
+TFrame.Size = UDim2.new(0.95, 0, 0, 52)
+TFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+TFrame.BackgroundTransparency = 0.2
+Instance.new("UICorner", TFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", TFrame).Color = Color3.fromRGB(65, 65, 70)
+
+local TLbl = Instance.new("TextLabel", TFrame)
+TLbl.Size = UDim2.new(0.6, 0, 1, 0)
+TLbl.Position = UDim2.new(0, 15, 0, 0)
+TLbl.BackgroundTransparency = 1
+TLbl.Text = "Проход сквозь стены (Noclip)"
+TLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+TLbl.Font = Enum.Font.SourceSansBold
+TLbl.TextSize = 16
+TLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local SBtn = Instance.new("TextButton", TFrame)
+SBtn.Size = UDim2.new(0, 42, 0, 20)
+SBtn.Position = UDim2.new(1, -55, 0.5, -10)
+SBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+SBtn.Text = ""
+Instance.new("UICorner", SBtn).CornerRadius = UDim.new(0, 10)
+
+local Crcl = Instance.new("Frame", SBtn)
+Crcl.Size = UDim2.new(0, 14, 0, 14)
+Crcl.Position = UDim2.new(0, 3, 0.5, -7)
+Crcl.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", Crcl).CornerRadius = UDim.new(0, 7)
+
+local noclipConnection = nil
+local enabled = false
+SBtn.MouseButton1Click:Connect(function()
+    enabled = not enabled
+    if enabled then
+        game:GetService("TweenService"):Create(SBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        game:GetService("TweenService"):Create(Crcl, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
+        noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+            if LocalPlayer.Character then
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide and part.Name ~= "HumanoidRootPart" and part.Name ~= "LeftLeg" and part.Name ~= "RightLeg" then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        game:GetService("TweenService"):Create(SBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
+        game:GetService("TweenService"):Create(Crcl, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
     end
 end)
 
-InfoTab.AddInfo("Разработчик проекта:", "Губби (Gubby) — автор оригинального концепта и интерфейса в Фотошопе.")
-InfoTab.AddInfo("Нейро-Ассистент:", "Джимини — напарник по коду. Мы лепили этот проект заново, как скульпторы!")
+InfoTab.AddInfo("Разработчик проекта:", "Губби (Gubby) — автор оригинального концепта в Фотошопе.")
+InfoTab.AddInfo("Нейро-Ассистент:", "Гренка — напарник по коду. Мы лепили этот проект заново, как скульпторы!")
 InfoTab.AddInfo("Стиль и Фичи:", "Премиальный Monochrome Glass UI (25% прозрачности). При нажатии на свернуть плавно сжимается на месте в идеальный круглый аватар Губби.")
 
-local ResizeBtn = Instance.new("TextButton")
+local ControlContainer = Instance.new("Frame", MainFrame)
+ControlContainer.Size = UDim2.new(0, 80, 0, 30)
+ControlContainer.Position = UDim2.new(1, -95, 0, 15)
+ControlContainer.BackgroundTransparency = 1
+ControlContainer.ZIndex = 10
+
+local function createTopButton(name, color, position, callback)
+    local btn = Instance.new("TextButton", ControlContainer)
+    btn.Size = UDim2.new(0, 26, 0, 14)
+    btn.Position = position
+    btn.BackgroundColor3 = color
+    btn.Text = ""
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
+    btn.MouseButton1Click:Connect(callback)
+    btn.ZIndex = 10
+end
+
+createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
+    MainFrame.Visible = false GubbyCircle.Visible = true
+end)
+
+GubbyCircle.MouseButton1Click:Connect(function()
+    GubbyCircle.Visible = false MainFrame.Visible = true
+end)
+
+createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), function()
+    GubbyScreenGui:Destroy()
+end)
+
+MainFrame:GetPropertyChangedSignal("Size"):Connect(function() ControlContainer.Position = UDim2.new(1, -95, 0, 15) end)
+
+local ResizeBtn = Instance.new("TextButton", MainFrame)
 ResizeBtn.Size = UDim2.new(0, 20, 0, 20)
 ResizeBtn.Position = UDim2.new(1, -20, 1, -20)
 ResizeBtn.BackgroundTransparency = 1
@@ -370,106 +377,18 @@ ResizeBtn.Text = "◢"
 ResizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ResizeBtn.TextSize = 14
 ResizeBtn.ZIndex = 10
-ResizeBtn.Parent = MainFrame
 
 local resizing = false
 local startSize, startMousePos
 ResizeBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        resizing = true
-        startSize = MainFrame.Size
-        startMousePos = UserInputService:GetMouseLocation()
+        resizing = true startSize = MainFrame.Size startMousePos = game:GetService("UserInputService"):GetMouseLocation()
     end
 end)
-UserInputService.InputChanged:Connect(function(input)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
     if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local mousePos = UserInputService:GetMouseLocation()
-        local delta = mousePos - startMousePos
+        local delta = game:GetService("UserInputService"):GetMouseLocation() - startMousePos
         MainFrame.Size = UDim2.new(0, math.max(460, startSize.X.Offset + delta.X), 0, math.max(320, startSize.Y.Offset + delta.Y))
     end
 end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
-end)
-print("[GubbyHUB] Полный запуск успешно завершен!")
--- [[ ЖЕЛЕЗОБЕТОННЫЙ НОКЛИП В КОНЕЦ ФАЙЛА ]] --
-task.spawn(function()
-    local RunService = game:GetService("RunService")
-    local TweenService = game:GetService("TweenService")
-    local LocalPlayer = game:GetService("Players").LocalPlayer
-
-    -- Ищем саму прокрутку контента, которая у тебя точно есть на экране
-    local Container = game:GetService("CoreGui"):FindFirstChild("ContainerScroller", true)
-    
-    -- Находим фрейм первой вкладки (Игрок)
-    local PlayerPage = Container and Container:FindFirstChildOfClass("Frame")
-
-    if PlayerPage then
-        -- 1. Создаем плашку тумблера под твой дизайн
-        local ToggleFrame = Instance.new("Frame")
-        ToggleFrame.Size = UDim2.new(0, 360, 0, 52)
-        ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-        ToggleFrame.BackgroundTransparency = 0.2
-        ToggleFrame.Parent = PlayerPage
-        
-        Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 12)
-        local tfs = Instance.new("UIStroke", ToggleFrame)
-        tfs.Color = Color3.fromRGB(65, 65, 70)
-        
-        -- 2. Текст
-        local ToggleLabel = Instance.new("TextLabel", ToggleFrame)
-        ToggleLabel.Size = UDim2.new(0.6, 0, 1, 0)
-        ToggleLabel.Position = UDim2.new(0, 15, 0, 0)
-        ToggleLabel.BackgroundTransparency = 1
-        ToggleLabel.Text = "Проход сквозь стены (Noclip)"
-        ToggleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
-        ToggleLabel.Font = Enum.Font.SourceSansBold
-        ToggleLabel.TextSize = 16
-        ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        
-        -- 3. Кнопка
-        local SwitchBtn = Instance.new("TextButton", ToggleFrame)
-        SwitchBtn.Size = UDim2.new(0, 42, 0, 20)
-        SwitchBtn.Position = UDim2.new(1, -55, 0.5, -10)
-        SwitchBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-        SwitchBtn.Text = ""
-        Instance.new("UICorner", SwitchBtn).CornerRadius = UDim.new(0, 10)
-        
-        -- Шарик
-        local Circle = Instance.new("Frame", SwitchBtn)
-        Circle.Size = UDim2.new(0, 14, 0, 14)
-        Circle.Position = UDim2.new(0, 3, 0.5, -7)
-        Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        Instance.new("UICorner", Circle).CornerRadius = UDim.new(0, 7)
-        
-        -- 4. Логика
-        local noclipConnection = nil
-        local enabled = false
-        
-        SwitchBtn.MouseButton1Click:Connect(function()
-            enabled = not enabled
-            if enabled then
-                TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
-                
-                noclipConnection = RunService.Stepped:Connect(function()
-                    if LocalPlayer.Character then
-                        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                            if part:IsA("BasePart") and part.CanCollide and part.Name ~= "HumanoidRootPart" and part.Name ~= "LeftLeg" and part.Name ~= "RightLeg" then
-                                part.CanCollide = false
-                            end
-                        end
-                    end
-                end)
-            else
-                TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
-                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-                
-                if noclipConnection then
-                    noclipConnection:Disconnect()
-                    noclipConnection = nil
-                end
-            end
-        end)
-    end
-end)
+game:GetService("UserInputService").InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end end)

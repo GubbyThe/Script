@@ -350,3 +350,31 @@ UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
 end)
 print("[GubbyHUB] Полный дизайн успешно зафиксирован!")
+-- [[ GubbyHUB — Дополнение: Рабочие Ползунки Скорости и Прыжка ]] --
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local PlayerTab = getgenv().GubbyCore and getgenv().GubbyCore.Tabs and getgenv().GubbyCore.Tabs["Игрок"]
+
+-- Если глобальная таблица вкладок доступна, добавляем ползунки напрямую
+if getgenv().GubbyCore and getgenv().GubbyCore.CreateTab then
+    -- На всякий случай берем движок создания элементов, если вкладки регистрировались через него
+    local TargetTab = getgenv().GubbyCore.PlayerTabInstance or getgenv().GubbyCore.CurrentPlayerTab
+    
+    -- Ползунок СКОРОСТИ (WalkSpeed) от 16 до 250
+    getgenv().GubbyCore.MainPlayerTab.AddSlider("Скорость бега персонажа", 16, 250, 16, function(value)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = value
+        end
+    end)
+
+    -- Ползунок ПРЫЖКА (JumpPower) от 50 до 300
+    getgenv().GubbyCore.MainPlayerTab.AddSlider("Высота прыжка персонажа", 50, 300, 50, function(value)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.UseJumpPower = true
+            LocalPlayer.Character.Humanoid.JumpPower = value
+        end
+    end)
+    
+    print("[GubbyHUB] Ползунки успешно дозаписаны в конец скрипта!")
+else
+    error("Ошибка: Базовый дизайн GubbyHUB не запущен в игре!")
+end

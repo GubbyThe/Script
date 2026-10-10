@@ -123,35 +123,35 @@ end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
 print("[GubbyHUB] Часть 1 успешно внедрена.")
--- [[ GubbyHUB — ЧАСТЬ 2: Фикс верстки и наложения текста ]] --
+-- [[ GubbyHUB — ЧАСТЬ 2: Полная адаптивность элементов ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame
 local TweenService = game:GetService("TweenService")
 
--- Сайдбар теперь привязан к высоте окна (0.85) и не вылезает вниз!
+-- САЙДБАР: Теперь строго занимает 23% ширины окна и 80% высоты, никуда не улетит!
 local SidebarFrame = Instance.new("Frame")
-SidebarFrame.Size = UDim2.new(0, 130, 0.82, 0)
+SidebarFrame.Size = UDim2.new(0.23, 0, 0.8, 0)
 SidebarFrame.Position = UDim2.new(0, 20, 0, 60)
 SidebarFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 SidebarFrame.BackgroundTransparency = 0.4
 SidebarFrame.Parent = MainFrame
 
 local SidebarCorner = Instance.new("UICorner")
-SidebarCorner.CornerRadius = UDim.new(0, 20)
+SidebarCorner.CornerRadius = UDim.new(0, 16)
 SidebarCorner.Parent = SidebarFrame
 
 local TabScroller = Instance.new("ScrollingFrame")
 TabScroller.Size = UDim2.new(1, -10, 1, -20)
 TabScroller.Position = UDim2.new(0, 5, 0, 10)
 TabScroller.BackgroundTransparency = 1
-TabScroller.ScrollBarThickness = 3
+TabScroller.ScrollBarThickness = 2
 TabScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
 TabScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 TabScroller.Parent = SidebarFrame
 
 local TabLayout = Instance.new("UIListLayout")
 TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-TabLayout.Padding = UDim.new(0, 10)
+TabLayout.Padding = UDim.new(0, 8)
 TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 TabLayout.Parent = TabScroller
 
@@ -159,12 +159,12 @@ TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- Контейнер для контента тоже адаптируется под размер окна
+-- ОСНОВНОЙ КОНТЕНТ: Занимает всю оставшуюся правую часть окна автоматически (68% ширины)
 local ContainerScroller = Instance.new("ScrollingFrame")
-ContainerScroller.Size = UDim2.new(0.67, 0, 0.8, 0)
-ContainerScroller.Position = UDim2.new(0, 170, 0, 65)
+ContainerScroller.Size = UDim2.new(0.68, 0, 0.8, 0)
+ContainerScroller.Position = UDim2.new(0.28, 0, 0, 60)
 ContainerScroller.BackgroundTransparency = 1
-ContainerScroller.ScrollBarThickness = 4
+ContainerScroller.ScrollBarThickness = 3
 ContainerScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
 ContainerScroller.Parent = MainFrame
 
@@ -182,15 +182,15 @@ local firstPage = true
 
 getgenv().GubbyCore.CreateTab = function(tabName)
     local TabButton = Instance.new("TextButton")
-    TabButton.Size = UDim2.new(0, 110, 0, 45)
+    TabButton.Size = UDim2.new(0.9, 0, 0, 40) -- Кнопки теперь подстраиваются под ширину сайдбара!
     TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     TabButton.Text = tabName
     TabButton.TextColor3 = Color3.fromRGB(150, 150, 155)
     TabButton.Font = Enum.Font.SourceSansBold
-    TabButton.TextSize = 15
+    TabButton.TextSize = 14
     
     local ButtonCorner = Instance.new("UICorner")
-    ButtonCorner.CornerRadius = UDim.new(0, 14)
+    ButtonCorner.CornerRadius = UDim.new(0, 10)
     ButtonCorner.Parent = TabButton
     
     local ButtonStroke = Instance.new("UIStroke")
@@ -198,17 +198,15 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     ButtonStroke.Parent = TabButton
     TabButton.Parent = TabScroller
     
-    -- Фрейм страницы
     local PageFrame = Instance.new("Frame")
     PageFrame.Size = UDim2.new(1, 0, 1, 0)
     PageFrame.BackgroundTransparency = 1
     PageFrame.Visible = false
     PageFrame.Parent = ContainerScroller
     
-    -- КРИТИЧЕСКИЙ ФИКС: Добавляем список для авто-выравнивания элементов внутри страницы!
     local PageLayout = Instance.new("UIListLayout")
     PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    PageLayout.Padding = UDim.new(0, 14)
+    PageLayout.Padding = UDim.new(0, 10)
     PageLayout.Parent = PageFrame
     
     pages[tabName] = PageFrame
@@ -238,11 +236,11 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     
     local function AddRealToggle(text, callback)
         local ToggleFrame = Instance.new("Frame")
-        ToggleFrame.Size = UDim2.new(1, -10, 0, 55)
+        ToggleFrame.Size = UDim2.new(0.96, 0, 0, 50) -- Адаптивная ширина плашки
         ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
         
         local TFCorner = Instance.new("UICorner")
-        TFCorner.CornerRadius = UDim.new(0, 16)
+        TFCorner.CornerRadius = UDim.new(0, 12)
         TFCorner.Parent = ToggleFrame
         
         local TFStroke = Instance.new("UIStroke")
@@ -250,31 +248,31 @@ getgenv().GubbyCore.CreateTab = function(tabName)
         TFStroke.Parent = ToggleFrame
         
         local ToggleLabel = Instance.new("TextLabel")
-        ToggleLabel.Size = UDim2.new(0, 200, 1, 0)
-        ToggleLabel.Position = UDim2.new(0, 20, 0, 0)
+        ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
+        ToggleLabel.Position = UDim2.new(0, 15)
         ToggleLabel.BackgroundTransparency = 1
         ToggleLabel.Text = text
         ToggleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
         ToggleLabel.Font = Enum.Font.SourceSansBold
-        ToggleLabel.TextSize = 18
+        ToggleLabel.TextSize = 16
         ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
         ToggleLabel.Parent = ToggleFrame
         
         local SwitchBtn = Instance.new("TextButton")
-        SwitchBtn.Size = UDim2.new(0, 45, 0, 22)
-        SwitchBtn.Position = UDim2.new(1, -65, 0.5, -11)
+        SwitchBtn.Size = UDim2.new(0, 40, 0, 20)
+        SwitchBtn.Position = UDim2.new(1, -55, 0.5, -10)
         SwitchBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
         SwitchBtn.Text = ""
         local SwitchCorner = Instance.new("UICorner")
-        SwitchCorner.CornerRadius = UDim.new(0, 11)
+        SwitchCorner.CornerRadius = UDim.new(0, 10)
         SwitchCorner.Parent = SwitchBtn
         
         local Circle = Instance.new("Frame")
-        Circle.Size = UDim2.new(0, 16, 0, 16)
-        Circle.Position = UDim2.new(0, 3, 0.5, -8)
+        Circle.Size = UDim2.new(0, 14, 0, 14)
+        Circle.Position = UDim2.new(0, 3, 0.5, -7)
         Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         local CircleCorner = Instance.new("UICorner")
-        CircleCorner.CornerRadius = UDim.new(0, 8)
+        CircleCorner.CornerRadius = UDim.new(0, 7)
         CircleCorner.Parent = Circle
         Circle.Parent = SwitchBtn
         SwitchBtn.Parent = ToggleFrame
@@ -285,50 +283,36 @@ getgenv().GubbyCore.CreateTab = function(tabName)
             enabled = not enabled
             if enabled then
                 TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(1, -19, 0.5, -8), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
+                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
             else
                 TweenService:Create(SwitchBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
-                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -8), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
             end
             if callback then pcall(callback, enabled) end
         end)
     end
     
-    -- Исправленная функция текста (теперь элементы создаются в отдельных контейнерах)
+    -- ФИКС ТЕКСТА: Теперь это один контейнер, где высота автоматически рассчитывается под длину слов
     local function AddTextLabel(title, text)
-        local TextContainer = Instance.new("Frame")
-        TextContainer.Size = UDim2.new(1, -10, 0, 75)
-        TextContainer.BackgroundTransparency = 1
-        TextContainer.Parent = PageFrame
-
-        local TitleLbl = Instance.new("TextLabel")
-        TitleLbl.Size = UDim2.new(1, 0, 0, 22)
-        TitleLbl.BackgroundTransparency = 1
-        TitleLbl.Text = title
-        TitleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TitleLbl.Font = Enum.Font.SourceSansBold
-        TitleLbl.TextSize = 19
-        TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-        TitleLbl.Parent = TextContainer
-
-        local DescLbl = Instance.new("TextLabel")
-        DescLbl.Size = UDim2.new(1, 0, 0, 50)
-        DescLbl.Position = UDim2.new(0, 0, 0, 24)
-        DescLbl.BackgroundTransparency = 1
-        DescLbl.Text = text
-        DescLbl.TextColor3 = Color3.fromRGB(190, 190, 195)
-        DescLbl.Font = Enum.Font.SourceSansItalic
-        DescLbl.TextSize = 15
-        DescLbl.TextWrapped = true
-        DescLbl.TextXAlignment = Enum.TextXAlignment.Left
-        DescLbl.TextYAlignment = Enum.TextYAlignment.Top
-        DescLbl.Parent = TextContainer
+        local TextBlock = Instance.new("TextLabel")
+        TextBlock.Size = UDim2.new(0.95, 0, 0, 70) -- Авто-перенос включен ниже
+        TextBlock.BackgroundTransparency = 1
+        -- Соединяем жирный заголовок и описание через перенос строки
+        TextBlock.Text = "<b>" .. title .. "</b>\n<i>" .. text .. "</i>"
+        TextBlock.RichText = true -- Разрешает использовать теги <b> и <i>
+        TextBlock.TextColor3 = Color3.fromRGB(240, 240, 245)
+        TextBlock.Font = Enum.Font.SourceSans
+        TextBlock.TextSize = 16
+        TextBlock.TextWrapped = true -- УБИРАЕТ МАКАРОНИНУ! Текст переносится по словам
+        TextBlock.TextXAlignment = Enum.TextXAlignment.Left
+        TextBlock.TextYAlignment = Enum.TextYAlignment.Top
+        TextBlock.Parent = PageFrame
     end
     
     return {AddToggle = AddRealToggle, AddInfo = AddTextLabel}
 end
-print("[GubbyHUB] Часть 2 исправлена!")
--- [[ GubbyHUB — ЧАСТЬ 3: Чистый перезапуск вкладок ]] --
+print("[GubbyHUB] Часть 2 полностью пересобрана под ресайз!")
+- [[ GubbyHUB — ЧАСТЬ 3: Чистый перезапуск вкладок ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab then error("Запусти сначала Часть 2!") end
 local CreateTab = getgenv().GubbyCore.CreateTab
 local LocalPlayer = game:GetService("Players").LocalPlayer

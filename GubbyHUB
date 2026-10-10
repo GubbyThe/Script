@@ -392,37 +392,33 @@ UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
 end)
 print("[GubbyHUB] Полный запуск успешно завершен!")
--- [[ ДОПОЛНЕНИЕ В КОНЕЦ: Адаптивный переключатель Noclip с ожиданием ]] --
+-- [[ ЖЕЛЕЗОБЕТОННЫЙ НОКЛИП В КОНЕЦ ФАЙЛА ]] --
 task.spawn(function()
-    task.wait(0.5) -- Ждем полсекунды, пока твой основной UI полностью прогрузится
-
     local RunService = game:GetService("RunService")
     local TweenService = game:GetService("TweenService")
     local LocalPlayer = game:GetService("Players").LocalPlayer
 
-    -- Ищем контейнер страниц твоего запущенного GubbyHUB
-    local Container = game:GetService("CoreGui"):FindFirstChild("ContainerScroller", true) or (MainFrame and MainFrame:FindFirstChild("ContainerScroller"))
-    local PlayerPageFrame = Container and Container:FindFirstChildOfClass("Frame")
+    -- Ищем саму прокрутку контента, которая у тебя точно есть на экране
+    local Container = game:GetService("CoreGui"):FindFirstChild("ContainerScroller", true)
+    
+    -- Находим фрейм первой вкладки (Игрок)
+    local PlayerPage = Container and Container:FindFirstChildOfClass("Frame")
 
-    if PlayerPageFrame then
-        -- 1. Создаем плашку для тумблера под твой монохромный стиль
+    if PlayerPage then
+        -- 1. Создаем плашку тумблера под твой дизайн
         local ToggleFrame = Instance.new("Frame")
-        ToggleFrame.Size = UDim2.new(0.95, 0, 0, 52)
+        ToggleFrame.Size = UDim2.new(0, 360, 0, 52)
         ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
         ToggleFrame.BackgroundTransparency = 0.2
-        ToggleFrame.Parent = PlayerPageFrame
+        ToggleFrame.Parent = PlayerPage
         
-        local TFCorner = Instance.new("UICorner")
-        TFCorner.CornerRadius = UDim.new(0, 12)
-        TFCorner.Parent = ToggleFrame
+        Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 12)
+        local tfs = Instance.new("UIStroke", ToggleFrame)
+        tfs.Color = Color3.fromRGB(65, 65, 70)
         
-        local TFStroke = Instance.new("UIStroke")
-        TFStroke.Color = Color3.fromRGB(65, 65, 70)
-        TFStroke.Parent = ToggleFrame
-        
-        -- 2. Текст названия чит-функции
-        local ToggleLabel = Instance.new("TextLabel")
-        ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
+        -- 2. Текст
+        local ToggleLabel = Instance.new("TextLabel", ToggleFrame)
+        ToggleLabel.Size = UDim2.new(0.6, 0, 1, 0)
         ToggleLabel.Position = UDim2.new(0, 15, 0, 0)
         ToggleLabel.BackgroundTransparency = 1
         ToggleLabel.Text = "Проход сквозь стены (Noclip)"
@@ -430,26 +426,23 @@ task.spawn(function()
         ToggleLabel.Font = Enum.Font.SourceSansBold
         ToggleLabel.TextSize = 16
         ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        ToggleLabel.Parent = ToggleFrame
         
-        -- 3. Овальный переключатель справа
-        local SwitchBtn = Instance.new("TextButton")
+        -- 3. Кнопка
+        local SwitchBtn = Instance.new("TextButton", ToggleFrame)
         SwitchBtn.Size = UDim2.new(0, 42, 0, 20)
         SwitchBtn.Position = UDim2.new(1, -55, 0.5, -10)
         SwitchBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
         SwitchBtn.Text = ""
-        SwitchBtn.Parent = ToggleFrame
         Instance.new("UICorner", SwitchBtn).CornerRadius = UDim.new(0, 10)
         
-        -- Шарик внутри тумблера
-        local Circle = Instance.new("Frame")
+        -- Шарик
+        local Circle = Instance.new("Frame", SwitchBtn)
         Circle.Size = UDim2.new(0, 14, 0, 14)
         Circle.Position = UDim2.new(0, 3, 0.5, -7)
         Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        Circle.Parent = SwitchBtn
         Instance.new("UICorner", Circle).CornerRadius = UDim.new(0, 7)
         
-        -- 4. Логика работы Ноклипа персонажа
+        -- 4. Логика
         local noclipConnection = nil
         local enabled = false
         

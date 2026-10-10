@@ -1,4 +1,4 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Векторный Арт Губби по рисунку ]] --
+-- [[ GubbyHUB — ЧАСТЬ 1: Белый Губби по рисунку ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -42,19 +42,19 @@ HubTitle.TextSize = 24
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 HubTitle.Parent = MainFrame
 
--- ТОТ САМЫЙ КРУЖОК-ГОЛОВА ГУББИ (Фиксированный)
+-- ТЕПЕРЬ ОН БЕЛЫЙ! Голова Губби при сворачивании
 local GubbyCircle = Instance.new("TextButton")
 GubbyCircle.Name = "GubbyCircle"
 GubbyCircle.Size = UDim2.new(0, 60, 0, 60)
-GubbyCircle.Position = UDim2.new(0.5, -30, 0.08, 0) -- Чуть ниже, чтобы уши не обрезались краем экрана
-GubbyCircle.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
-GubbyCircle.BackgroundTransparency = 0.1
+GubbyCircle.Position = UDim2.new(0.5, -30, 0.08, 0)
+GubbyCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Чисто белый цвет лица!
+GubbyCircle.BackgroundTransparency = 0
 GubbyCircle.Text = ""
 GubbyCircle.Visible = false
 GubbyCircle.Active = true
-GubbyCircle.Draggable = false -- Перетаскивание полностью отключено
+GubbyCircle.Draggable = false
 GubbyCircle.ZIndex = 100
-GubbyCircle.ClipsDescendants = false -- Чтобы уши могли торчать сверху!
+GubbyCircle.ClipsDescendants = false
 GubbyCircle.Parent = GubbyScreenGui
 
 local CircleCorner = Instance.new("UICorner")
@@ -62,8 +62,8 @@ CircleCorner.CornerRadius = UDim.new(1, 0)
 CircleCorner.Parent = GubbyCircle
 
 local CircleStroke = Instance.new("UIStroke")
-CircleStroke.Color = Color3.fromRGB(255, 255, 255)
-CircleStroke.Thickness = 1.5
+CircleStroke.Color = Color3.fromRGB(0, 0, 0) -- Черный контур головы
+CircleStroke.Thickness = 2
 CircleStroke.Parent = GubbyCircle
 
 -- КОНТЕЙНЕР ДЛЯ ЛИЦА И УШЕЙ
@@ -73,66 +73,68 @@ FaceContainer.BackgroundTransparency = 1
 FaceContainer.ZIndex = 101
 FaceContainer.Parent = GubbyCircle
 
--- Левое Ухо (Торчит сверху прямоугольником)
+-- Левое Ухо (Белое с черным контуром)
 local LeftEar = Instance.new("Frame")
 LeftEar.Size = UDim2.new(0, 14, 0, 22)
 LeftEar.Position = UDim2.new(0.25, -7, 0, -20)
-LeftEar.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
+LeftEar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 LeftEar.ZIndex = 99
 LeftEar.Parent = FaceContainer
 local LEStroke = Instance.new("UIStroke")
-LEStroke.Color = Color3.fromRGB(255, 255, 255)
-LEStroke.Thickness = 1.5
+LEStroke.Color = Color3.fromRGB(0, 0, 0)
+LEStroke.Thickness = 2
 LEStroke.Parent = LeftEar
 
--- Правое Ухо (Торчит сверху прямоугольником)
+-- Правое Ухо (Белое с черным контуром)
 local RightEar = Instance.new("Frame")
 RightEar.Size = UDim2.new(0, 14, 0, 22)
 RightEar.Position = UDim2.new(0.75, -7, 0, -20)
-RightEar.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
+RightEar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 RightEar.ZIndex = 99
 RightEar.Parent = FaceContainer
 local REStroke = Instance.new("UIStroke")
-REStroke.Color = Color3.fromRGB(255, 255, 255)
-REStroke.Thickness = 1.5
+REStroke.Color = Color3.fromRGB(0, 0, 0)
+REStroke.Thickness = 2
 REStroke.Parent = RightEar
 
--- Левый раскосый читерский глаз (Наклоненная полоска)
+-- Левый раскосый черный глаз
 local LeftEye = Instance.new("Frame")
-LeftEye.Size = UDim2.new(0, 12, 0, 3)
+LeftEye.Size = UDim2.new(0, 12, 0, 4)
 LeftEye.Position = UDim2.new(0.32, -6, 0.42, -1)
-LeftEye.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-LeftEye.Rotation = 45 -- Строгий злой прищур
+LeftEye.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Черный цвет
+LeftEye.Rotation = 45
 LeftEye.ZIndex = 102
 LeftEye.Parent = FaceContainer
 Instance.new("UICorner", LeftEye).CornerRadius = UDim.new(1, 0)
 
--- Правый раскосый читерский глаз (Наклоненная полоска)
+-- Правый раскосый черный глаз
 local RightEye = Instance.new("Frame")
-RightEye.Size = UDim2.new(0, 12, 0, 3)
+RightEye.Size = UDim2.new(0, 12, 0, 4)
 RightEye.Position = UDim2.new(0.68, -6, 0.42, -1)
-RightEye.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RightEye.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Черный цвет
 RightEye.Rotation = -45
 RightEye.ZIndex = 102
 RightEye.Parent = FaceContainer
 Instance.new("UICorner", RightEye).CornerRadius = UDim.new(1, 0)
 
--- РОТ ВОЛНОЙ (Зигзаг из двух пересекающихся под углом тонких линий)
+-- РОТ ВОЛНОЙ (Черные полоски зигзагом)
 local MouthPart1 = Instance.new("Frame")
-MouthPart1.Size = UDim2.new(0, 14, 0, 2)
+MouthPart1.Size = UDim2.new(0, 14, 0, 3)
 MouthPart1.Position = UDim2.new(0.42, -5, 0.65, 0)
-MouthPart1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MouthPart1.Rotation = -20 -- Первая часть волны идет вверх
+MouthPart1.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MouthPart1.Rotation = -20
 MouthPart1.ZIndex = 102
 MouthPart1.Parent = FaceContainer
+Instance.new("UICorner", MouthPart1).CornerRadius = UDim.new(1, 0)
 
 local MouthPart2 = Instance.new("Frame")
-MouthPart2.Size = UDim2.new(0, 14, 0, 2)
+MouthPart2.Size = UDim2.new(0, 14, 0, 3)
 MouthPart2.Position = UDim2.new(0.58, -5, 0.65, 0)
-MouthPart2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MouthPart2.Rotation = 20 -- Вторая часть уходит вниз, образуя изгиб
+MouthPart2.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MouthPart2.Rotation = 20
 MouthPart2.ZIndex = 102
 MouthPart2.Parent = FaceContainer
+Instance.new("UICorner", MouthPart2).CornerRadius = UDim.new(1, 0)
 
 -- КНОПКИ УПРАВЛЕНИЯ
 local ControlContainer = Instance.new("Frame")
@@ -175,7 +177,7 @@ MainFrame:GetPropertyChangedSignal("Size"):Connect(function()
 end)
 
 getgenv().GubbyCore.MainFrame = MainFrame
-print("[GubbyHUB] Оригинальный аватар Губби успешно воплощен в коде!")
+print("[GubbyHUB] Белый Губби успешно скомпилирован!")
 -- [[ GubbyHUB — ЧАСТЬ 2: Вырезана старая логика сжатия ]] --
 if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Часть 1!") end
 local MainFrame = getgenv().GubbyCore.MainFrame

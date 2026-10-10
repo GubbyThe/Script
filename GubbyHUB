@@ -255,7 +255,7 @@ getgenv().GubbyCore.CreateTab = function(tabName)
     
     return {AddSlider = AddSlider, AddInfo = AddTextLabel, RawPage = PageFrame}
 end
--- [[ GubbyHUB — ЧАСТЬ 3: Слайдеры, Ноклип и Ресайз ]] --
+-- [[ GubbyHUB — ЧАСТЬ 3: Слайдеры, Железобетонный Ноклип и Ресайз ]] --
 local CreateTab = getgenv().GubbyCore.CreateTab
 local MainFrame = getgenv().GubbyCore.MainFrame
 local GubbyCircle = getgenv().GubbyCore.GubbyCircle
@@ -280,7 +280,7 @@ PlayerTab.AddSlider("Высота прыжка персонажа", 50, 300, 50,
     end
 end)
 
--- ЖЕЛЕЗОБЕТОННЫЙ РАБОЧИЙ ТУМБЛЕР НОКЛИПА ИЗ СТАНДАРТНЫХ ФИГУР КОДОМ!
+-- ЖЕЛЕЗОБЕТОННЫЙ РАБОЧИЙ ТУМБЛЕР НОКЛИПА С ФИХОМ ФИЗИКИ
 local TFrame = Instance.new("Frame", PlayerTab.RawPage)
 TFrame.Size = UDim2.new(0.95, 0, 0, 52)
 TFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
@@ -318,19 +318,25 @@ SBtn.MouseButton1Click:Connect(function()
     if enabled then
         game:GetService("TweenService"):Create(SBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         game:GetService("TweenService"):Create(Crcl, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
+        
+        -- ФИКС: Переводим гуманоида в режим "Без физики", отключая столкновения со всеми стенами игры
         noclipConnection = game:GetService("RunService").Stepped:Connect(function()
-            if LocalPlayer.Character then
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") and part.CanCollide and part.Name ~= "HumanoidRootPart" and part.Name ~= "LeftLeg" and part.Name ~= "RightLeg" then
-                        part.CanCollide = false
-                    end
-                end
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.NoPhysics)
             end
         end)
     else
         game:GetService("TweenService"):Create(SBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
         game:GetService("TweenService"):Create(Crcl, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
+        
+        if noclipConnection then 
+            noclipConnection:Disconnect() 
+            noclipConnection = nil 
+            -- Возвращаем стандартное состояние физики
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.GettingUp)
+            end
+        end
     end
 end)
 

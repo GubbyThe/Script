@@ -1,45 +1,394 @@
--- [[ GubbyHUB — Оптимизированная рабочая версия ]] --
-local Fluent = loadstring(game:HttpGet("https://github.com"))()
+-- [[ GubbyHUB — ФАЙЛ 1: Окно и Аватар Губби ]] --
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
 
-local Window = Fluent:CreateWindow({
-    Title = "GubbyHUB",
-    SubTitle = "by Gubby",
-    TabWidth = 130,
-    Size = UDim2.fromOffset(580, 460),
-    Theme = "Dark"
-})
+getgenv().GubbyCore = {}
 
-local Tabs = {
-    Player = Window:AddTab({ Title = "Игрок", Icon = "user" }),
-    Info = Window:AddTab({ Title = "Инфо", Icon = "info" })
-}
+local GubbyScreenGui = Instance.new("ScreenGui")
+GubbyScreenGui.Name = "GubbyHUB_Premium"
+GubbyScreenGui.ResetOnSpawn = false
+GubbyScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+if syn and syn.protect_gui then syn.protect_gui(GubbyScreenGui) end
+GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
--- РАБОЧИЕ ПОЛЗУНКИ ВО ВКЛАДКЕ ИГРОК
-Tabs.Player:AddSlider("Speed", {
-    Title = "Скорость бега персонажа",
-    Min = 16, Max = 250, Default = 16, Rounding = 0,
-    Callback = function(Value)
-        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 580, 0, 460)
+MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+MainFrame.BackgroundTransparency = 0.25
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = GubbyScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 20)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(255, 255, 255)
+MainStroke.Thickness = 1.5
+MainStroke.Parent = MainFrame
+
+local HubTitle = Instance.new("TextLabel")
+HubTitle.Size = UDim2.new(0, 200, 0, 35)
+HubTitle.Position = UDim2.new(0, 25, 0, 12)
+HubTitle.BackgroundTransparency = 1
+HubTitle.Text = "GubbyHUB"
+HubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+HubTitle.Font = Enum.Font.FredokaOne
+HubTitle.TextSize = 24
+HubTitle.TextXAlignment = Enum.TextXAlignment.Left
+HubTitle.Parent = MainFrame
+
+local GubbyCircle = Instance.new("TextButton")
+GubbyCircle.Name = "GubbyCircle"
+GubbyCircle.Size = UDim2.new(0, 60, 0, 60)
+GubbyCircle.Position = UDim2.new(0.5, -30, 0.08, 0)
+GubbyCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+GubbyCircle.Text = ""
+GubbyCircle.Visible = false
+GubbyCircle.Active = true
+GubbyCircle.Draggable = false
+GubbyCircle.ZIndex = 100
+GubbyCircle.ClipsDescendants = false
+GubbyCircle.Parent = GubbyScreenGui
+
+Instance.new("UICorner", GubbyCircle).CornerRadius = UDim.new(1, 0)
+local CircleStroke = Instance.new("UIStroke")
+CircleStroke.Color = Color3.fromRGB(0, 0, 0)
+CircleStroke.Thickness = 2
+CircleStroke.Parent = GubbyCircle
+
+local FaceContainer = Instance.new("Frame")
+FaceContainer.Size = UDim2.new(1, 0, 1, 0)
+FaceContainer.BackgroundTransparency = 1
+FaceContainer.ZIndex = 101
+FaceContainer.Parent = GubbyCircle
+
+local function createEar(pos)
+    local ear = Instance.new("Frame")
+    ear.Size = UDim2.new(0, 14, 0, 24)
+    ear.Position = UDim2.new(pos, -7, 0, -12)
+    ear.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ear.ZIndex = 99
+    local s = Instance.new("UIStroke")
+    s.Color = Color3.fromRGB(0, 0, 0)
+    s.Thickness = 2
+    s.Parent = ear
+    ear.Parent = FaceContainer
+end
+createEar(0.25)
+createEar(0.75)
+
+local function createEye(pos, rot)
+    local eye = Instance.new("Frame")
+    eye.Size = UDim2.new(0, 12, 0, 3.5)
+    eye.Position = UDim2.new(pos, -6, 0.42, -1)
+    eye.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    eye.Rotation = rot
+    eye.ZIndex = 102
+    Instance.new("UICorner", eye).CornerRadius = UDim.new(1, 0)
+    eye.Parent = FaceContainer
+end
+createEye(0.32, 45)
+createEye(0.68, -45)
+
+local function createMouthPart(pos, rot)
+    local m = Instance.new("Frame")
+    m.Size = UDim2.new(0, 14, 0, 3)
+    m.Position = UDim2.new(pos, -5, 0.65, 0)
+    m.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    m.Rotation = rot
+    m.ZIndex = 102
+    Instance.new("UICorner", m).CornerRadius = UDim.new(1, 0)
+    m.Parent = FaceContainer
+end
+createMouthPart(0.42, -20)
+createMouthPart(0.58, 20)
+
+local ControlContainer = Instance.new("Frame")
+ControlContainer.Size = UDim2.new(0, 80, 0, 30)
+ControlContainer.Position = UDim2.new(1, -95, 0, 15)
+ControlContainer.BackgroundTransparency = 1
+ControlContainer.ZIndex = 10
+ControlContainer.Parent = MainFrame
+
+local function createTopButton(name, color, position, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 26, 0, 14)
+    btn.Position = position
+    btn.BackgroundColor3 = color
+    btn.Text = ""
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 7)
+    corner.Parent = btn
+    btn.MouseButton1Click:Connect(callback)
+    btn.ZIndex = 10
+    btn.Parent = ControlContainer
+end
+
+createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
+    MainFrame.Visible = false
+    GubbyCircle.Visible = true
+end)
+
+GubbyCircle.MouseButton1Click:Connect(function()
+    GubbyCircle.Visible = false
+    MainFrame.Visible = true
+end)
+
+createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), function()
+    GubbyScreenGui:Destroy()
+end)
+
+MainFrame:GetPropertyChangedSignal("Size"):Connect(function()
+    ControlContainer.Position = UDim2.new(1, -95, 0, 15)
+end)
+
+getgenv().GubbyCore.MainFrame = MainFrame
+print("[GubbyHUB] Файл 1 загружен!")
+-- [[ GubbyHUB — ФАЙЛ 2: Адаптивный Движок ]] --
+if not getgenv().GubbyCore or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Файл 1!") end
+local MainFrame = getgenv().GubbyCore.MainFrame
+local UserInputService = game:GetService("UserInputService")
+
+local SidebarFrame = Instance.new("Frame")
+SidebarFrame.Size = UDim2.new(0, 130, 1, -85)
+SidebarFrame.Position = UDim2.new(0, 20, 0, 60)
+SidebarFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+SidebarFrame.BackgroundTransparency = 0.4
+SidebarFrame.Parent = MainFrame
+Instance.new("UICorner", SidebarFrame).CornerRadius = UDim.new(0, 16)
+
+local TabScroller = Instance.new("ScrollingFrame")
+TabScroller.Size = UDim2.new(1, -10, 1, -20)
+TabScroller.Position = UDim2.new(0, 5, 0, 10)
+TabScroller.BackgroundTransparency = 1
+TabScroller.ScrollBarThickness = 2
+TabScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
+TabScroller.CanvasSize = UDim2.new(0, 0, 0, 400)
+TabScroller.Parent = SidebarFrame
+
+local TabLayout = Instance.new("UIListLayout")
+TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabLayout.Padding = UDim.new(0, 8)
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+TabLayout.Parent = TabScroller
+
+local ContainerScroller = Instance.new("ScrollingFrame")
+ContainerScroller.Size = UDim2.new(1, -185, 1, -85)
+ContainerScroller.Position = UDim2.new(0, 165, 0, 60)
+ContainerScroller.BackgroundTransparency = 1
+ContainerScroller.ScrollBarThickness = 3
+ContainerScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
+ContainerScroller.CanvasSize = UDim2.new(0, 0, 0, 500)
+ContainerScroller.Parent = MainFrame
+
+local ContainerLayout = Instance.new("UIListLayout")
+ContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ContainerLayout.Padding = UDim.new(0, 12)
+ContainerLayout.Parent = ContainerScroller
+
+local pages = {}
+local firstPage = true
+
+getgenv().GubbyCore.CreateTab = function(tabName)
+    local TabButton = Instance.new("TextButton")
+    TabButton.Size = UDim2.new(0, 110, 0, 42)
+    TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    TabButton.Text = tabName
+    TabButton.TextColor3 = Color3.fromRGB(150, 150, 155)
+    TabButton.Font = Enum.Font.SourceSansBold
+    TabButton.TextSize = 14
+    Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 12)
+    local bs = Instance.new("UIStroke")
+    bs.Color = Color3.fromRGB(55, 55, 60)
+    bs.Parent = TabButton
+    TabButton.Parent = TabScroller
+    
+    local PageFrame = Instance.new("Frame")
+    PageFrame.Size = UDim2.new(1, 0, 1, 0)
+    PageFrame.BackgroundTransparency = 1
+    PageFrame.Visible = false
+    PageFrame.Parent = ContainerScroller
+    
+    local PageLayout = Instance.new("UIListLayout")
+    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    PageLayout.Padding = UDim.new(0, 14)
+    PageLayout.Parent = PageFrame
+    pages[tabName] = PageFrame
+    
+    TabButton.MouseButton1Click:Connect(function()
+        for _, p in pairs(pages) do p.Visible = false end
+        PageFrame.Visible = true
+        for _, b in pairs(TabScroller:GetChildren()) do
+            if b:IsA("TextButton") then
+                b.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+                b.TextColor3 = Color3.fromRGB(150, 150, 155)
+                b:FindFirstChildOfClass("UIStroke").Color = Color3.fromRGB(55, 55, 60)
+            end
         end
+        TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TabButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+        bs.Color = Color3.fromRGB(255, 255, 255)
+    end)
+    
+    if firstPage then
+        PageFrame.Visible = true
+        TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TabButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+        bs.Color = Color3.fromRGB(255, 255, 255)
+        firstPage = false
     end
-})
-
-Tabs.Player:AddSlider("Jump", {
-    Title = "Высота прыжка персонажа",
-    Min = 50, Max = 300, Default = 50, Rounding = 0,
-    Callback = function(Value)
-        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            game.Players.LocalPlayer.Character.Humanoid.UseJumpPower = true
-            game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+    
+    local function AddSlider(text, min, max, default, callback)
+        local SliderFrame = Instance.new("Frame")
+        SliderFrame.Size = UDim2.new(0.95, 0, 0, 60)
+        SliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+        SliderFrame.BackgroundTransparency = 0.2
+        SliderFrame.Parent = PageFrame
+        Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 12)
+        local sfs = Instance.new("UIStroke")
+        sfs.Color = Color3.fromRGB(65, 65, 70)
+        sfs.Parent = SliderFrame
+        
+        local SliderLabel = Instance.new("TextLabel")
+        SliderLabel.Size = UDim2.new(0.6, 0, 0, 30)
+        SliderLabel.Position = UDim2.new(0, 15, 0, 5)
+        SliderLabel.BackgroundTransparency = 1
+        SliderLabel.Text = text
+        SliderLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+        SliderLabel.Font = Enum.Font.SourceSansBold
+        SliderLabel.TextSize = 16
+        SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+        SliderLabel.Parent = SliderFrame
+        
+        local ValueLabel = Instance.new("TextLabel")
+        ValueLabel.Size = UDim2.new(0.3, 0, 0, 30)
+        ValueLabel.Position = UDim2.new(0.65, 0, 0, 5)
+        ValueLabel.BackgroundTransparency = 1
+        ValueLabel.Text = tostring(default)
+        ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ValueLabel.Font = Enum.Font.SourceSansBold
+        ValueLabel.TextSize = 16
+        ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+        ValueLabel.Parent = SliderFrame
+        
+        local SliderTrack = Instance.new("TextButton")
+        SliderTrack.Size = UDim2.new(1, -30, 0, 6)
+        SliderTrack.Position = UDim2.new(0, 15, 0, 42)
+        SliderTrack.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+        SliderTrack.Text = ""
+        SliderTrack.Parent = SliderFrame
+        Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(1, 0)
+        
+        local SliderFill = Instance.new("Frame")
+        SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+        SliderFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        SliderFill.BorderSizePixel = 0
+        SliderFill.Parent = SliderTrack
+        Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+        
+        local sliding = false
+        local function updateSlider(input)
+            local percentage = math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
+            SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+            local val = math.floor(min + (max - min) * percentage)
+            ValueLabel.Text = tostring(val)
+            if callback then pcall(callback, val) end
         end
+        
+        SliderTrack.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true updateSlider(input) end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(input) end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end
+        end)
     end
-})
+    
+    local function AddTextLabel(title, text)
+        local TextBlock = Instance.new("TextLabel")
+        TextBlock.Size = UDim2.new(0.92, 0, 0, 70)
+        TextBlock.BackgroundTransparency = 1
+        TextBlock.Text = "<b>" .. title .. "</b>\n<i>" .. text .. "</i>"
+        TextBlock.RichText = true
+        TextBlock.TextColor3 = Color3.fromRGB(240, 240, 245)
+        TextBlock.Font = Enum.Font.SourceSans
+        TextBlock.TextSize = 16
+        TextBlock.TextWrapped = true
+        TextBlock.TextXAlignment = Enum.TextXAlignment.Left
+        TextBlock.TextYAlignment = Enum.TextYAlignment.Top
+        TextBlock.Parent = PageFrame
+    end
+    
+    return {AddSlider = AddSlider, AddInfo = AddTextLabel}
+end
+getgenv().GubbyCore.CreateTab = getgenv().GubbyCore.CreateTab
+print("[GubbyHUB] Файл 2 загружен!")
+-- [[ GubbyHUB — ФАЙЛ 3: Контент и Ресайз ]] --
+if not getgenv().GubbyCore or not getgenv().GubbyCore.CreateTab or not getgenv().GubbyCore.MainFrame then error("Запусти сначала Файл 2!") end
+local CreateTab = getgenv().GubbyCore.CreateTab
+local MainFrame = getgenv().GubbyCore.MainFrame
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local UserInputService = game:GetService("UserInputService")
 
--- НАША ВКЛАДКА ИНФО
-Tabs.Info:AddParagraph({
-    Title = "Разработчик проекта: Губби",
-    Content = "Автор оригинального концепта. Мы лепили этот проект вместе, как скульпторы!"
-})
+local PlayerTab   = CreateTab("Игрок")
+local TrollTab    = CreateTab("Тролл")
+local CombatTab   = CreateTab("Комбат")
+local TeleportTab = CreateTab("Телепорт")
+local MiscTab     = CreateTab("Смешанное")
+local FarmTab     = CreateTab("Авто фарм")
+local InfoTab     = CreateTab("Инфо")
 
-Fluent:Notify({ Title = "GubbyHUB", Content = "Скрипт успешно запущен!", Duration = 5 })
+-- Реальные рабочие ползунки во вкладке "Игрок"!
+PlayerTab.AddSlider("Скорость бега персонажа", 16, 250, 16, function(value)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = value
+    end
+end)
+
+PlayerTab.AddSlider("Высота прыжка персонажа", 50, 300, 50, function(value)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.UseJumpPower = true
+        LocalPlayer.Character.Humanoid.JumpPower = value
+    end
+end)
+
+InfoTab.AddInfo("Разработчик проекта:", "Губби (Gubby) — автор оригинального концепта и интерфейса в Фотошопе.")
+InfoTab.AddInfo("Нейро-Ассистент:", "Джимини — напарник по коду. Мы лепили этот проект заново, как скульпторы!")
+InfoTab.AddInfo("Стиль и Фичи:", "Премиальный Monochrome Glass UI (25% прозрачности). При нажатии на свернуть плавно сжимается на месте в идеальный круглый аватар Губби.")
+
+local ResizeBtn = Instance.new("TextButton")
+ResizeBtn.Size = UDim2.new(0, 20, 0, 20)
+ResizeBtn.Position = UDim2.new(1, -20, 1, -20)
+ResizeBtn.BackgroundTransparency = 1
+ResizeBtn.Text = "◢"
+ResizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ResizeBtn.TextSize = 14
+ResizeBtn.ZIndex = 10
+ResizeBtn.Parent = MainFrame
+
+local resizing = false
+local startSize, startMousePos
+ResizeBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        resizing = true
+        startSize = MainFrame.Size
+        startMousePos = UserInputService:GetMouseLocation()
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mousePos = UserInputService:GetMouseLocation()
+        local delta = mousePos - startMousePos
+        MainFrame.Size = UDim2.new(0, math.max(460, startSize.X.Offset + delta.X), 0, math.max(320, startSize.Y.Offset + delta.Y))
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
+end)
+print("[GubbyHUB] Полный запуск успешно завершен!")

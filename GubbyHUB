@@ -1,202 +1,161 @@
--- [[ GubbyHUB — ЧАСТЬ 1: Окно и Аватар ]] --
+-- [[ GubbyHUB v3 — ЧАСТЬ 1: ОСНОВА И ТВОЙ ДИЗАЙН ]] --
 local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
-getgenv().GubbyCore = {}
+if CoreGui:FindFirstChild("GubbyScreenGui") then
+    CoreGui.GubbyScreenGui:Destroy()
+end
 
-local GubbyScreenGui = Instance.new("ScreenGui")
-GubbyScreenGui.Name = "GubbyHUB_Premium"
+local GubbyScreenGui = Instance.new("ScreenGui", CoreGui)
+GubbyScreenGui.Name = "GubbyScreenGui"
 GubbyScreenGui.ResetOnSpawn = false
-GubbyScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-if syn and syn.protect_gui then syn.protect_gui(GubbyScreenGui) end
-GubbyScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 580, 0, 460)
-MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+local MainFrame = Instance.new("Frame", GubbyScreenGui)
+MainFrame.Size = UDim2.new(0, 520, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -180)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.25
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.Parent = GubbyScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 20)
-MainCorner.Parent = MainFrame
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(255, 255, 255)
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(60, 60, 65)
 MainStroke.Thickness = 1.5
-MainStroke.Parent = MainFrame
 
-local HubTitle = Instance.new("TextLabel")
-HubTitle.Size = UDim2.new(0, 200, 0, 35)
-HubTitle.Position = UDim2.new(0, 25, 0, 12)
-HubTitle.BackgroundTransparency = 1
-HubTitle.Text = "GubbyHUB"
-HubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-HubTitle.Font = Enum.Font.FredokaOne
-HubTitle.TextSize = 24
-HubTitle.TextXAlignment = Enum.TextXAlignment.Left
-HubTitle.Parent = MainFrame
+local TabContainer = Instance.new("Frame", MainFrame)
+TabContainer.Size = UDim2.new(0, 140, 1, -50)
+TabContainer.Position = UDim2.new(0, 10, 0, 45)
+TabContainer.BackgroundTransparency = 1
 
-local GubbyCircle = Instance.new("TextButton")
-GubbyCircle.Size = UDim2.new(0, 60, 0, 60)
-GubbyCircle.Position = UDim2.new(0.5, -30, 0.08, 0)
-GubbyCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-GubbyCircle.Text = ""
+local TabLayout = Instance.new("UIListLayout", TabContainer)
+TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabLayout.Padding = UDim.new(0, 6)
+
+local PagesContainer = Instance.new("Frame", MainFrame)
+PagesContainer.Size = UDim2.new(1, -170, 1, -60)
+PagesContainer.Position = UDim2.new(0, 160, 0, 45)
+PagesContainer.BackgroundTransparency = 1
+
+local GubbyCircle = Instance.new("TextButton", GubbyScreenGui)
+GubbyCircle.Size = UDim2.new(0, 50, 0, 50)
+GubbyCircle.Position = UDim2.new(0.05, 0, 0.05, 0)
+GubbyCircle.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+GubbyCircle.Text = "G"
+GubbyCircle.TextColor3 = Color3.fromRGB(255, 255, 255)
+GubbyCircle.Font = Enum.Font.SourceSansBold
+GubbyCircle.TextSize = 22
 GubbyCircle.Visible = false
-GubbyCircle.Active = true
-GubbyCircle.ZIndex = 100
-GubbyCircle.Parent = GubbyScreenGui
+Instance.new("UICorner", GubbyCircle).CornerRadius = UDim.new(0, 25)
+Instance.new("UIStroke", GubbyCircle).Color = Color3.fromRGB(255, 255, 255)
 
-Instance.new("UICorner", GubbyCircle).CornerRadius = UDim.new(1, 0)
-local CircleStroke = Instance.new("UIStroke", GubbyCircle)
-CircleStroke.Color = Color3.fromRGB(0, 0, 0)
-CircleStroke.Thickness = 2
+local HubTitle = Instance.new("TextLabel", MainFrame)
+HubTitle.Size = UDim2.new(0.5, 0, 0, 30)
+HubTitle.Position = UDim2.new(0, 15, 0, 10)
+HubTitle.BackgroundTransparency = 1
+HubTitle.Text = "GubbyHUB v3"
+HubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+HubTitle.Font = Enum.Font.SourceSansBold
+HubTitle.TextSize = 18
+HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-local FaceContainer = Instance.new("Frame", GubbyCircle)
-FaceContainer.Size = UDim2.new(1, 0, 1, 0)
-FaceContainer.BackgroundTransparency = 1
-FaceContainer.ZIndex = 101
-
-local function createEar(pos)
-    local ear = Instance.new("Frame", FaceContainer)
-    ear.Size = UDim2.new(0, 14, 0, 24)
-    ear.Position = UDim2.new(pos, -7, 0, -12)
-    ear.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    ear.ZIndex = 99
-    Instance.new("UIStroke", ear).Color = Color3.fromRGB(0, 0, 0)
-end
-createEar(0.25) createEar(0.75)
-
-local function createEye(pos, rot)
-    local eye = Instance.new("Frame", FaceContainer)
-    eye.Size = UDim2.new(0, 12, 0, 3.5)
-    eye.Position = UDim2.new(pos, -6, 0.42, -1)
-    eye.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    eye.Rotation = rot
-    eye.ZIndex = 102
-    Instance.new("UICorner", eye).CornerRadius = UDim.new(1, 0)
-end
-createEye(0.32, 45) createEye(0.68, -45)
-
-local function createMouth(pos, rot)
-    local m = Instance.new("Frame", FaceContainer)
-    m.Size = UDim2.new(0, 14, 0, 3)
-    m.Position = UDim2.new(pos, -5, 0.65, 0)
-    m.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    m.Rotation = rot
-    m.ZIndex = 102
-    Instance.new("UICorner", m).CornerRadius = UDim.new(1, 0)
-end
-createMouth(0.42, -20) createMouth(0.58, 20)
-
-getgenv().GubbyCore.MainFrame = MainFrame
-getgenv().GubbyCore.GubbyCircle = GubbyCircle
-getgenv().GubbyCore.HubTitle = HubTitle
--- [[ GubbyHUB — ЧАСТЬ 2: Стабильная UI Библиотека (Monochromatic Glass) ]] --
-getgenv().GubbyCore = getgenv().GubbyCore or {}
-
+getgenv().GubbyCore = {
+    MainFrame = MainFrame,
+    TabContainer = TabContainer,
+    PagesContainer = PagesContainer,
+    GubbyCircle = GubbyCircle,
+    GubbyScreenGui = GubbyScreenGui
+}
+-- [[ GubbyHUB v3 — ЧАСТЬ 2: ФУНКЦИИ И ВКЛАДКИ ]] --
 local TweenService = game:GetService("TweenService")
-local MainFrame = getgenv().GubbyCore.MainFrame
-local TabContainer = getgenv().GubbyCore.TabContainer
-local PagesContainer = getgenv().GubbyCore.PagesContainer
+local UserInputService = game:GetService("UserInputService")
+local Core = getgenv().GubbyCore
+
+local firstTab = true
 
 local function CreateTab(Name)
-    -- Кнопка вкладки в левом меню (Твой оригинальный стиль)
-    local TabButton = Instance.new("TextButton", TabContainer)
-    TabButton.Size = UDim2.new(0.9, 0, 0, 38)
+    local TabButton = Instance.new("TextButton", Core.TabContainer)
+    TabButton.Size = UDim2.new(1, 0, 0, 34)
     TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     TabButton.BackgroundTransparency = 0.4
     TabButton.Text = Name
-    TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TabButton.TextColor3 = Color3.fromRGB(180, 180, 180)
     TabButton.Font = Enum.Font.SourceSansBold
     TabButton.TextSize = 14
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 8)
-    local TabStroke = Instance.new("UIStroke", TabButton)
-    TabStroke.Color = Color3.fromRGB(55, 55, 60)
-    TabStroke.Thickness = 1
+    Instance.new("UIStroke", TabButton).Color = Color3.fromRGB(50, 50, 55)
 
-    -- Контейнер страницы для элементов управления
-    local RawPage = Instance.new("ScrollingFrame", PagesContainer)
+    local RawPage = Instance.new("ScrollingFrame", Core.PagesContainer)
     RawPage.Size = UDim2.new(1, 0, 1, 0)
     RawPage.BackgroundTransparency = 1
     RawPage.Visible = false
-    RawPage.ScrollBarThickness = 2
-    RawPage.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 85)
+    RawPage.ScrollBarThickness = 3
+    RawPage.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 75)
     
     local ListLayout = Instance.new("UIListLayout", RawPage)
     ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ListLayout.Padding = UDim.new(0, 10)
+    ListLayout.Padding = UDim.new(0, 8)
     ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    -- Авто-размер холста, чтобы элементы не слипались
     ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        RawPage.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 20)
+        RawPage.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 15)
     end)
 
-    -- Переключение вкладок при клике
     TabButton.MouseButton1Click:Connect(function()
-        for _, page in pairs(PagesContainer:GetChildren()) do
+        for _, page in pairs(Core.PagesContainer:GetChildren()) do
             if page:IsA("ScrollingFrame") then page.Visible = false end
         end
-        for _, btn in pairs(TabContainer:GetChildren()) do
+        for _, btn in pairs(Core.TabContainer:GetChildren()) do
             if btn:IsA("TextButton") then 
-                TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(200, 200, 200), BackgroundColor3 = Color3.fromRGB(30, 30, 35)}):Play()
+                TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(180, 180, 180), BackgroundColor3 = Color3.fromRGB(30, 30, 35)}):Play()
             end
         end
         RawPage.Visible = true
-        TweenService:Create(TabButton, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(255, 255, 255), BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
+        TweenService:Create(TabButton, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(255, 255, 255), BackgroundColor3 = Color3.fromRGB(45, 45, 50)}):Play()
     end)
 
-    -- Сделай первую созданную вкладку видимой по умолчанию
-    if #TabContainer:GetChildren() == 3 then -- учитывая UIListLayout
+    if firstTab then
+        firstTab = false
         RawPage.Visible = true
         TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+        TabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
     end
 
     return {
         RawPage = RawPage,
-        
-        -- Функция добавления Слайдера (Твой оригинальный дизайн)
         AddSlider = function(text, min, max, default, callback)
             local SFrame = Instance.new("Frame", RawPage)
-            SFrame.Size = UDim2.new(0.95, 0, 0, 65)
+            SFrame.Size = UDim2.new(0.98, 0, 0, 58)
             SFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
             SFrame.BackgroundTransparency = 0.2
-            Instance.new("UICorner", SFrame).CornerRadius = UDim.new(0, 12)
-            local SStroke = Instance.new("UIStroke", SFrame)
-            SStroke.Color = Color3.fromRGB(65, 65, 70)
+            Instance.new("UICorner", SFrame).CornerRadius = UDim.new(0, 10)
+            Instance.new("UIStroke", SFrame).Color = Color3.fromRGB(60, 60, 65)
 
             local SLbl = Instance.new("TextLabel", SFrame)
-            SLbl.Size = UDim2.new(0.7, 0, 0, 25)
-            SLbl.Position = UDim2.new(0, 15, 0, 8)
+            SLbl.Size = UDim2.new(0.7, 0, 0, 22)
+            SLbl.Position = UDim2.new(0, 12, 0, 6)
             SLbl.BackgroundTransparency = 1
             SLbl.Text = text
-            SLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+            SLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
             SLbl.Font = Enum.Font.SourceSansBold
-            SLbl.TextSize = 15
+            SLbl.TextSize = 14
             SLbl.TextXAlignment = Enum.TextXAlignment.Left
 
             local ValLbl = Instance.new("TextLabel", SFrame)
-            ValLbl.Size = UDim2.new(0.2, 0, 0, 25)
-            ValLbl.Position = UDim2.new(1, -65, 0, 8)
+            ValLbl.Size = UDim2.new(0.2, 0, 0, 22)
+            ValLbl.Position = UDim2.new(1, -60, 0, 6)
             ValLbl.BackgroundTransparency = 1
             ValLbl.Text = tostring(default)
-            ValLbl.TextColor3 = Color3.fromRGB(150, 150, 150)
+            ValLbl.TextColor3 = Color3.fromRGB(160, 160, 160)
             ValLbl.Font = Enum.Font.Code
-            ValLbl.TextSize = 14
+            ValLbl.TextSize = 13
             ValLbl.TextXAlignment = Enum.TextXAlignment.Right
 
             local SBar = Instance.new("TextButton", SFrame)
-            SBar.Size = UDim2.new(0.9, 0, 0, 6)
-            SBar.Position = UDim2.new(0.05, 0, 1, -18)
-            SBar.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+            SBar.Size = UDim2.new(0.92, 0, 0, 5)
+            SBar.Position = UDim2.new(0.04, 0, 1, -15)
+            SBar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
             SBar.Text = ""
             Instance.new("UICorner", SBar).CornerRadius = UDim.new(0, 3)
 
@@ -217,54 +176,55 @@ local function CreateTab(Name)
             SBar.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true update(input) end
             end)
-            game:GetService("UserInputService").InputChanged:Connect(function(input)
+            UserInputService.InputChanged:Connect(function(input)
                 if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then update(input) end
             end)
-            game:GetService("UserInputService").InputEnded:Connect(function(input)
+            UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end
             end)
         end,
-
-        -- Функция Информационных строк для третьей части (Защита от нил-ошибки)
+        
         AddInfo = function(titleText, descText)
             local InfoFrame = Instance.new("Frame", RawPage)
-            InfoFrame.Size = UDim2.new(0.95, 0, 0, 52)
+            InfoFrame.Size = UDim2.new(0.98, 0, 0, 48)
             InfoFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
             InfoFrame.BackgroundTransparency = 0.2
-            Instance.new("UICorner", InfoFrame).CornerRadius = UDim.new(0, 12)
-            local IStroke = Instance.new("UIStroke", InfoFrame)
-            IStroke.Color = Color3.fromRGB(65, 65, 70)
+            Instance.new("UICorner", InfoFrame).CornerRadius = UDim.new(0, 10)
+            Instance.new("UIStroke", InfoFrame).Color = Color3.fromRGB(60, 60, 65)
             
             local Txt1 = Instance.new("TextLabel", InfoFrame)
-            Txt1.Size = UDim2.new(0.4, 0, 1, 0)
-            Txt1.Position = UDim2.new(0, 15, 0, 0)
+            Txt1.Size = UDim2.new(0.38, 0, 1, 0)
+            Txt1.Position = UDim2.new(0, 12, 0, 0)
             Txt1.BackgroundTransparency = 1
             Txt1.Text = titleText
-            Txt1.TextColor3 = Color3.fromRGB(160, 160, 165)
+            Txt1.TextColor3 = Color3.fromRGB(150, 150, 155)
             Txt1.Font = Enum.Font.SourceSansBold
-            Txt1.TextSize = 14
+            Txt1.TextSize = 13
             Txt1.TextXAlignment = Enum.TextXAlignment.Left
             
             local Txt2 = Instance.new("TextLabel", InfoFrame)
-            Txt2.Size = UDim2.new(0.55, 0, 1, 0)
-            Txt2.Position = UDim2.new(0.42, 0, 0, 0)
+            Txt2.Size = UDim2.new(0.58, 0, 1, 0)
+            Txt2.Position = UDim2.new(0.4, 0, 0, 0)
             Txt2.BackgroundTransparency = 1
             Txt2.Text = descText
-            Txt2.TextColor3 = Color3.fromRGB(230, 230, 230)
+            Txt2.TextColor3 = Color3.fromRGB(240, 240, 240)
             Txt2.Font = Enum.Font.SourceSans
-            Txt2.TextSize = 14
+            Txt2.TextSize = 13
             Txt2.TextXAlignment = Enum.TextXAlignment.Left
         end
     end
 end
 
-getgenv().GubbyCore.CreateTab = CreateTab
--- [[ GubbyHUB — ЧАСТЬ 3: Слайдеры, Настоящий Ноклип и Ресайз ]] --
-local CreateTab = getgenv().GubbyCore.CreateTab
-local MainFrame = getgenv().GubbyCore.MainFrame
-local GubbyCircle = getgenv().GubbyCore.GubbyCircle
-local HubTitle = getgenv().GubbyCore.HubTitle
-local LocalPlayer = game:GetService("Players").LocalPlayer
+Core.CreateTab = CreateTab
+-- [[ GubbyHUB v3 — ЧАСТЬ 3: НАПОЛНЕНИЕ И ФУНКЦИИ ]] --
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Core = getgenv().GubbyCore
+
+local CreateTab = Core.CreateTab
 
 local PlayerTab   = CreateTab("Игрок")
 local TrollTab    = CreateTab("Тролл")
@@ -284,27 +244,27 @@ PlayerTab.AddSlider("Высота прыжка персонажа", 50, 300, 50,
     end
 end)
 
--- НАСТОЯЩИЙ ТУМБЛЕР НОКЛИПА
+-- НАСТОЯЩИЙ ИСПРАВЛЕННЫЙ НОКЛИП ДЛЯ SOLARA
 local TFrame = Instance.new("Frame", PlayerTab.RawPage)
-TFrame.Size = UDim2.new(0.95, 0, 0, 52)
+TFrame.Size = UDim2.new(0.98, 0, 0, 52)
 TFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 TFrame.BackgroundTransparency = 0.2
-Instance.new("UICorner", TFrame).CornerRadius = UDim.new(0, 12)
-Instance.new("UIStroke", TFrame).Color = Color3.fromRGB(65, 65, 70)
+Instance.new("UICorner", TFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", TFrame).Color = Color3.fromRGB(60, 60, 65)
 
 local TLbl = Instance.new("TextLabel", TFrame)
 TLbl.Size = UDim2.new(0.6, 0, 1, 0)
-TLbl.Position = UDim2.new(0, 15, 0, 0)
+TLbl.Position = UDim2.new(0, 12, 0, 0)
 TLbl.BackgroundTransparency = 1
 TLbl.Text = "Проход сквозь стены (Noclip)"
 TLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
 TLbl.Font = Enum.Font.SourceSansBold
-TLbl.TextSize = 16
+TLbl.TextSize = 14
 TLbl.TextXAlignment = Enum.TextXAlignment.Left
 
 local SBtn = Instance.new("TextButton", TFrame)
 SBtn.Size = UDim2.new(0, 42, 0, 20)
-SBtn.Position = UDim2.new(1, -55, 0.5, -10)
+SBtn.Position = UDim2.new(1, -52, 0.5, -10)
 SBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
 SBtn.Text = ""
 Instance.new("UICorner", SBtn).CornerRadius = UDim.new(0, 10)
@@ -316,29 +276,24 @@ Crcl.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 Instance.new("UICorner", Crcl).CornerRadius = UDim.new(0, 7)
 
 local noclipConnection = nil
-local enabled = false
+local noclipEnabled = false
 
 SBtn.MouseButton1Click:Connect(function()
-    enabled = not enabled
-    if enabled then
-        game:GetService("TweenService"):Create(SBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-        game:GetService("TweenService"):Create(Crcl, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
+    noclipEnabled = not noclipEnabled
+    if noclipEnabled then
+        TweenService:Create(SBtn, TweenInfo.new(0.18), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        TweenService:Create(Crcl, TweenInfo.new(0.18), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
         
-        -- ФИКС: Принудительно меняем состояние персонажа на NoClip во время рендера физики
-        noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+        noclipConnection = RunService.Stepped:Connect(function()
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
                 LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.NoClip)
             end
         end)
     else
-        game:GetService("TweenService"):Create(SBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
-        game:GetService("TweenService"):Create(Crcl, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        TweenService:Create(SBtn, TweenInfo.new(0.18), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
+        TweenService:Create(Crcl, TweenInfo.new(0.18), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         
-        if noclipConnection then 
-            noclipConnection:Disconnect() 
-            noclipConnection = nil 
-        end
-        -- Возвращаем стандартное состояние, чтобы не проваливаться под землю
+        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
             LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.GettingUp)
         end
@@ -346,60 +301,58 @@ SBtn.MouseButton1Click:Connect(function()
 end)
 
 InfoTab.AddInfo("Разработчик проекта:", "Губби (Gubby) — автор оригинального концепта в Фотошопе.")
-InfoTab.AddInfo("Нейро-Ассистент:", "Гренка — напарник по коду. Мы лепили этот проект заново, как скульпторы!")
-InfoTab.AddInfo("Стиль и Фичи:", "Премиальный Monochrome Glass UI (25% прозрачности). При нажатии на свернуть плавно сжимается на месте в идеальный круглый аватар Губби.")
+InfoTab.AddInfo("Нейро-Ассистент:", "Гренка — напарник по коду. Мы лепили этот проект заново!")
+InfoTab.AddInfo("Стиль и Фичи:", "Премиальный Monochrome Glass UI (25% прозрачности).")
 
-local ControlContainer = Instance.new("Frame", MainFrame)
+local ControlContainer = Instance.new("Frame", Core.MainFrame)
 ControlContainer.Size = UDim2.new(0, 80, 0, 30)
-ControlContainer.Position = UDim2.new(1, -95, 0, 15)
+ControlContainer.Position = UDim2.new(1, -95, 0, 10)
 ControlContainer.BackgroundTransparency = 1
 ControlContainer.ZIndex = 10
 
-local function createTopButton(name, color, position, callback)
+local function createTopButton(color, position, callback)
     local btn = Instance.new("TextButton", ControlContainer)
-    btn.Size = UDim2.new(0, 26, 0, 14)
+    btn.Size = UDim2.new(0, 24, 0, 12)
     btn.Position = position
     btn.BackgroundColor3 = color
     btn.Text = ""
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     btn.MouseButton1Click:Connect(callback)
     btn.ZIndex = 10
 end
 
-createTopButton("Min", Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
-    MainFrame.Visible = false GubbyCircle.Visible = true
+createTopButton(Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
+    Core.MainFrame.Visible = false Core.GubbyCircle.Visible = true
 end)
 
-GubbyCircle.MouseButton1Click:Connect(function()
-    GubbyCircle.Visible = false MainFrame.Visible = true
+Core.GubbyCircle.MouseButton1Click:Connect(function()
+    Core.GubbyCircle.Visible = false Core.MainFrame.Visible = true
 end)
 
-createTopButton("Close", Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), function()
-    GubbyScreenGui:Destroy()
+createTopButton(Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), function()
+    Core.GubbyScreenGui:Destroy()
 end)
 
-MainFrame:GetPropertyChangedSignal("Size"):Connect(function() ControlContainer.Position = UDim2.new(1, -95, 0, 15) end)
-
-local ResizeBtn = Instance.new("TextButton", MainFrame)
-ResizeBtn.Size = UDim2.new(0, 20, 0, 20)
-ResizeBtn.Position = UDim2.new(1, -20, 1, -20)
+local ResizeBtn = Instance.new("TextButton", Core.MainFrame)
+ResizeBtn.Size = UDim2.new(0, 18, 0, 18)
+ResizeBtn.Position = UDim2.new(1, -18, 1, -18)
 ResizeBtn.BackgroundTransparency = 1
 ResizeBtn.Text = "◢"
-ResizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ResizeBtn.TextSize = 14
+ResizeBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+ResizeBtn.TextSize = 12
 ResizeBtn.ZIndex = 10
 
 local resizing = false
 local startSize, startMousePos
 ResizeBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        resizing = true startSize = MainFrame.Size startMousePos = game:GetService("UserInputService"):GetMouseLocation()
+        resizing = true startSize = Core.MainFrame.Size startMousePos = UserInputService:GetMouseLocation()
     end
 end)
-game:GetService("UserInputService").InputChanged:Connect(function(input)
+UserInputService.InputChanged:Connect(function(input)
     if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = game:GetService("UserInputService"):GetMouseLocation() - startMousePos
-        MainFrame.Size = UDim2.new(0, math.max(460, startSize.X.Offset + delta.X), 0, math.max(320, startSize.Y.Offset + delta.Y))
+        local delta = UserInputService:GetMouseLocation() - startMousePos
+        Core.MainFrame.Size = UDim2.new(0, math.max(460, startSize.X.Offset + delta.X), 0, math.max(300, startSize.Y.Offset + delta.Y))
     end
 end)
-game:GetService("UserInputService").InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end end)
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end end)

@@ -240,11 +240,15 @@ for _, tab in pairs(getgenv().GubbyTabs or {}) do
         Txt2.TextXAlignment = Enum.TextXAlignment.Left
     end
 end
--- [[ GubbyHUB v3 — ЧАСТЬ 3.1: СОЗДАНИЕ ВКЛАДОК И СЛАЙДЕРОВ ]] --
-local Core = getgenv().GubbyCore
+-- [[ GubbyHUB v3 — ЧАСТЬ 3: ВСЕ ВКЛАДКИ И НАСТОЯЩИЙ НОКЛИП ]] --
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local Core = getgenv().GubbyCore
 
+-- Создаем вкладки напрямую из ядра
 local PlayerTab   = Core.CreateTab("Игрок")
 local TrollTab    = Core.CreateTab("Тролл")
 local CombatTab   = Core.CreateTab("Комбат")
@@ -253,33 +257,18 @@ local MiscTab     = Core.CreateTab("Смешанное")
 local FarmTab     = Core.CreateTab("Авто фарм")
 local InfoTab     = Core.CreateTab("Инфо")
 
-getgenv().GubbyTabsList = {
-    PlayerTab = PlayerTab,
-    InfoTab = InfoTab
-}
-
+-- Настройка ползунков
 PlayerTab.AddSlider("Скорость бега персонажа", 16, 250, 16, function(v)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then 
-        LocalPlayer.Character.Humanoid.WalkSpeed = v 
-    end
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = v end
 end)
 
 PlayerTab.AddSlider("Высота прыжка персонажа", 50, 300, 50, function(v)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then 
-        LocalPlayer.Character.Humanoid.UseJumpPower = true 
-        LocalPlayer.Character.Humanoid.JumpPower = v 
+        LocalPlayer.Character.Humanoid.UseJumpPower = true LocalPlayer.Character.Humanoid.JumpPower = v 
     end
 end)
--- [[ GubbyHUB v3 — ЧАСТЬ 3.2: НОКЛИП И УПРАВЛЕНИЕ ]] --
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local Core = getgenv().GubbyCore
-local TabsList = getgenv().GubbyTabsList
 
-local PlayerTab = TabsList.PlayerTab
-local InfoTab = TabsList.InfoTab
-
+-- Тумблер Ноклипа (Внутри фрейма PlayerTab)
 local TFrame = Instance.new("Frame", PlayerTab.RawPage)
 TFrame.Size = UDim2.new(0.98, 0, 0, 52)
 TFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
@@ -309,16 +298,16 @@ SBtn.MouseButton1Click:Connect(function()
         TweenService:Create(SBtn, TweenInfo.new(0.18), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         TweenService:Create(Crcl, TweenInfo.new(0.18), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
         noclipConnection = RunService.Stepped:Connect(function()
-            if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.NoClip)
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.NoClip)
             end
         end)
     else
         TweenService:Create(SBtn, TweenInfo.new(0.18), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
         TweenService:Create(Crcl, TweenInfo.new(0.18), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
-        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-            game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.GettingUp)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.GettingUp)
         end
     end
 end)
@@ -327,6 +316,7 @@ InfoTab.AddInfo("Разработчик проекта:", "Губби (Gubby) �
 InfoTab.AddInfo("Нейро-Ассистент:", "Гренка — напарник по коду. Мы лепили этот проект заново!")
 InfoTab.AddInfo("Стиль и Фичи:", "Премиальный Monochrome Glass UI (25% прозрачности).")
 
+-- Кнопки закрытия и сворачивания хаба
 local ControlContainer = Instance.new("Frame", Core.MainFrame)
 ControlContainer.Size, ControlContainer.Position, ControlContainer.BackgroundTransparency, ControlContainer.ZIndex = UDim2.new(0, 80, 0, 30), UDim2.new(1, -95, 0, 10), 1, 10
 
@@ -341,6 +331,7 @@ createTopButton(Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function()
 Core.GubbyCircle.MouseButton1Click:Connect(function() Core.GubbyCircle.Visible = false Core.MainFrame.Visible = true end)
 createTopButton(Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), function() Core.GubbyScreenGui:Destroy() end)
 
+-- Ресайз (Уголок ◢)
 local ResizeBtn = Instance.new("TextButton", Core.MainFrame)
 ResizeBtn.Size, ResizeBtn.Position, ResizeBtn.BackgroundTransparency = UDim2.new(0, 18, 0, 18), UDim2.new(1, -18, 1, -18), 1
 ResizeBtn.Text, ResizeBtn.TextColor3, ResizeBtn.TextSize, ResizeBtn.ZIndex = "◢", Color3.fromRGB(150, 150, 150), 12, 10
@@ -354,4 +345,3 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end end)
-

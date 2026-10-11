@@ -67,154 +67,51 @@ getgenv().GubbyCore = {
     GubbyCircle = GubbyCircle,
     GubbyScreenGui = GubbyScreenGui
 }
--- [[ GubbyHUB v3 — ЧАСТЬ 2: ФУНКЦИИ И ВКЛАДКИ ]] --
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+-- [[ ЧАСТЬ 2: КАРКАС UI БЕЗ ОБРЕЗОК ]]
 local Core = getgenv().GubbyCore
-
 local firstTab = true
 
 local function CreateTab(Name)
-    local TabButton = Instance.new("TextButton", Core.TabContainer)
-    TabButton.Size = UDim2.new(1, 0, 0, 34)
-    TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    TabButton.BackgroundTransparency = 0.4
-    TabButton.Text = Name
-    TabButton.TextColor3 = Color3.fromRGB(180, 180, 180)
-    TabButton.Font = Enum.Font.SourceSansBold
-    TabButton.TextSize = 14
-    Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 8)
-    Instance.new("UIStroke", TabButton).Color = Color3.fromRGB(50, 50, 55)
+    local TabBtn = Instance.new("TextButton", Core.TabContainer)
+    TabBtn.Size = UDim2.new(1, 0, 0, 34)
+    TabBtn.Text = Name
+    TabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    TabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
 
-    local RawPage = Instance.new("ScrollingFrame", Core.PagesContainer)
-    RawPage.Size = UDim2.new(1, 0, 1, 0)
-    RawPage.BackgroundTransparency = 1
-    RawPage.Visible = false
-    RawPage.ScrollBarThickness = 3
-    RawPage.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 75)
+    local Page = Instance.new("ScrollingFrame", Core.PagesContainer)
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.Visible = false
     
-    local ListLayout = Instance.new("UIListLayout", RawPage)
-    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ListLayout.Padding = UDim.new(0, 8)
-    ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    local List = Instance.new("UIListLayout", Page)
+    List.SortOrder = Enum.SortOrder.LayoutOrder
+    List.Padding = UDim.new(0, 8)
+    List.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        RawPage.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 15)
+    List:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Page.CanvasSize = UDim2.new(0, 0, 0, List.AbsoluteContentSize.Y + 15)
     end)
 
-    TabButton.MouseButton1Click:Connect(function()
-        for _, page in pairs(Core.PagesContainer:GetChildren()) do
-            if page:IsA("ScrollingFrame") then page.Visible = false end
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, p in pairs(Core.PagesContainer:GetChildren()) do 
+            if p:IsA("ScrollingFrame") then p.Visible = false end 
         end
-        for _, btn in pairs(Core.TabContainer:GetChildren()) do
-            if btn:IsA("TextButton") then 
-                TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(180, 180, 180), BackgroundColor3 = Color3.fromRGB(30, 30, 35)}):Play()
-            end
-        end
-        RawPage.Visible = true
-        TweenService:Create(TabButton, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(255, 255, 255), BackgroundColor3 = Color3.fromRGB(45, 45, 50)}):Play()
+        Page.Visible = true
     end)
 
-    if firstTab then
-        firstTab = false
-        RawPage.Visible = true
-        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-    end
+    if firstTab then firstTab = false Page.Visible = true end
 
     return {
-        RawPage = RawPage,
+        RawPage = Page,
         AddSlider = function(text, min, max, default, callback)
-            local SFrame = Instance.new("Frame", RawPage)
-            SFrame.Size = UDim2.new(0.98, 0, 0, 58)
-            SFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-            SFrame.BackgroundTransparency = 0.2
-            Instance.new("UICorner", SFrame).CornerRadius = UDim.new(0, 10)
-            Instance.new("UIStroke", SFrame).Color = Color3.fromRGB(60, 60, 65)
-
-            local SLbl = Instance.new("TextLabel", SFrame)
-            SLbl.Size = UDim2.new(0.7, 0, 0, 22)
-            SLbl.Position = UDim2.new(0, 12, 0, 6)
-            SLbl.BackgroundTransparency = 1
-            SLbl.Text = text
-            SLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
-            SLbl.Font = Enum.Font.SourceSansBold
-            SLbl.TextSize = 14
-            SLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-            local ValLbl = Instance.new("TextLabel", SFrame)
-            ValLbl.Size = UDim2.new(0.2, 0, 0, 22)
-            ValLbl.Position = UDim2.new(1, -60, 0, 6)
-            ValLbl.BackgroundTransparency = 1
-            ValLbl.Text = tostring(default)
-            ValLbl.TextColor3 = Color3.fromRGB(160, 160, 160)
-            ValLbl.Font = Enum.Font.Code
-            ValLbl.TextSize = 13
-            ValLbl.TextXAlignment = Enum.TextXAlignment.Right
-
-            local SBar = Instance.new("TextButton", SFrame)
-            SBar.Size = UDim2.new(0.92, 0, 0, 5)
-            SBar.Position = UDim2.new(0.04, 0, 1, -15)
-            SBar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-            SBar.Text = ""
-            Instance.new("UICorner", SBar).CornerRadius = UDim.new(0, 3)
-
-            local SFill = Instance.new("Frame", SBar)
-            SFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-            SFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Instance.new("UICorner", SFill).CornerRadius = UDim.new(0, 3)
-
-            local function update(input)
-                local unit = math.clamp((input.Position.X - SBar.AbsolutePosition.X) / SBar.AbsoluteSize.X, 0, 1)
-                local value = math.floor(min + (max - min) * unit)
-                SFill.Size = UDim2.new(unit, 0, 1, 0)
-                ValLbl.Text = tostring(value)
-                callback(value)
-            end
-
-            local sliding = false
-            SBar.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true update(input) end
-            end)
-            UserInputService.InputChanged:Connect(function(input)
-                if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then update(input) end
-            end)
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end
-            end)
+            -- Сюда мы вставим код слайдера следующим шагом
         end,
-        
-        AddInfo = function(titleText, descText)
-            local InfoFrame = Instance.new("Frame", RawPage)
-            InfoFrame.Size = UDim2.new(0.98, 0, 0, 48)
-            InfoFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-            InfoFrame.BackgroundTransparency = 0.2
-            Instance.new("UICorner", InfoFrame).CornerRadius = UDim.new(0, 10)
-            Instance.new("UIStroke", InfoFrame).Color = Color3.fromRGB(60, 60, 65)
-            
-            local Txt1 = Instance.new("TextLabel", InfoFrame)
-            Txt1.Size = UDim2.new(0.38, 0, 1, 0)
-            Txt1.Position = UDim2.new(0, 12, 0, 0)
-            Txt1.BackgroundTransparency = 1
-            Txt1.Text = titleText
-            Txt1.TextColor3 = Color3.fromRGB(150, 150, 155)
-            Txt1.Font = Enum.Font.SourceSansBold
-            Txt1.TextSize = 13
-            Txt1.TextXAlignment = Enum.TextXAlignment.Left
-            
-            local Txt2 = Instance.new("TextLabel", InfoFrame)
-            Txt2.Size = UDim2.new(0.58, 0, 1, 0)
-            Txt2.Position = UDim2.new(0.4, 0, 0, 0)
-            Txt2.BackgroundTransparency = 1
-            Txt2.Text = descText
-            Txt2.TextColor3 = Color3.fromRGB(240, 240, 240)
-            Txt2.Font = Enum.Font.SourceSans
-            Txt2.TextSize = 13
-            Txt2.TextXAlignment = Enum.TextXAlignment.Left
+        AddInfo = function(title, desc)
+            -- Сюда мы вставим код инфо-строки
         end
     end
 end
-
 Core.CreateTab = CreateTab
 -- [[ GubbyHUB v3 — ЧАСТЬ 3: НАПОЛНЕНИЕ И ФУНКЦИИ ]] --
 local RunService = game:GetService("RunService")

@@ -1,4 +1,4 @@
--- [[ GubbyHUB v3 — ЧАСТЬ 1: ОСНОВА И ТВОЙ ДИЗАЙН ]] --
+-- [[ GubbyHUB v3 — ЧАСТЬ 1: ОСНОВА UI ]] --
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
@@ -250,7 +250,8 @@ TFrame.Size = UDim2.new(0.98, 0, 0, 52)
 TFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 TFrame.BackgroundTransparency = 0.2
 Instance.new("UICorner", TFrame).CornerRadius = UDim.new(0, 10)
-Instance.new("UIStroke", TFrame).Color = Color3.fromRGB(60, 60, 65)
+local TStroke = Instance.new("UIStroke", TFrame)
+TStroke.Color = Color3.fromRGB(60, 60, 65)
 
 local TLbl = Instance.new("TextLabel", TFrame)
 TLbl.Size = UDim2.new(0.6, 0, 1, 0)

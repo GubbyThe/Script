@@ -1,64 +1,451 @@
--- Загрузка библиотеки интерфейса Rayfield напрямую через GitHub RAW
-local Rayfield = loadstring(game:HttpGet('https://githubusercontent.com'))()
+-- [[ GubbyHUB — STANDALONE FLY FARM С ПРОВЕРКОЙ РАУНДА (ЧАСТЬ 1) ]] --
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
 
-local Window = Rayfield:CreateWindow({
-   Name = "Fisch | Auto-Catch Menu",
-   LoadingTitle = "Загрузка меню для Solara...",
-   LoadingSubtitle = "by AI Assistant",
-   ConfigurationSaving = { Enabled = false }
-})
+if CoreGui:FindFirstChild("GubbyStandaloneFarm") then
+    CoreGui.GubbyStandaloneFarm:Destroy()
+end
 
-local Tab = Window:CreateTab("Авто-Рыбалка", 4483362458)
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "GubbyStandaloneFarm"
+ScreenGui.ResetOnSpawn = false
 
-local AutoFishEnabled = false
+-- Оригинальный премиальный дизайн окна (Monochromatic Glass UI)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 320, 0, 160) -- Чуть увеличили высоту под строку статуса
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -80)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainFrame.BackgroundTransparency = 0.25
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
-task.spawn(function()
-    while task.wait() do
-        if AutoFishEnabled then
-            pcall(function()
-                local localPlayer = game.Players.LocalPlayer
-                local character = localPlayer.Character
-                local playerGui = localPlayer:WaitForChild("PlayerGui")
-                
-                -- Auto Shake
-                local shakeUI = playerGui:FindFirstChild("ShakeUI")
-                if shakeUI and shakeUI.Enabled then
-                    local safeButton = shakeUI:FindFirstChild("SafeZone")
-                    if safeButton then
-                        game:GetService("VirtualUser"):ClickButton1(Vector2.new(9999, 9999))
-                    end
-                end
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(240, 240, 240)
+MainStroke.Thickness = 1.2
+MainStroke.Transparency = 0.3
 
-                -- Auto Reel (Perfect Catch)
-                local reelUI = playerGui:FindFirstChild("ReelUI")
-                if reelUI and reelUI.Enabled then
-                    local bar = reelUI:FindFirstChild("Bar")
-                    local fish = reelUI:FindFirstChild("Fish")
-                    
-                    if bar and fish then
-                        bar.Position = fish.Position
-                        local reelEvent = game:GetService("ReplicatedStorage"):FindFirstChild("ReelEvent")
-                        if reelEvent then
-                            reelEvent:FireServer(100, true)
-                        end
-                    end
-                end
-            end)
-        end
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Position = UDim2.new(0, 0, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "GubbyHUB | Standalone Fly Farm ✈️"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 15
+
+-- НОВЫЙ ИНДИКАТОР: Показывает, участвуешь ли ты в раунде прямо сейчас
+local StatusLabel = Instance.new("TextLabel", MainFrame)
+StatusLabel.Size = UDim2.new(0.9, 0, 0, 20)
+StatusLabel.Position = UDim2.new(0.05, 0, 0, 35)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Проверка статуса игры..."
+StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 155)
+StatusLabel.Font = Enum.Font.SourceSansItalic
+StatusLabel.TextSize = 13
+
+-- Кнопка-переключатель фарма
+local FarmBtn = Instance.new("TextButton", MainFrame)
+FarmBtn.Size = UDim2.new(0.9, 0, 0, 40)
+FarmBtn.Position = UDim2.new(0.05, 0, 1, -55)
+FarmBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+FarmBtn.BackgroundTransparency = 0.4
+FarmBtn.Text = "✈️ FLY FARM (СКОРОСТЬ 22): ВЫКЛ"
+FarmBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+FarmBtn.Font = Enum.Font.SourceSansBold
+FarmBtn.TextSize = 14
+Instance.new("UICorner", FarmBtn).CornerRadius = UDim.new(0, 8)
+local BtnStroke = Instance.new("UIStroke", FarmBtn)
+BtnStroke.Color = Color3.fromRGB(240, 240, 240)
+BtnStroke.Thickness = 1
+BtnStroke.Transparency = 0.5
+
+-- Кнопка закрытия хаба (X)
+local CloseBtn = Instance.new("TextButton", MainFrame)
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -30, 0, 5)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 70, 70)
+CloseBtn.Font = Enum.Font.SourceSansBold
+CloseBtn.TextSize = 16
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+getgenv().StandaloneFarmData = {
+    FarmBtn = FarmBtn,
+    BtnStroke = BtnStroke,
+    StatusLabel = StatusLabel,
+    ScreenGui = ScreenGui
+}
+-- [[ GubbyHUB — standalone FIX SPEED DELTA FARM MM2 (ЧАСТЬ 2) ]] --
+local W = game:GetService("Workspace")
+local LP = game:GetService("Players").LocalPlayer
+local RS = game:GetService("RunService")
+local Data = getgenv().StandaloneFarmData
+
+local farmActive = false
+
+Data.FarmBtn.MouseButton1Click:Connect(function()
+    farmActive = not farmActive
+    if farmActive then
+        Data.FarmBtn.BackgroundTransparency = 0.1
+        Data.BtnStroke.Transparency = 0.1
+        Data.FarmBtn.Text = "🟢 SAFE DELTA FARM: АКТИВЕН (СКОРОСТЬ 22)"
+        Data.FarmBtn.TextColor3 = Color3.fromRGB(50, 255, 50)
+        Data.BtnStroke.Color = Color3.fromRGB(50, 255, 50)
+    else
+        Data.FarmBtn.BackgroundTransparency = 0.4
+        Data.BtnStroke.Transparency = 0.5
+        Data.FarmBtn.Text = "✈️ FLY FARM (СКОРОСТЬ 22): ВЫКЛ"
+        Data.FarmBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        Data.BtnStroke.Color = Color3.fromRGB(240, 240, 240)
+        Data.StatusLabel.Text = "Проверка статуса игры..."
+        Data.StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 155)
     end
 end)
 
-Tab:CreateToggle({
-   Name = "Идеальная ловля (Без промахов)",
-   CurrentValue = false,
-   Flag = "AutoFishToggle",
-   Callback = function(Value)
-      AutoFishEnabled = Value
-      Rayfield:Notify({
-         Title = "Статус авторыбалки",
-         Content = Value and "Авторыбалка включена!" or "Авторыбалка выключена.",
-         Duration = 3,
-         Image = 4483362458,
-      })
-   end,
-})
+-- ЖЕЛЕЗНЫЙ NOCLIP ЧЕРЕЗ ОТКЛЮЧЕНИЕ КОЛЛИЗИИ
+RS.Stepped:Connect(function()
+    if not farmActive then return end
+    if LP.Character then
+        pcall(function()
+            for _, part in ipairs(LP.Character:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end)
+    end
+end)
+
+-- Бесконечный поток точечного перемещения со скоростью 22
+task.spawn(function()
+    while true do
+        local deltaTime = RS.Heartbeat:Wait()
+        
+        if farmActive then
+            local char = LP.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            
+            if root and hum and hum.Health > 0 then
+                -- --- ФУНКЦИЯ АВТО-РЕСЕТА ПРИ ПОЛНОМ МЕШКЕ ---
+                pcall(function()
+                    local coinValue = LP:FindFirstChild("leaderstats") and LP.leaderstats:FindFirstChild("Coins")
+                    local mainGui = LP.PlayerGui:FindFirstChild("MainGui")
+                    local gameFrame = mainGui and mainGui:FindFirstChild("Game")
+                    local coinLabel = gameFrame and gameFrame:FindFirstChild("CoinLabel") or (gameFrame and gameFrame:FindFirstChild("CoinContainer") and gameFrame.CoinContainer:FindFirstChild("CoinLabel"))
+                    
+                    local currentCoins = coinValue and coinValue.Value or 0
+                    local maxCoins = 40
+                    
+                    if coinLabel and coinLabel:IsA("TextLabel") and coinLabel.Text:find("/") then
+                        local split = coinLabel.Text:split("/")
+                        currentCoins = tonumber(split:match("%d+")) or currentCoins
+                        maxCoins = tonumber(split:match("%d+")) or maxCoins
+                    end
+                    
+                    if currentCoins >= maxCoins and maxCoins > 0 then
+                        Data.StatusLabel.Text = "🚨 Мешок полный ("..currentCoins.."/"..maxCoins..")! Авторесет..."
+                        Data.StatusLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
+                        hum.Health = 0
+                        task.wait(3)
+                    end
+                end)
+
+                -- --- ПОИСК БЛИЖАЙШЕЙ МОНЕТЫ ---
+                local targetTrigger = nil
+                local minDistance = math.huge
+                local coinContainer = W:FindFirstChild("CoinContainer", true) or W:FindFirstChild("Coins", true)
+                local source = coinContainer or W
+                
+                for _, obj in ipairs(source:GetDescendants()) do
+                    if farmActive and obj:IsA("TouchTransmitter") and obj.Parent and obj.Parent:IsA("BasePart") then
+                        local item = obj.Parent
+                        if item.Name ~= "Grip" and item.Name ~= "GunDrop" and item.Name ~= "Box" and item.Name ~= "Radio" and not item:FindFirstChildOfClass("Humanoid") then
+                            local dist = (item.Position - root.Position).Magnitude
+                            -- ФИЛЬТР: Берем только монеты в радиусе доступности, без прыжков сквозь барьеры потолка
+                            if math.abs(item.Position.Y - root.Position.Y) < 12 then
+                                if dist < minDistance then
+                                    minDistance = dist
+                                    targetTrigger = item
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                -- --- ПЛАВНОЕ CFRAME ПЕРЕМЕЩЕНИЕ СТРОГО НА СКОРОСТИ 22 ---
+                if targetTrigger and hum.Health > 0 then
+                    Data.StatusLabel.Text = "🎯 Статус: В игре. Собираю валюту..."
+                    Data.StatusLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+                    
+                    pcall(function()
+                        root.Velocity = Vector3.zero -- Намертво обнуляем физический импульс, чтобы не было бешеного разгона
+                        root.RotVelocity = Vector3.zero
+                        
+                        local targetPos = targetTrigger.Position
+                        local direction = (targetPos - root.Position)
+                        local distance = direction.Magnitude
+                        
+                        if distance > 1.0 then
+                            local speed = 22
+                            local step = direction.Unit * (speed * deltaTime)
+                            
+                            -- Защита: шаг никогда не превысит лимит скорости кадра
+                            if step.Magnitude > distance then
+                                root.CFrame = CFrame.new(targetPos)
+                            else
+                                root.CFrame = root.CFrame + step
+                            end
+                        else
+                            task.wait(0.04) -- Стабильная пауза подбора
+                        end
+                    end)
+                else
+                    root.Velocity = Vector3.zero
+                end
+            else
+                if root then root.Velocity = Vector3.zero end
+                Data.StatusLabel.Text = "💤 Статус: В лобби / Ожидание раунда."
+                Data.StatusLabel.TextColor3 = Color3.fromRGB(180, 130, 50)
+            end
+        end
+    end
+end)
+-- [[ GubbyHUB — standalone ANTI-AFK & SOFT REJOIN (ЧАСТЬ 3) ]] --
+task.spawn(function()
+    local VU = game:GetService("VirtualUser")
+    local LP = game:GetService("Players").LocalPlayer
+    local TS = game:GetService("TeleportService")
+    local GuiService = game:GetService("GuiService")
+
+    -- 1. НАМЕРТВО БЛОКИРУЕМ ОШИБКУ AFK (20 МИНУТ БЕЗДЕЙСТВИЯ)
+    LP.Idled:Connect(function()
+        pcall(function()
+            -- Симулируем микро-движение мыши на уровне ядра игры, сбрасывая таймер Роблокса
+            VU:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            VU:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        end)
+    end)
+
+    -- 2. ЛОМАЕМ ТАЙМЕРЫ ОШИБОК И ДЕЛАЕМ МЯГКИЙ ТП В ДРУГОЕ ЛОББИ
+    GuiService.ErrorMessageChanged:Connect(function()
+        pcall(function()
+            local statusLabel = getgenv().StandaloneFarmData and getgenv().StandaloneFarmData.StatusLabel
+            if statusLabel then
+                statusLabel.Text = "🚨 Ошибка сервера! Прыгаю в другое лобби..."
+                statusLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
+            end
+            
+            -- Мягкий прыжок на случайный активный сервер MM2 без перезапуска Roblox
+            task.wait(1)
+            TS:Teleport(142823291, LP) -- ID официального плейса Murder Mystery 2
+        end)
+    end)
+
+    print("[Gubby Фикс]: Железный Anti-AFK и защита от ошибок успешно активированы!")
+end)
+-- [[ GubbyHUB — standalone SMART MURDERER AVOID (ЧАСТЬ 4) ]] --
+task.spawn(function()
+    local P = game:GetService("Players")
+    local LP = P.LocalPlayer
+    local RS = game:GetService("RunService")
+    
+    -- Бесконечный поток сканирования угрозы вокруг персонажа
+    RS.Heartbeat:Connect(function()
+        local char = LP.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root or not _G.StandaloneFarmData then return end
+
+        -- Перебираем всех игроков на сервере в поиске Мардера
+        for _, player in ipairs(P:GetPlayers()) do
+            if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local enemyChar = player.Character
+                
+                -- Проверяем, экипирован ли у игрока нож (в руках или в бэкпаке)
+                local hasKnife = enemyChar:FindFirstChild("Knife") or (player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("Knife"))
+                
+                if hasKnife then
+                    local enemyRoot = enemyChar.HumanoidRootPart
+                    local distanceToMurderer = (enemyRoot.Position - root.Position).Magnitude
+                    
+                    -- Если Убийца подошёл опасно близко (ближе 25 студов)
+                    if distanceToMurderer < 25 then
+                        pcall(function()
+                            -- Выводим экстренный статус в твоё премиум-меню
+                            getgenv().StandaloneFarmData.StatusLabel.Text = "⚠️ УГРОЗА: Мардер рядом! Сбегаю..."
+                            getgenv().StandaloneFarmData.StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                            
+                            -- Выкручиваем вектор отталкивания в противоположную от Мардера сторону сквозь стены
+                            local escapeDirection = (root.Position - enemyRoot.Position).Unit
+                            root.Velocity = escapeDirection * 22
+                        end)
+                    end
+                end
+            end
+        end
+    end)
+
+    print("[Gubby Модуль]: Умный Анти-Мардер успешно интегрирован на защиту твинка!")
+end)
+-- [[ GubbyHUB — standalone FIX UI & ATTACH ORBIT FLING (ЧАСТЬ 5) ]] --
+task.spawn(function()
+    local P = game:GetService("Players")
+    local LP = P.LocalPlayer
+    local RS = game:GetService("RunService")
+    local Data = getgenv().StandaloneFarmData
+    
+    if not Data or not Data.ScreenGui then return end
+    local MainFrame = Data.ScreenGui:FindFirstChildOfClass("Frame")
+    if not MainFrame then return end
+
+    -- Фикс геометрии: Увеличиваем окно, чтобы всё встало на свои места пиксель в пиксель
+    MainFrame.Size = UDim2.new(0, 320, 0, 240)
+    
+    -- Перемещаем кнопку фарма в самый верх, чтобы список её не перекрывал
+    Data.FarmBtn.Position = UDim2.new(0.05, 0, 0, 55)
+    
+    -- Сдвигаем индикатор статуса чуть выше кнопки
+    Data.StatusLabel.Position = UDim2.new(0.05, 0, 0, 32)
+
+    -- Информационный текст-подсказка над списком клоунов
+    local HintLabel = Instance.new("TextLabel", MainFrame)
+    HintLabel.Size = UDim2.new(0.9, 0, 0, 15)
+    HintLabel.Position = UDim2.new(0.05, 0, 0, 102)
+    HintLabel.BackgroundTransparency = 1
+    HintLabel.Text = "Выберите клоуна для экзотического полёта:"
+    HintLabel.TextColor3 = Color3.fromRGB(180, 180, 185)
+    HintLabel.Font = Enum.Font.SourceSansBold
+    HintLabel.TextSize = 12
+    HintLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Красивый скролл-контейнер для списка игроков строго снизу
+    local FlingScroll = Instance.new("ScrollingFrame", MainFrame)
+    FlingScroll.Name = "GubbyFlingScroll"
+    FlingScroll.Size = UDim2.new(0.9, 0, 0, 100)
+    FlingScroll.Position = UDim2.new(0.05, 0, 0, 122)
+    FlingScroll.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    FlingScroll.BackgroundTransparency = 0.3
+    FlingScroll.BorderSizePixel = 0
+    FlingScroll.ScrollBarThickness = 3
+    FlingScroll.ScrollBarImageColor3 = Color3.fromRGB(240, 240, 240)
+    FlingScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Instance.new("UICorner", FlingScroll).CornerRadius = UDim.new(0, 8)
+    local ScrollStroke = Instance.new("UIStroke", FlingScroll)
+    ScrollStroke.Color = Color3.fromRGB(65, 65, 70)
+
+    local FLayout = Instance.new("UIListLayout", FlingScroll)
+    FLayout.Padding = UDim.new(0, 4)
+    FLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    local activeButtons = {}
+
+    -- ФУНКЦИЯ ОБНОВЛЕНИЯ СПИСКА ИГРОКОВ
+    local function updateFlingList()
+        for _, b in pairs(activeButtons) do pcall(function() b:Destroy() end) end
+        table.clear(activeButtons)
+
+        for _, player in ipairs(P:GetPlayers()) do
+            if player ~= LP then
+                local pBtn = Instance.new("TextButton", FlingScroll)
+                pBtn.Size = UDim2.new(0.96, 0, 0, 24)
+                pBtn.BackgroundColor3 = Color3.fromRGB(35, 20, 20)
+                pBtn.BackgroundTransparency = 0.4
+                pBtn.Text = "🚀 Отправить: " .. player.Name
+                pBtn.TextColor3 = Color3.fromRGB(255, 120, 120)
+                pBtn.Font = Enum.Font.SourceSansBold
+                pBtn.TextSize = 12
+                pBtn.TextScaled = true
+                Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
+                
+                local pStroke = Instance.new("UIStroke", pBtn)
+                pStroke.Color = Color3.fromRGB(200, 60, 60)
+                pStroke.Thickness = 0.8
+
+                -- ТВОЯ ХАКЕРСКАЯ ЛОГИКА ЖЁСТКОЙ ПРИВЯЗКИ (ATTACH ORBIT FLING)
+                pBtn.MouseButton1Click:Connect(function()
+                    local myChar = LP.Character
+                    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                    local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+                    local enemyChar = player.Character
+                    local enemyRoot = enemyChar and enemyChar:FindFirstChild("HumanoidRootPart")
+                    
+                    if myRoot and myHum and enemyRoot then
+                        pBtn.Text = "💥 ПРИВЯЗКА И НАКРУТКА..."
+                        
+                        -- Запоминаем изначальную безопасную координату до атаки
+                        local oldCFrame = myRoot.CFrame
+                        
+                        -- Намертво выключаем коллизию своего персонажа, чтобы не улететь самому
+                        local steppedConnection = RS.Stepped:Connect(function()
+                            for _, part in ipairs(myChar:GetDescendants()) do
+                                if part:IsA("BasePart") then part.CanCollide = false end
+                            end
+                        end)
+
+                        -- Накручиваем огромную скорость анимации ходьбы на уровне гуманоида
+                        local originalSpeed = myHum.WalkSpeed
+                        myHum.WalkSpeed = 250
+                        
+                        local angle = 0
+                        local attackTime = 0
+                        local targetSentToSpace = false
+                        
+                        -- Цикл жёсткого удержания внутри торса цели
+                        while attackTime < 3.0 and not targetSentToSpace do
+                            local dt = RS.Heartbeat:Wait()
+                            attackTime = attackTime + dt
+                            
+                            -- Проверяем, существует ли ещё цель и не умерла ли она
+                            if not player or not player.Character or not enemyRoot.Parent then break end
+                            
+                            -- Математика Orbit-привязки: бешено крутимся вокруг его торса с радиусом 0.5 студа
+                            angle = angle + 45
+                            local offset = Vector3.new(math.sin(angle) * 0.5, 0, math.cos(angle) * 0.5)
+                            
+                            -- Жёстко выставляем CFrame прямо внутрь челика и крутим угловую скорость таза
+                            myRoot.CFrame = CFrame.new(enemyRoot.Position + offset)
+                            myRoot.Velocity = Vector3.new(500000, 500000, 500000)
+                            myRoot.RotVelocity = Vector3.new(500000, 500000, 500000)
+                            
+                            -- ТВОЙ ЛАЙФХАК: Проверяем, улетел ли он уже в экзотическое далёко (дистанция больше 70 студов)
+                            local currentDist = (enemyRoot.Position - oldCFrame.Position).Magnitude
+                            if currentDist > 70 then
+                                targetSentToSpace = true
+                            end
+                        end
+
+                        -- ОТПУСКАЕМ ЦЕЛЬ И ВОЗВРАЩАЕМСЯ НА БАЗУ С ОЧИСТКОЙ СКОРОСТЕЙ
+                        if steppedConnection then steppedConnection:Disconnect() end
+                        
+                        myRoot.Velocity = Vector3.zero
+                        myRoot.RotVelocity = Vector3.zero
+                        myHum.WalkSpeed = originalSpeed
+                        
+                        -- Возвращаем в изначальную координату
+                        myRoot.CFrame = oldCFrame
+                        
+                        -- ТВОЯ ИДЕЯ: Даём задержку в 1 секунду на полный сброс скоростей для защиты от античита
+                        pBtn.Text = "🛡️ СБРОС СКОРОСТИ (1 сек)..."
+                        task.wait(1.0)
+                        
+                        pBtn.Text = "🚀 Отправить: " .. player.Name
+                    end
+                end)
+                table.insert(activeButtons, pBtn)
+            end
+        end
+    end
+
+    local c1 = P.PlayerAdded:Connect(updateFlingList)
+    local c2 = P.PlayerRemoving:Connect(updateFlingList)
+    
+    Data.ScreenGui.Destroying:Connect(function()
+        if c1 then c1:Disconnect() end
+        if c2 then c2:Disconnect() end
+    end)
+
+    task.spawn(updateFlingList)
+    print("[Gubby Модуль]: Новый Orbit-Флинг по твоей тактике успешно загружен!");
+end)

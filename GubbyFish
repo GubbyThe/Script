@@ -449,3 +449,44 @@ task.spawn(function()
     task.spawn(updateFlingList)
     print("[Gubby Модуль]: Новый Orbit-Флинг по твоей тактике успешно загружен!");
 end)
+-- 1. ЭТУ ЧАСТЬ ВСТАВЛЯЙ ТУДА, ГДЕ У ТЕБЯ СОЗДАЮТСЯ КНОПКИ В МЕНЮ (GUI)
+local BroomAutoEquip = false -- Переменная, которая следит, включена ли функция
+
+YourTab:CreateToggle({
+    Name = "Авто-экипировка Метлы (Broom)",
+    CurrentValue = false,
+    Flag = "BroomToggle",
+    Callback = function(Value)
+        BroomAutoEquip = Value -- Переключаем статус функции при нажатии в меню
+    end,
+})
+
+-- 2. ЭТУ ЧАСТЬ ПРОСТО ЗАКИДЫВАЙ В САМЫЙ КОНЕЦ СВОЕГО СКРИПТА
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+local function equipBroom()
+    task.wait(1.2) -- Даем игре 1.2 секунды на выдачу предметов в рюкзак
+    
+    if BroomAutoEquip and localPlayer.Character then
+        -- Ищем метлу в инвентаре
+        local broom = localPlayer.Backpack:FindFirstChild("Broom") or localPlayer.Character:FindFirstChild("Broom")
+        
+        if broom and broom:IsA("Tool") then
+            local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid:EquipTool(broom) -- Достаем метлу в руку (первый клик)
+                
+                task.wait(0.2)   -- Микро-пауза, чтобы анимация взятия не лаганула
+                broom:Activate() -- Автоматический клик для активации полета! (второй клик)
+            end
+        end
+    end
+end
+
+-- Следим за каждым респавном (началом нового раунда)
+localPlayer.CharacterAdded:Connect(function(character)
+    if BroomAutoEquip then
+        equipBroom()
+    end
+end)

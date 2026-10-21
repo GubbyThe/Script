@@ -450,24 +450,65 @@ task.spawn(function()
     print("[Gubby Модуль]: Новый Orbit-Флинг по твоей тактике успешно загружен!");
 end)
 -- ========================================================
--- ФОНОВАЯ ЛОГИКА ДЛЯ АВТО-МЕТЛЫ (БЕЗ КНОПОК В МЕНЮ)
+-- [СИСТЕМА КОНФИГОВ ПО НИКУ И АВТО-МЕТЛА ДЛЯ GUBBYHUB]
 -- ========================================================
-local function equipHalloweenBroom()
-    task.wait(1.5) -- Ждем, пока прогрузится раунд и игра выдаст вещи
-    if LocalPlayer.Character then
-        -- Ищем предмет по точному имени в инвентаре MM2
-        local broom = LocalPlayer.Backpack:FindFirstChild("Broom Toy") or LocalPlayer.Character:FindFirstChild("Broom Toy")
-        if broom and broom:IsA("Tool") then
-            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid:EquipTool(broom) -- Достаем метлу в руку
-                task.wait(0.3)
-                broom:Activate() -- Авто-клик для запуска анимации полета!
-            end
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local username = LocalPlayer.Name
+
+-- Имя файла конфигурации для Соляры
+local configFile = "GubbyHub_Broom_" .. username .. ".txt"
+
+-- Функция сохранения конфига (записывает данные на ПК)
+local function saveConfig(status)
+    if writefile then
+        writefile(configFile, tostring(status))
+    end
+end
+
+-- Функция загрузки конфига (читает данные даже после ребута ПК)
+local function loadConfig()
+    if isfile and readfile and isfile(configFile) then
+        local content = readfile(configFile)
+        return content == "true"
+    end
+    return false -- По умолчанию выключено
+end
+
+-- Инициализируем статус из файла подкачки
+local BroomAutoEquip = loadConfig()
+
+-- ТУТ ТВОЙ СКРИПТ ДОЛЖЕН ОТПРАВИТЬ СИГНАЛ ИГРЕ ДЛЯ ЭКИПИРОВКИ
+local function useBroomRemotely()
+    task.wait(2) -- Ждем загрузки раунда
+    if not BroomAutoEquip then return end
+    
+    -- Симуляция клика через Ремоут Ивенты MM2 (Никилис использует их для экипировки игрушек)
+    -- В зависимости от версии обновления, ивент может лежать в ReplicatedStorage
+    local equipEvent = ReplicatedStorage:FindFirstChild("EquipToy", true) or ReplicatedStorage:FindFirstChild("EquipItem", true)
+    
+    if equipEvent and equipEvent:IsA("RemoteEvent") then
+        -- Передаем серверу имя предмета, имитируя, что мы открыли меню и кликнули по метле
+        equipEvent:FireServer("Broom Toy") 
+        
+        -- Даем микро-паузу и активируем полет
+        task.wait(0.5)
+        local characterBroom = LocalPlayer.Character:FindFirstChild("Broom Toy")
+        if characterBroom and characterBroom:IsA("Tool") then
+            characterBroom:Activate()
         end
     end
 end
 
--- Скрипт сам активирует метлу при каждом спавне или старте раунда
-LocalPlayer.CharacterAdded:Connect(equipHalloweenBroom)
+-- Срабатывание при каждом респавне
+LocalPlayer.CharacterAdded:Connect(function(character)
+    if BroomAutoEquip then
+        useBroomRemotely()
+    end
+end)
+
+-- ПРИМЕР: Если ты когда-нибудь захочешь переключать этот режим, 
+-- достаточно вызвать функцию saveConfig(true) или saveConfig(false)
+-- Скрипт сразу перезапишет файл на диске под твоим ником!
 -- ========================================================

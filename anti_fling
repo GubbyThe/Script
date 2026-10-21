@@ -1,0 +1,135 @@
+-- Настройки
+local MAX_SPEED = 300 -- Максимальная скорость, после которой срабатывает анти-флинг
+local CHECK_INTERVAL = 0.5 -- Как часто сохранять безопасную позицию (в секундах)
+
+-- Ссылки на сервисы
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+local isRunning = true
+
+-- Переменная для хранения последней безопасной позиции
+local lastSafeCFrame = nil
+
+-- Создание UI
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local TitleLabel = Instance.new("TextLabel")
+local StatusLabel = Instance.new("TextLabel")
+local CloseButton = Instance.new("TextButton")
+
+ScreenGui.Name = "AntiFlingSafe_Solara"
+ScreenGui.ResetOnSpawn = false
+pcall(function()
+    ScreenGui.Parent = CoreGui
+end)
+if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 200, 0, 80)
+MainFrame.Position = UDim2.new(0.05, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+TitleLabel.Size = UDim2.new(0, 160, 0, 30)
+TitleLabel.Position = UDim2.new(0, 10, 0, 5)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Anti-Fling MM2 v2"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.TextSize = 18
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = MainFrame
+
+StatusLabel.Size = UDim2.new(0, 180, 0, 30)
+StatusLabel.Position = UDim2.new(0, 10, 0, 40)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Статус: Защита активна"
+StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
+StatusLabel.Font = Enum.Font.SourceSans
+StatusLabel.TextSize = 14
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.Parent = MainFrame
+
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -30, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.TextSize = 16
+CloseButton.Parent = MainFrame
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 5)
+ButtonCorner.Parent = CloseButton
+
+CloseButton.MouseButton1Click:Connect(function()
+    isRunning = false
+    ScreenGui:Destroy()
+end)
+
+-- 1. Поток для постоянного сохранения безопасных координат
+task.spawn(function()
+    while isRunning do
+        local character = LocalPlayer.Character
+        if character then
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            
+            if rootPart and humanoid and humanoid.Health > 0 then
+                -- Если скорость в норме, запоминаем ВСЕ координаты (включая точную высоту Y)
+                if rootPart.Velocity.Magnitude < 50 then
+                    lastSafeCFrame = rootPart.CFrame
+                end
+            end
+        end
+        task.wait(CHECK_INTERVAL)
+    end
+end)
+
+-- 2. Основной быстрый цикл проверки на флинг
+RunService.Heartbeat:Connect(function()
+    if not isRunning then return end
+    
+    local character = LocalPlayer.Character
+    if character then
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        
+        if rootPart then
+            -- Проверяем, не улетели ли мы от флинга
+            if rootPart.Velocity.Magnitude > MAX_SPEED then
+                
+                -- Если у нас есть сохраненная безопасная точка, возвращаем туда
+                if lastSafeCFrame then
+                    -- Полностью гасим инерцию флинга
+                    rootPart.Velocity = Vector3.new(0, 0, 0)
+                    rootPart.RotVelocity = Vector3.new(0, 0, 0)
+                    
+                    -- Телепортируем назад во времени на безопасное место
+                    rootPart.CFrame = lastSafeCFrame
+                    
+                    -- Обновляем статус в меню
+                    StatusLabel.Text = "Статус: Возврат из флинга!"
+                    StatusLabel.TextColor3 = Color3.fromRGB(255, 150, 0)
+                    
+                    task.wait(0.5)
+                    if isRunning then
+                        StatusLabel.Text = "Статус: Защита активна"
+                        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
+                    end
+                end
+            end
+        end
+    end
+end)

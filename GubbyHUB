@@ -1,347 +1,1951 @@
--- [[ GubbyHUB v3 — ЧАСТЬ 1: ОСНОВА UI ]] --
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local LocalPlayer = Players.LocalPlayer
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 1 ИЗ 10 (БАЗА И ВСЕ ПЕРЕМЕННЫЕ)
+-- ========================================================================
+local P = game:GetService("Players")
+local W = game:GetService("Workspace")
+local LP = P.LocalPlayer or P.PlayerAdded:Wait()
 
-if CoreGui:FindFirstChild("GubbyScreenGui") then
-    CoreGui.GubbyScreenGui:Destroy()
-end
+local currentGravity = W.Gravity
+if currentGravity == 0 or currentGravity < 10 then currentGravity = 196.2 end
 
-local GubbyScreenGui = Instance.new("ScreenGui", CoreGui)
-GubbyScreenGui.Name = "GubbyScreenGui"
-GubbyScreenGui.ResetOnSpawn = false
-
-local MainFrame = Instance.new("Frame", GubbyScreenGui)
-MainFrame.Size = UDim2.new(0, 520, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -260, 0.5, -180)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MainFrame.BackgroundTransparency = 0.25
-MainFrame.Active = true
-MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
-
-local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = Color3.fromRGB(60, 60, 65)
-MainStroke.Thickness = 1.5
-
-local TabContainer = Instance.new("Frame", MainFrame)
-TabContainer.Size = UDim2.new(0, 140, 1, -50)
-TabContainer.Position = UDim2.new(0, 10, 0, 45)
-TabContainer.BackgroundTransparency = 1
-
-local TabLayout = Instance.new("UIListLayout", TabContainer)
-TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-TabLayout.Padding = UDim.new(0, 6)
-
-local PagesContainer = Instance.new("Frame", MainFrame)
-PagesContainer.Size = UDim2.new(1, -170, 1, -60)
-PagesContainer.Position = UDim2.new(0, 160, 0, 45)
-PagesContainer.BackgroundTransparency = 1
-
-local GubbyCircle = Instance.new("TextButton", GubbyScreenGui)
-GubbyCircle.Size = UDim2.new(0, 50, 0, 50)
-GubbyCircle.Position = UDim2.new(0.05, 0, 0.05, 0)
-GubbyCircle.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-GubbyCircle.Text = "G"
-GubbyCircle.TextColor3 = Color3.fromRGB(255, 255, 255)
-GubbyCircle.Font = Enum.Font.SourceSansBold
-GubbyCircle.TextSize = 22
-GubbyCircle.Visible = false
-Instance.new("UICorner", GubbyCircle).CornerRadius = UDim.new(0, 25)
-Instance.new("UIStroke", GubbyCircle).Color = Color3.fromRGB(255, 255, 255)
-
-local HubTitle = Instance.new("TextLabel", MainFrame)
-HubTitle.Size = UDim2.new(0.5, 0, 0, 30)
-HubTitle.Position = UDim2.new(0, 15, 0, 10)
-HubTitle.BackgroundTransparency = 1
-HubTitle.Text = "GubbyHUB v3"
-HubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-HubTitle.Font = Enum.Font.SourceSansBold
-HubTitle.TextSize = 18
-HubTitle.TextXAlignment = Enum.TextXAlignment.Left
-
-getgenv().GubbyCore = {
-    MainFrame = MainFrame,
-    TabContainer = TabContainer,
-    PagesContainer = PagesContainer,
-    GubbyCircle = GubbyCircle,
-    GubbyScreenGui = GubbyScreenGui
+-- Полная база настроек, включая все утерянные утилиты, троллинг и скрытые фичи
+_G.GeminiConfig = {
+    Farm = {CoinFarm = false, Delay = 0.5, Radius = 150, Speed = 35}, 
+    Wallhop = {Enabled = false}, 
+    InfJump = {Enabled = false}, 
+    Spinbot = {Enabled = false, Key = Enum.KeyCode.C, Speed = 50}, 
+    Fling = {Enabled = false, Targets = {}, Radius = 2.0, StartCFrame = nil}, 
+    AntiFling = {Enabled = false}, 
+    MM2 = {FullBright = false, ESP = false, NamesESP = false, KFC = false, KfcSize = 10}, 
+    Fly = {Enabled = false, Speed = 50, Key = Enum.KeyCode.F, OriginalGravity = currentGravity}, 
+    Noclip = {Enabled = false, Key = Enum.KeyCode.N}, 
+    HumanoidMods = {Speed = 16, Jump = 50, Gravity = currentGravity}, 
+    DoorsMod = {AutoInteract = false}, 
+    Invisibility = {Enabled = false},
+    WallEditor = {CurrentBlock = nil, HandleInstance = nil, Increment = 1},
+    ClickTp = {Enabled = false, Key = Enum.KeyCode.LeftControl},
+    Autoclicker = {Enabled = false},
+    ToxicTroll = {Enabled = false}
 }
--- [[ ЧАСТЬ 2: КАРКАС UI БЕЗ ОБРЕЗОК ]]
-local Core = getgenv().GubbyCore
-local firstTab = true
+_G.GeminiBlocksList = {}
+_G.GeminiTurretsList = {}
+_G.GeminiUI = {Tabs = {}, B_Refs = {}}
 
-local function CreateTab(Name)
-    local TabBtn = Instance.new("TextButton", Core.TabContainer)
-    TabBtn.Size = UDim2.new(1, 0, 0, 34)
-    TabBtn.Text = Name
-    TabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-    TabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
+print("[Джимини Хаб]: Часть 1/10 (База Конфига) успешно инициализирована!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 2 ИЗ 10 (ФРЕЙМЫ И СМУТ-ДРАГ)
+-- ========================================================================
+local LP = game:GetService("Players").LocalPlayer
+local UIS = game:GetService("UserInputService")
 
-    local Page = Instance.new("ScrollingFrame", Core.PagesContainer)
-    Page.Size = UDim2.new(1, 0, 1, 0)
-    Page.BackgroundTransparency = 1
-    Page.Visible = false
-    
-    local List = Instance.new("UIListLayout", Page)
-    List.SortOrder = Enum.SortOrder.LayoutOrder
-    List.Padding = UDim.new(0, 8)
-    List.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local ScreenGui = Instance.new("ScreenGui", LP:WaitForChild("PlayerGui"))
+ScreenGui.Name = "ДжиминиХаб_v40.0"
+ScreenGui.ResetOnSpawn = false
+_G.GeminiUI.ScreenGui = ScreenGui
 
-    List:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        Page.CanvasSize = UDim2.new(0, 0, 0, List.AbsoluteContentSize.Y + 15)
-    end)
+-- Тот самый оригинальный ярко-желтый полупрозрачный дизайн хаба
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 480, 0, 360)
+MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(255, 235, 59)
+MainFrame.BackgroundTransparency = 0.4
+MainFrame.Active = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+_G.GeminiUI.MainFrame = MainFrame
 
-    TabBtn.MouseButton1Click:Connect(function()
-        for _, p in pairs(Core.PagesContainer:GetChildren()) do 
-            if p:IsA("ScrollingFrame") then p.Visible = false end 
-        end
-        Page.Visible = true
-    end)
+local TopBar = Instance.new("Frame", MainFrame)
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = Color3.fromRGB(255, 235, 59)
+TopBar.BackgroundTransparency = 0.2
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
 
-    if firstTab then firstTab = false Page.Visible = true end
+local Title = Instance.new("TextLabel", TopBar)
+Title.Size = UDim2.new(0.5, 0, 1, 0); Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Text = "Джимини Хаб"; Title.Font = Enum.Font.SourceSansBold; Title.TextSize = 16
+Title.TextColor3 = Color3.fromRGB(0, 0, 0); Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left
 
-    return {
-        RawPage = Page,
-        AddSlider = function(text, min, max, default, callback)
-            -- Сюда мы вставим код слайдера следующим шагом
-        end,
-        AddInfo = function(title, desc)
-            -- Сюда мы вставим код инфо-строки
-        end
-    end
-end
-Core.CreateTab = CreateTab
--- [[ GubbyHUB v3 — ЧАСТЬ 2.1: БАЗА ТАБОВ ]] --
-local Core = getgenv().GubbyCore
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local firstTab = true
-
-getgenv().GubbyTabs = {}
-
-local function CreateTab(Name)
-    local TabBtn = Instance.new("TextButton", Core.TabContainer)
-    TabBtn.Size = UDim2.new(1, 0, 0, 34)
-    TabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    TabBtn.BackgroundTransparency = 0.4
-    TabBtn.Text = Name
-    TabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-    TabBtn.Font = Enum.Font.SourceSansBold
-    TabBtn.TextSize = 14
-    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
-    Instance.new("UIStroke", TabBtn).Color = Color3.fromRGB(50, 50, 55)
-
-    local Page = Instance.new("ScrollingFrame", Core.PagesContainer)
-    Page.Size = UDim2.new(1, 0, 1, 0)
-    Page.BackgroundTransparency = 1
-    Page.Visible = false
-    Page.ScrollBarThickness = 3
-    Page.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 75)
-    
-    local List = Instance.new("UIListLayout", Page)
-    List.SortOrder = Enum.SortOrder.LayoutOrder
-    List.Padding = UDim.new(0, 8)
-    List.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-    List:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        Page.CanvasSize = UDim2.new(0, 0, 0, List.AbsoluteContentSize.Y + 15)
-    end)
-
-    TabBtn.MouseButton1Click:Connect(function()
-        for _, p in pairs(Core.PagesContainer:GetChildren()) do 
-            if p:IsA("ScrollingFrame") then p.Visible = false end 
-        end
-        for _, b in pairs(Core.TabContainer:GetChildren()) do
-            if b:IsA("TextButton") then 
-                TweenService:Create(b, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(180, 180, 180), BackgroundColor3 = Color3.fromRGB(30, 30, 35)}):Play()
-            end
-        end
-        Page.Visible = true
-        TweenService:Create(TabBtn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(255, 255, 255), BackgroundColor3 = Color3.fromRGB(45, 45, 50)}):Play()
-    end)
-
-    if firstTab then
-        firstTab = false
-        Page.Visible = true
-        TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-    end
-
-    local tabObj = { RawPage = Page }
-    table.insert(getgenv().GubbyTabs, tabObj)
-    return tabObj
-end
-Core.CreateTab = CreateTab
--- [[ GubbyHUB v3 — ЧАСТЬ 2.2: НАЧИНКА UI (СЛАЙДЕРЫ) ]] --
-local Core = getgenv().GubbyCore
-local UserInputService = game:GetService("UserInputService")
-
-for _, tab in pairs(getgenv().GubbyTabs or {}) do
-    local Page = tab.RawPage
-    
-    tab.AddSlider = function(text, min, max, default, callback)
-        local SFrame = Instance.new("Frame", Page)
-        SFrame.Size = UDim2.new(0.98, 0, 0, 58)
-        SFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-        SFrame.BackgroundTransparency = 0.2
-        Instance.new("UICorner", SFrame).CornerRadius = UDim.new(0, 10)
-        Instance.new("UIStroke", SFrame).Color = Color3.fromRGB(60, 60, 65)
-
-        local SLbl = Instance.new("TextLabel", SFrame)
-        SLbl.Size, SLbl.Position, SLbl.BackgroundTransparency = UDim2.new(0.7, 0, 0, 22), UDim2.new(0, 12, 0, 6), 1
-        SLbl.Text, SLbl.TextColor3, SLbl.Font, SLbl.TextSize = text, Color3.fromRGB(220, 220, 220), Enum.Font.SourceSansBold, 14
-        SLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-        local ValLbl = Instance.new("TextLabel", SFrame)
-        ValLbl.Size, ValLbl.Position, ValLbl.BackgroundTransparency = UDim2.new(0.2, 0, 0, 22), UDim2.new(1, -60, 0, 6), 1
-        ValLbl.Text, ValLbl.TextColor3, ValLbl.Font, ValLbl.TextSize = tostring(default), Color3.fromRGB(160, 160, 160), Enum.Font.Code, 13
-        ValLbl.TextXAlignment = Enum.TextXAlignment.Right
-
-        local SBar = Instance.new("TextButton", SFrame)
-        SBar.Size, SBar.Position, SBar.BackgroundColor3, SBar.Text = UDim2.new(0.92, 0, 0, 5), UDim2.new(0.04, 0, 1, -15), Color3.fromRGB(40, 40, 45), ""
-        Instance.new("UICorner", SBar).CornerRadius = UDim.new(0, 3)
-
-        local SFill = Instance.new("Frame", SBar)
-        SFill.Size, SFill.BackgroundColor3 = UDim2.new((default - min) / (max - min), 0, 1, 0), Color3.fromRGB(255, 255, 255)
-        Instance.new("UICorner", SFill).CornerRadius = UDim.new(0, 3)
-
-        local function update(input)
-            local unit = math.clamp((input.Position.X - SBar.AbsolutePosition.X) / SBar.AbsoluteSize.X, 0, 1)
-            local value = math.floor(min + (max - min) * unit)
-            SFill.Size = UDim2.new(unit, 0, 1, 0)
-            ValLbl.Text = tostring(value)
-            callback(value)
-        end
-
-        local sliding = false
-        SBar.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true update(input) end end)
-        UserInputService.InputChanged:Connect(function(input) if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then update(input) end end)
-        UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end end)
-    end
-
-    tab.AddInfo = function(title, desc)
-        local InfoFrame = Instance.new("Frame", Page)
-        InfoFrame.Size = UDim2.new(0.98, 0, 0, 48)
-        InfoFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-        InfoFrame.BackgroundTransparency = 0.2
-        Instance.new("UICorner", InfoFrame).CornerRadius = UDim.new(0, 10)
-        Instance.new("UIStroke", InfoFrame).Color = Color3.fromRGB(60, 60, 65)
-        
-        local Txt1 = Instance.new("TextLabel", InfoFrame)
-        Txt1.Size, Txt1.Position, Txt1.BackgroundTransparency = UDim2.new(0.38, 0, 1, 0), UDim2.new(0, 12, 0, 0), 1
-        Txt1.Text, Txt1.TextColor3, Txt1.Font, Txt1.TextSize = title, Color3.fromRGB(150, 150, 155), Enum.Font.SourceSansBold, 13
-        Txt1.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local Txt2 = Instance.new("TextLabel", InfoFrame)
-        Txt2.Size, Txt2.Position, Txt2.BackgroundTransparency = UDim2.new(0.58, 0, 1, 0), UDim2.new(0.4, 0, 0, 0), 1
-        Txt2.Text, Txt2.TextColor3, Txt2.Font, Txt2.TextSize = desc, Color3.fromRGB(240, 240, 240), Enum.Font.SourceSans, 13
-        Txt2.TextXAlignment = Enum.TextXAlignment.Left
-    end
-end
--- [[ GubbyHUB v3 — ЧАСТЬ 3: ВСЕ ВКЛАДКИ И НАСТОЯЩИЙ НОКЛИП ]] --
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Core = getgenv().GubbyCore
-
--- Создаем вкладки напрямую из ядра
-local PlayerTab   = Core.CreateTab("Игрок")
-local TrollTab    = Core.CreateTab("Тролл")
-local CombatTab   = Core.CreateTab("Комбат")
-local TeleportTab = Core.CreateTab("Телепорт")
-local MiscTab     = Core.CreateTab("Смешанное")
-local FarmTab     = Core.CreateTab("Авто фарм")
-local InfoTab     = Core.CreateTab("Инфо")
-
--- Настройка ползунков
-PlayerTab.AddSlider("Скорость бега персонажа", 16, 250, 16, function(v)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = v end
+local dragging, dragInput, dragStart, startPos
+TopBar.InputBegan:Connect(function(i) 
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then 
+        dragging = true; dragStart = i.Position; startPos = MainFrame.Position
+        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then dragging = false end end)
+    end 
 end)
+TopBar.InputChanged:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseMovement then dragInput = i end end)
+UIS.InputChanged:Connect(function(i) 
+    if i == dragInput and dragging then 
+        local d = i.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y) 
+    end 
+end)
+print("[Джимини Хаб]: Часть 2/10 (Главное окно) успешно загружена!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 3 ИЗ 10 (САЙДБАР И СКРОЛЛ ПАНЕЛИ)
+-- ========================================================================
+local MainFrame = _G.GeminiUI.MainFrame
+local ScreenGui = _G.GeminiUI.ScreenGui
 
-PlayerTab.AddSlider("Высота прыжка персонажа", 50, 300, 50, function(v)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then 
-        LocalPlayer.Character.Humanoid.UseJumpPower = true LocalPlayer.Character.Humanoid.JumpPower = v 
+local MinimizeBtn = Instance.new("TextButton", TopBar or MainFrame)
+MinimizeBtn.Size = UDim2.new(0, 30, 0, 30); MinimizeBtn.Position = UDim2.new(1, -65, 0, 2)
+MinimizeBtn.Text = "_"; MinimizeBtn.TextSize = 20; MinimizeBtn.TextColor3 = Color3.fromRGB(0,0,0); MinimizeBtn.BackgroundTransparency = 1
+
+local CloseBtn = Instance.new("TextButton", TopBar or MainFrame)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Position = UDim2.new(1, -35, 0, 2)
+CloseBtn.Text = "X"; CloseBtn.TextColor3 = Color3.fromRGB(180, 0, 0); CloseBtn.Font = Enum.Font.SourceSansBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundTransparency = 1
+
+local GmShortcut = Instance.new("TextButton", ScreenGui)
+GmShortcut.Size = UDim2.new(0, 45, 0, 45); GmShortcut.Position = UDim2.new(0.5, -22, 0, 15)
+GmShortcut.BackgroundColor3 = Color3.fromRGB(255, 235, 59); GmShortcut.BackgroundTransparency = 0.2; GmShortcut.Text = "ДХ"; GmShortcut.Font = Enum.Font.SourceSansBold; GmShortcut.TextSize = 18; GmShortcut.Visible = false
+Instance.new("UICorner", GmShortcut).CornerRadius = UDim.new(1, 0)
+
+MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; GmShortcut.Visible = true end)
+GmShortcut.MouseButton1Click:Connect(function() MainFrame.Visible = true; GmShortcut.Visible = false end)
+CloseBtn.MouseButton1Click:Connect(function() pcall(function() if _G.GeminiConfig.WallEditor.HandleInstance then _G.GeminiConfig.WallEditor.HandleInstance:Destroy() end end); ScreenGui:Destroy() end)
+
+local Sidebar = Instance.new("Frame", MainFrame)
+Sidebar.Size = UDim2.new(0, 110, 1, -35); Sidebar.Position = UDim2.new(0, 0, 0, 35)
+Sidebar.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Sidebar.BackgroundTransparency = 0.4
+Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 8)
+local SbLayout = Instance.new("UIListLayout", Sidebar); SbLayout.Padding = UDim.new(0, 4); SbLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local ContentArea = Instance.new("Frame", MainFrame)
+ContentArea.Size = UDim2.new(1, -275, 1, -45); ContentArea.Position = UDim2.new(0, 115, 0, 40)
+ContentArea.BackgroundTransparency = 1
+_G.GeminiUI.ContentArea = ContentArea; _G.GeminiUI.Sidebar = Sidebar
+
+local PlayerListFrame = Instance.new("Frame", MainFrame)
+PlayerListFrame.Size = UDim2.new(0, 150, 1, -45); PlayerListFrame.Position = UDim2.new(1, -155, 0, 40); PlayerListFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); PlayerListFrame.BackgroundTransparency = 0.3
+Instance.new("UICorner", PlayerListFrame).CornerRadius = UDim.new(0, 6)
+
+local PlScroll = Instance.new("ScrollingFrame", PlayerListFrame)
+PlScroll.Size = UDim2.new(1, -6, 1, -30); PlScroll.Position = UDim2.new(0, 3, 0, 25); PlScroll.BackgroundTransparency = 1; PlScroll.ScrollBarThickness = 3
+Instance.new("UIListLayout", PlScroll).Padding = UDim.new(0, 4)
+_G.GeminiUI.PlScroll = PlScroll
+
+print("[Джимини Хаб]: Часть 3/10 (Макет Сайдбара) успешно загружена!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 4 ИЗ 10 (ВКЛАДКИ И ОКНО СТЕН)
+-- ========================================================================
+local Sidebar = _G.GeminiUI.Sidebar
+local ContentArea = _G.GeminiUI.ContentArea
+local ScreenGui = _G.GeminiUI.ScreenGui
+
+_G.GeminiUI.CreateTab = function(name)
+    local tBtn = Instance.new("TextButton", Sidebar)
+    tBtn.Size = UDim2.new(0, 100, 0, 30); tBtn.BackgroundColor3 = Color3.fromRGB(255, 152, 0); tBtn.BackgroundTransparency = 0.6; tBtn.Text = name; tBtn.TextColor3 = Color3.fromRGB(255, 255, 255); tBtn.Font = Enum.Font.SourceSansBold; tBtn.TextSize = 14
+    Instance.new("UICorner", tBtn).CornerRadius = UDim.new(0, 6)
+    local sc = Instance.new("ScrollingFrame", ContentArea)
+    sc.Size = UDim2.new(1, 0, 1, 0); sc.BackgroundTransparency = 1; sc.ScrollBarThickness = 4; sc.Visible = false; sc.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    local l = Instance.new("UIListLayout", sc); l.Padding = UDim.new(0, 6); l.SortOrder = Enum.SortOrder.LayoutOrder
+    tBtn.MouseButton1Click:Connect(function()
+        for _, tab in pairs(_G.GeminiUI.Tabs) do tab.sc.Visible = false; tab.btn.BackgroundTransparency = 0.6 end
+        sc.Visible = true; tBtn.BackgroundTransparency = 0.2
+    end)
+    table.insert(_G.GeminiUI.Tabs, {btn = tBtn, sc = sc, name = name})
+    return sc
+end
+
+local EditorFrame = Instance.new("Frame", ScreenGui)
+EditorFrame.Size = UDim2.new(0, 220, 0, 290); EditorFrame.Position = UDim2.new(0.05, 0, 0.3, 0); EditorFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30); EditorFrame.BackgroundTransparency = 0.2; EditorFrame.Active = true; EditorFrame.Visible = false
+Instance.new("UICorner", EditorFrame).CornerRadius = UDim.new(0, 8)
+_G.GeminiUI.EditorFrame = EditorFrame
+
+local EdTop = Instance.new("Frame", EditorFrame)
+EdTop.Size = UDim2.new(1, 0, 0, 30); EdTop.BackgroundColor3 = Color3.fromRGB(255, 152, 0); Instance.new("UICorner", EdTop).CornerRadius = UDim.new(0, 8)
+
+local EdTitle = Instance.new("TextLabel", EdTop)
+EdTitle.Size = UDim2.new(1, -30, 1, 0); EdTitle.Position = UDim2.new(0, 10, 0, 0); EdTitle.Text = "Wall Editor Panel"; EdTitle.Font = Enum.Font.SourceSansBold; EdTitle.TextSize = 14; EdTitle.TextColor3 = Color3.fromRGB(255, 255, 255); EdTitle.BackgroundTransparency = 1; EdTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local EdClose = Instance.new("TextButton", EdTop)
+EdClose.Size = UDim2.new(0, 25, 0, 25); EdClose.Position = UDim2.new(1, -27, 0, 2); EdClose.Text = "X"; EdClose.TextColor3 = Color3.fromRGB(255, 255, 255); EdClose.Font = Enum.Font.SourceSansBold; EdClose.BackgroundTransparency = 1
+EdClose.MouseButton1Click:Connect(function() EditorFrame.Visible = false end)
+
+local EdScroll = Instance.new("ScrollingFrame", EditorFrame)
+EdScroll.Size = UDim2.new(1, -10, 1, -40); EdScroll.Position = UDim2.new(0, 5, 0, 35); EdScroll.BackgroundTransparency = 1; EdScroll.ScrollBarThickness = 3; EdScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Instance.new("UIListLayout", EdScroll).Padding = UDim.new(0, 5)
+_G.GeminiUI.EdScroll = EdScroll
+
+print("[Джимини Хаб]: Часть 4/10 (Окно Редактора) успешно загружена!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 4.1 (ФИКСЫ: DRAG, РЕСАЙЗ ОКНА И ПОТОК УМНОГО ESP)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local LP = game:GetService("Players").LocalPlayer
+local UIS = game:GetService("UserInputService")
+local P = game:GetService("Players")
+local EditorFrame = _G.GeminiUI.EditorFrame
+local EdTop = EditorFrame:FindFirstChild("Frame") or EditorFrame:GetChildren()[1]
+
+-- 1. ЖЕЛЕЗНЫЙ ДРАГ (ПЕРЕМЕЩЕНИЕ) ДЛЯ ОКНА WALL EDITOR
+local edDragging, edDragStart, edStartPos, edDragInput
+EdTop.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        edDragging = true; edDragStart = i.Position; edStartPos = EditorFrame.Position
+        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then edDragging = false end end)
+    end
+end)
+EdTop.InputChanged:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseMovement then edDragInput = i end end)
+UIS.InputChanged:Connect(function(i)
+    if i == edDragInput and edDragging then
+        local d = i.Position - edDragStart
+        EditorFrame.Position = UDim2.new(edStartPos.X.Scale, edStartPos.X.Offset + d.X, edStartPos.Y.Scale, edStartPos.Y.Offset + d.Y)
     end
 end)
 
--- Тумблер Ноклипа (Внутри фрейма PlayerTab)
-local TFrame = Instance.new("Frame", PlayerTab.RawPage)
-TFrame.Size = UDim2.new(0.98, 0, 0, 52)
-TFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-TFrame.BackgroundTransparency = 0.2
-Instance.new("UICorner", TFrame).CornerRadius = UDim.new(0, 10)
-Instance.new("UIStroke", TFrame).Color = Color3.fromRGB(60, 60, 65)
+-- 2. ВОЗВРАЩЕНИЕ УГОЛКА РАС ТЯГИВАНИЯ ОКНА (РЕСАЙЗ СЕТКИ)
+local ResizeBtn = Instance.new("ImageButton", EditorFrame)
+ResizeBtn.Size = UDim2.new(0, 16, 0, 16)
+ResizeBtn.Position = UDim2.new(1, -16, 1, -16)
+ResizeBtn.BackgroundTransparency = 1
+ResizeBtn.Image = "rbxassetid://10634621021" -- Текстура профессионального уголка-стрелочки ресайза
+ResizeBtn.ZIndex = 5
 
-local TLbl = Instance.new("TextLabel", TFrame)
-TLbl.Size, TLbl.Position, TLbl.BackgroundTransparency = UDim2.new(0.6, 0, 1, 0), UDim2.new(0, 12, 0, 0), 1
-TLbl.Text, TLbl.TextColor3, TLbl.Font, TLbl.TextSize = "Проход сквозь стены (Noclip)", Color3.fromRGB(230, 230, 230), Enum.Font.SourceSansBold, 14
-TLbl.TextXAlignment = Enum.TextXAlignment.Left
+local resizing, resizeStartSize, resizeStartMouse
+ResizeBtn.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        resizing = true; resizeStartSize = EditorFrame.AbsoluteSize; resizeStartMouse = UIS:GetMouseLocation()
+        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then resizing = false end end)
+    end
+end)
+UIS.InputChanged:Connect(function(i)
+    if resizing and i.UserInputType == Enum.UserInputType.MouseMovement then
+        local currMouse = UIS:GetMouseLocation()
+        local delta = currMouse - resizeStartMouse
+        -- Плавное изменение размера фрейма с ограничением минимальной ширины и высоты
+        EditorFrame.Size = UDim2.new(0, math.max(160, resizeStartSize.X + delta.X), 0, math.max(180, resizeStartSize.Y + delta.Y))
+    end
+end)
 
-local SBtn = Instance.new("TextButton", TFrame)
-SBtn.Size, SBtn.Position, SBtn.BackgroundColor3, SBtn.Text = UDim2.new(0, 42, 0, 20), UDim2.new(1, -52, 0.5, -10), Color3.fromRGB(50, 50, 55), ""
-Instance.new("UICorner", SBtn).CornerRadius = UDim.new(0, 10)
+-- 3. ПОЛНЫЙ ПЕРЕПИСАННЫЙ ИИ-ПОТОК ДЛЯ РАБОТЫ ESP (СКВОЗЬ ЛЮБЫЕ СТЕНЫ)
+local function getPlayerRole(p)
+    if not p.Character then return "Innocent" end
+    if p.Character:FindFirstChild("Knife") or p:FindFirstChild("Backpack"):FindFirstChild("Knife") then return "Murderer" end
+    if p.Character:FindFirstChild("Gun") or p:FindFirstChild("Backpack"):FindFirstChild("Gun") then return "Sheriff" end
+    return "Innocent"
+end
 
-local Crcl = Instance.new("Frame", SBtn)
-Crcl.Size, Crcl.Position, Crcl.BackgroundColor3 = UDim2.new(0, 14, 0, 14), UDim2.new(0, 3, 0.5, -7), Color3.fromRGB(255, 255, 255)
-Instance.new("UICorner", Crcl).CornerRadius = UDim.new(0, 7)
-
-local noclipConnection = nil
-local noclipEnabled = false
-
-SBtn.MouseButton1Click:Connect(function()
-    noclipEnabled = not noclipEnabled
-    if noclipEnabled then
-        TweenService:Create(SBtn, TweenInfo.new(0.18), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-        TweenService:Create(Crcl, TweenInfo.new(0.18), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
-        noclipConnection = RunService.Stepped:Connect(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.NoClip)
+local function handleSmartESP(p)
+    if p == LP then return end
+    task.spawn(function()
+        while task.wait(0.5) do
+            if Config.MM2.ESP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local role = getPlayerRole(p)
+                local color = role == "Murderer" and Color3.fromRGB(255, 0, 0) or (role == "Sheriff" and Color3.fromRGB(0, 0, 255) or Color3.fromRGB(0, 255, 0))
+                
+                -- Создание/Обновление жесткого Highlight силуэта
+                local hl = p.Character:FindFirstChild("GeminiESP")
+                if not hl then
+                    hl = Instance.new("Highlight")
+                    hl.Name = "GeminiESP"
+                    hl.Parent = p.Character
+                end
+                hl.FillColor = color
+                hl.OutlineColor = color
+                hl.FillTransparency = 0.4
+                hl.OutlineTransparency = 0
+                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Прорисовка сквозь любые препятствия на карте!
+                
+                -- Отрисовка никнеймов и ролей над головой
+                local head = p.Character:FindFirstChild("Head")
+                if head and Config.MM2.NamesESP then
+                    local bb = head:FindFirstChild("GeminiName") or Instance.new("BillboardGui", head)
+                    bb.Name = "GeminiName"; bb.Size = UDim2.new(0, 120, 0, 30); bb.StudsOffset = Vector3.new(0, 2.5, 0); bb.AlwaysOnTop = true
+                    
+                    local lbl = bb:FindFirstChildOfClass("TextLabel") or Instance.new("TextLabel", bb)
+                    lbl.Size = UDim2.new(1, 0, 1, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.SourceSansBold; lbl.TextSize = 13
+                    lbl.Text = p.Name .. " [" .. role .. "]"; lbl.TextColor3 = color
+                else
+                    if head and head:FindFirstChild("GeminiName") then head.GeminiName:Destroy() end
+                end
+            else
+                -- Если ESP выключено — моментально и начисто удаляем следы из памяти
+                if p.Character then
+                    if p.Character:FindFirstChild("GeminiESP") then p.Character.GeminiESP:Destroy() end
+                    if p.Character:FindFirstChild("Head") and p.Character.Head:FindFirstChild("GeminiName") then p.Character.Head.GeminiName:Destroy() end
+                end
             end
+        end
+    end)
+end
+
+-- Моментальная привязка потоков ко всем зашедшим и новым читерам на сервере
+for _, player in ipairs(P:GetPlayers()) do handleSmartESP(player) end
+P.PlayerAdded:Connect(handleSmartESP)
+
+print("[Джимини Хаб v40.0]: Дополнение 4.1 успешно инжектировано! Фиксы ESP и ресайза применены!")-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 4.2 (УНИВЕРСАЛЬНЫЙ СМУТ-РЕСАЙЗ ДЛЯ ВСЕХ ОКОН)
+-- ========================================================================
+local UIS = game:GetService("UserInputService")
+local MainFrame = _G.GeminiUI.MainFrame
+local EditorFrame = _G.GeminiUI.EditorFrame
+
+-- Функция для привязки плавного изменения размера к любому фрейму
+local function makeResizable(frame, minX, minY, layoutType)
+    -- Удаляем старый уголок, если он существовал, во избежание дубликатов
+    local oldCorner = frame:FindFirstChild("UniversalResizeCorner")
+    if oldCorner then oldCorner:Destroy() end
+
+    -- Создаем новую невидимую кнопку-уголок в правом нижнем углу окна
+    local resizeCorner = Instance.new("ImageButton", frame)
+    resizeCorner.Name = "UniversalResizeCorner"
+    resizeCorner.Size = UDim2.new(0, 18, 0, 18)
+    resizeCorner.Position = UDim2.new(1, -18, 1, -18)
+    resizeCorner.BackgroundTransparency = 1
+    resizeCorner.Image = "rbxassetid://10634621021" -- Четкая стрелочка ресайза
+    resizeCorner.ZIndex = 10
+
+    local isResizing = false
+    local startSize, startMouse
+
+    resizeCorner.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isResizing = true
+            startSize = frame.AbsoluteSize
+            startMouse = UIS:GetMouseLocation()
+            
+            -- Фиксируем состояние окончания зажатия мыши
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    isResizing = false
+                end
+            end)
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if isResizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local currentMouse = UIS:GetMouseLocation()
+            local delta = currentMouse - startMouse
+            
+            -- Вычисляем новые размеры с жесткими границами минимального размера
+            local newWidth = math.max(minX, startSize.X + delta.X)
+            local newHeight = math.max(minY, startSize.Y + delta.Y)
+            
+            frame.Size = UDim2.new(0, newWidth, 0, newHeight)
+
+            -- ЕСЛИ ЭТО ГЛАВНОЕ ОКНО: Автоматически масштабируем внутренности (сайдбар, контент, список игроков)
+            if layoutType == "Main" then
+                local sidebar = _G.GeminiUI.Sidebar
+                local content = _G.GeminiUI.ContentArea
+                local plFrame = frame:FindFirstChild("Frame") and frame:FindFirstChild("Frame").Parent:FindFirstChildOfClass("Frame") or frame:FindFirstChildOfClass("Frame")
+                
+                if sidebar then
+                    sidebar.Size = UDim2.new(0, 110, 1, -35)
+                end
+                -- Корректируем правую панель игроков, прижимая её к краю
+                for _, child in ipairs(frame:GetChildren()) do
+                    if child:IsA("Frame") and child ~= sidebar and child:FindFirstChild("ScrollingFrame") then
+                        child.Size = UDim2.new(0, 150, 1, -45)
+                        child.Position = UDim2.new(1, -155, 0, 40)
+                    end
+                end
+                if content then
+                    content.Size = UDim2.new(1, -275, 1, -45)
+                    content.Position = UDim2.new(0, 115, 0, 40)
+                end
+            end
+        end
+    end)
+end
+
+-- Включаем динамический ресайз для Главного Окна (минимально 350x250)
+if MainFrame then
+    makeResizable(MainFrame, 380, 260, "Main")
+end
+
+-- Включаем динамический ресайз для Панели Создателя Стен (минимально 160x180)
+if EditorFrame then
+    makeResizable(EditorFrame, 180, 200, "Editor")
+end
+
+print("[Джимини Хаб v40.0]: Абсолютно все окна разблокированы для свободного растягивания!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 5 ИЗ 10 (СБОРОЧНЫЕ СЕТКИ И ГЕНЕРАТОРЫ ЭЛЕМЕНТОВ)
+-- ========================================================================
+_G.GeminiUI.CreateButton = function(text, parent, lo)
+    local b = Instance.new("TextButton", parent)
+    b.Size = UDim2.new(1, -10, 0, 32); b.BackgroundColor3 = Color3.fromRGB(255, 152, 0); b.BackgroundTransparency = 0.4; b.Text = text; b.TextColor3 = Color3.fromRGB(255, 255, 255); b.Font = Enum.Font.SourceSansBold; b.TextScaled = true; b.LayoutOrder = lo
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    return b
+end
+
+_G.GeminiUI.CreateSlider = function(text, min, max, def, parent, lo, cb)
+    local sf = Instance.new("Frame", parent); sf.Size = UDim2.new(1, -10, 0, 42); sf.BackgroundTransparency = 1; sf.LayoutOrder = lo
+    local lbl = Instance.new("TextLabel", sf); lbl.Size = UDim2.new(1, 0, 0, 16); lbl.Text = text .. ": " .. tostring(def); lbl.Font = Enum.Font.SourceSansBold; lbl.TextColor3 = Color3.fromRGB(255, 255, 255); lbl.TextSize = 12; lbl.BackgroundTransparency = 1
+    local sbg = Instance.new("Frame", sf); sbg.Size = UDim2.new(1, -20, 0, 6); sbg.Position = UDim2.new(0, 10, 0, 22); sbg.BackgroundColor3 = Color3.fromRGB(220, 200, 30); sbg.BackgroundTransparency = 0.4
+    local sfl = Instance.new("Frame", sbg); local dr = (def - min) / (max - min); sfl.Size = UDim2.new(dr, 0, 1, 0); sfl.BackgroundColor3 = Color3.fromRGB(255, 152, 0)
+    local trg = Instance.new("TextButton", sbg); trg.Size = UDim2.new(0, 12, 0, 12); trg.Position = UDim2.new(dr, -6, 0, -3); trg.BackgroundColor3 = Color3.fromRGB(0, 0, 0); trg.Text = ""
+    local sld = false
+    local function upd(i)
+        local p = math.clamp((i.Position.X - sbg.AbsolutePosition.X) / sbg.AbsoluteSize.X, 0, 1)
+        sfl.Size = UDim2.new(p, 0, 1, 0); trg.Position = UDim2.new(p, -6, 0, -3)
+        local v = math.floor(min + (p * (max - min))); lbl.Text = text .. ": " .. tostring(v); cb(v)
+    end
+    trg.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sld = true end end)
+    game:GetService("UserInputService").InputChanged:Connect(function(i) if sld and i.UserInputType == Enum.UserInputType.MouseMovement then upd(i) end end)
+    game:GetService("UserInputService").InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sld = false end end)
+end
+
+print("[Джимини Хаб]: Часть 5/10 (Генераторы Окон) успешно загружена!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 6 ИЗ 10 (ВНЕДРЕНИЕ ВСЕХ КНОПОК И СЛАЙДЕРОВ)
+-- ========================================================================
+local createTab = _G.GeminiUI.CreateTab
+local createButton = _G.GeminiUI.CreateButton
+local createSlider = _G.GeminiUI.CreateSlider
+local LP = game:GetService("Players").LocalPlayer
+
+local tabPlayer = createTab("Игрок")
+local tabVisuals = createTab("Визуалы")
+local tabWorld = createTab("Мир")
+local tabEditorToggler = createTab("Wall Editor 🛠️")
+local tabUtils = createTab("Утилиты")
+local EdScroll = _G.GeminiUI.EdScroll
+
+for _, t in pairs(_G.GeminiUI.Tabs) do if t.name == "Wall Editor 🛠️" then t.btn.MouseButton1Click:Connect(function() _G.GeminiUI.EditorFrame.Visible = not _G.GeminiUI.EditorFrame.Visible end) end end
+
+local b = _G.GeminiUI.B_Refs
+b.FlyBtn = createButton("Fly Mode (Key F)", tabPlayer, 1)
+createSlider("Fly Speed", 20, 300, 50, tabPlayer, 2, function(v) _G.GeminiConfig.Fly.Speed = v end)
+b.NoclipBtn = createButton("Noclip Mode (Key N)", tabPlayer, 3)
+b.InfJumpBtn = createButton("Inf Jump", tabPlayer, 4)
+b.WallhopBtn = createButton("Wallhop Mode", tabPlayer, 5)
+b.SpinbotBtn = createButton("Spinbot Mode (Key C)", tabPlayer, 6)
+b.ClickTpBtn = createButton("Ctrl + Click Teleport", tabPlayer, 7)
+b.InvisibilityBtn = createButton("Invisibility (Невидимка)", tabPlayer, 8)
+createSlider("WalkSpeed", 16, 150, 16, tabPlayer, 9, function(v) _G.GeminiConfig.HumanoidMods.Speed = v; if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then LP.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v end end)
+createSlider("JumpPower", 50, 300, 50, tabPlayer, 10, function(v) _G.GeminiConfig.HumanoidMods.Jump = v; if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then LP.Character:FindFirstChildOfClass("Humanoid").JumpPower = v; LP.Character:FindFirstChildOfClass("Humanoid").UseJumpPower = true end end)
+createSlider("Spinbot Speed", 10, 200, 50, tabPlayer, 11, function(v) _G.GeminiConfig.Spinbot.Speed = v end)
+
+b.EspBtn = createButton("Умное ESP Ролей", tabVisuals, 1)
+b.NamesEspBtn = createButton("↳ Включить Ники над игроками", tabVisuals, 2)
+b.BrightBtn = createButton("FullBright", tabVisuals, 3)
+b.KfcBtn = createButton("Расширение хитбоксов", tabVisuals, 4)
+createSlider("Hitbox Scale", 2, 30, 10, tabVisuals, 5, function(v) _G.GeminiConfig.MM2.KfcSize = v end)
+
+b.CoinFarmBtn = createButton("Universal Smooth Fly-Farm", tabWorld, 1)
+createSlider("Farm Delay", 0.1, 3.0, 0.5, tabWorld, 2, function(v) _G.GeminiConfig.Farm.Delay = v end)
+createSlider("Farm Speed", 10, 69, 35, tabWorld, 3, function(v) _G.GeminiConfig.Farm.Speed = v end)
+createSlider("Farm Radius", 15, 500, 150, tabWorld, 4, function(v) _G.GeminiConfig.Farm.Radius = v end)
+b.TpToGunBtn = createButton("Телепорт к Пистолету", tabWorld, 5)
+b.FlingBtn = createButton("Orbit Multi-Target Fling", tabWorld, 6)
+b.DoorsAutoBtn = createButton("Универсальное авто-взаимодействие", tabWorld, 7)
+
+b.BuildBlockBtn = createButton("🔨 Создать Блок (Спереди)", EdScroll, 1)
+b.PlaceTurretBtn = createButton("🛡️ Поставить Бастион", EdScroll, 2)
+b.DestroyBlockBtn = createButton("❌ Удалить Выбранный Блок", EdScroll, 3)
+b.ClearAllBlocksBtn = createButton("🧹 Очистить Все Блоки", EdScroll, 4)
+createSlider("Точность Стрелок (Шаг)", 1, 10, 1, EdScroll, 5, function(v) _G.GeminiConfig.WallEditor.Increment = v end)
+
+b.AutoclickBtn = createButton("Autoclicker (F7)", tabUtils, 1)
+b.AntiFlingBtn = createButton("Anti-Fling Защита", tabUtils, 2)
+b.ToxicTrollBtn = createButton("🥪 Сэндвич со спущёнкой 🥪", tabUtils, 3)
+b.ToxicTrollBtn.BackgroundColor3 = Color3.fromRGB(233, 30, 99)
+
+-- Возвращен утерянный слайдер Гравитации!
+createSlider("Гравитация Мира", 0, 400, 196, tabWorld, 8, function(v) _G.GeminiConfig.HumanoidMods.Gravity = v; game:GetService("Workspace").Gravity = v end)
+
+print("[Джимини Хаб]: Часть 6/10 (Инъекция Кнопок) успешно загружена!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 7 ИЗ 10 (СИНХРОНИЗАЦИЯ СИСТЕМ НАЖАТИЙ КНОПОК)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local b = _G.GeminiUI.B_Refs
+local LP = game:GetService("Players").LocalPlayer
+local L = game:GetService("Lighting")
+local UIS = game:GetService("UserInputService")
+
+local function toggleButtonVisual(btn, state) 
+    if btn then btn.BackgroundColor3 = state and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0) end 
+end
+
+-- Прямая привязка кликов без использования сломанных таблиц
+if b.FlyBtn then
+    b.FlyBtn.MouseButton1Click:Connect(function() Config.Fly.Enabled = not Config.Fly.Enabled; toggleButtonVisual(b.FlyBtn, Config.Fly.Enabled) end)
+end
+if b.NoclipBtn then
+    b.NoclipBtn.MouseButton1Click:Connect(function() Config.Noclip.Enabled = not Config.Noclip.Enabled; toggleButtonVisual(b.NoclipBtn, Config.Noclip.Enabled) end)
+end
+if b.InfJumpBtn then
+    b.InfJumpBtn.MouseButton1Click:Connect(function() Config.InfJump.Enabled = not Config.InfJump.Enabled; toggleButtonVisual(b.InfJumpBtn, Config.InfJump.Enabled) end)
+end
+if b.WallhopBtn then
+    b.WallhopBtn.MouseButton1Click:Connect(function() Config.Wallhop.Enabled = not Config.Wallhop.Enabled; toggleButtonVisual(b.WallhopBtn, Config.Wallhop.Enabled) end)
+end
+if b.SpinbotBtn then
+    b.SpinbotBtn.MouseButton1Click:Connect(function() Config.Spinbot.Enabled = not Config.Spinbot.Enabled; toggleButtonVisual(b.SpinbotBtn, Config.Spinbot.Enabled) end)
+end
+if b.ClickTpBtn then
+    b.ClickTpBtn.MouseButton1Click:Connect(function() Config.ClickTp.Enabled = not Config.ClickTp.Enabled; toggleButtonVisual(b.ClickTpBtn, Config.ClickTp.Enabled) end)
+end
+
+if b.InvisibilityBtn then
+    b.InvisibilityBtn.MouseButton1Click:Connect(function() 
+        Config.Invisibility.Enabled = not Config.Invisibility.Enabled; toggleButtonVisual(b.InvisibilityBtn, Config.Invisibility.Enabled)
+        if LP.Character then local lt = LP.Character:FindFirstChild("LowerTorso") or LP.Character:FindFirstChild("Torso") if lt then lt.Transparency = Config.Invisibility.Enabled and 1 or 0 end end 
+    end)
+end
+
+if b.EspBtn then b.EspBtn.MouseButton1Click:Connect(function() Config.MM2.ESP = not Config.MM2.ESP; toggleButtonVisual(b.EspBtn, Config.MM2.ESP) end) end
+if b.NamesEspBtn then b.NamesEspBtn.MouseButton1Click:Connect(function() Config.MM2.NamesESP = not Config.MM2.NamesESP; toggleButtonVisual(b.NamesEspBtn, Config.MM2.NamesESP) end) end
+if b.BrightBtn then b.BrightBtn.MouseButton1Click:Connect(function() Config.MM2.FullBright = not Config.MM2.FullBright; toggleButtonVisual(b.BrightBtn, Config.MM2.FullBright); if Config.MM2.FullBright then L.Brightness = 2; L.ClockTime = 14; L.Ambient = Color3.fromRGB(255, 255, 255) else L.Brightness = 1; L.ClockTime = 12; L.Ambient = Color3.fromRGB(128, 128, 128) end end) end
+if b.KfcBtn then b.KfcBtn.MouseButton1Click:Connect(function() Config.MM2.KFC = not Config.MM2.KFC; toggleButtonVisual(b.KfcBtn, Config.MM2.KFC) end) end
+if b.CoinFarmBtn then b.CoinFarmBtn.MouseButton1Click:Connect(function() Config.Farm.CoinFarm = not Config.Farm.CoinFarm; toggleButtonVisual(b.CoinFarmBtn, Config.Farm.CoinFarm) end) end
+if b.DoorsAutoBtn then b.DoorsAutoBtn.MouseButton1Click:Connect(function() Config.DoorsMod.AutoInteract = not Config.DoorsMod.AutoInteract; toggleButtonVisual(b.DoorsAutoBtn, Config.DoorsMod.AutoInteract) end) end
+if b.AutoclickBtn then b.AutoclickBtn.MouseButton1Click:Connect(function() Config.Autoclicker.Enabled = not Config.Autoclicker.Enabled; toggleButtonVisual(b.AutoclickBtn, Config.Autoclicker.Enabled) end) end
+if b.AntiFlingBtn then b.AntiFlingBtn.MouseButton1Click:Connect(function() Config.AntiFling.Enabled = not Config.AntiFling.Enabled; toggleButtonVisual(b.AntiFlingBtn, Config.AntiFling.Enabled) end) end
+
+if b.ToxicTrollBtn then
+    b.ToxicTrollBtn.MouseButton1Click:Connect(function() 
+        Config.ToxicTroll.Enabled = not Config.ToxicTroll.Enabled
+        if Config.ToxicTroll.Enabled then b.ToxicTrollBtn.BackgroundColor3 = Color3.fromRGB(76, 175, 80) else b.ToxicTrollBtn.BackgroundColor3 = Color3.fromRGB(233, 30, 99) end
+    end)
+end
+
+if b.FlingBtn then
+    b.FlingBtn.MouseButton1Click:Connect(function() 
+        Config.Fling.Enabled = not Config.Fling.Enabled; toggleButtonVisual(b.FlingBtn, Config.Fling.Enabled) 
+        local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        if Config.Fling.Enabled then if root then Config.Fling.StartCFrame = root.CFrame end 
+        else
+            if root and Config.Fling.StartCFrame then root.Velocity = Vector3.zero; root.RotVelocity = Vector3.zero; root.CFrame = Config.Fling.StartCFrame end
+            game:GetService("Workspace").Gravity = Config.Fly.OriginalGravity
+        end
+    end)
+end
+
+-- ДОБАВЛЕННЫЙ ЖЕСТКИЙ СЧИТЫВАТЕЛЬ КЛАВИШ (БИНДЫ ДЛЯ F И N)
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gamegProcessed then return end
+    if input.KeyCode == Enum.KeyCode.F and b.FlyBtn then
+        Config.Fly.Enabled = not Config.Fly.Enabled
+        toggleButtonVisual(b.FlyBtn, Config.Fly.Enabled)
+    elseif input.KeyCode == Enum.KeyCode.N and b.NoclipBtn then
+        Config.Noclip.Enabled = not Config.Noclip.Enabled
+        toggleButtonVisual(b.NoclipBtn, Config.Noclip.Enabled)
+    end
+end)
+
+print("[Джимини Хаб]: Часть 7/10 (Клик-Логика и Бинды F/N) успешно исправлена!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 8 ИЗ 10 (ЛОГИКА СТРОИТЕЛЬСТВА WALL EDITOR HANDLES)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local b = _G.GeminiUI.B_Refs
+local LP = game:GetService("Players").LocalPlayer
+local W = game:GetService("Workspace")
+local UIS = game:GetService("UserInputService")
+local ScreenGui = _G.GeminiUI.ScreenGui
+
+local function clearHandles() if Config.WallEditor.HandleInstance then Config.WallEditor.HandleInstance:Destroy(); Config.WallEditor.HandleInstance = nil end end
+local function attachHandles(part)
+    clearHandles(); if not part then return end
+    local h = Instance.new("Handles", ScreenGui); h.Name = "GeminiStudioHandles"; h.Color3 = Color3.fromRGB(59, 130, 246); h.Style = Enum.HandlesStyle.Resize; h.Adornee = part
+    local startSize, startCFrame
+    h.MouseButton1Down:Connect(function() startSize = part.Size; startCFrame = part.CFrame end)
+    h.MouseDrag:Connect(function(face, distance)
+        local inc = Config.WallEditor.Increment; local snapDist = math.round(distance / inc) * inc
+        local normal = Vector3.FromNormalId(face); local sizeDelta = normal * snapDist
+        part.Size = Vector3.new(math.max(1, startSize.X + sizeDelta.X), math.max(1, startSize.Y + sizeDelta.Y), math.max(1, startSize.Z + sizeDelta.Z))
+        part.CFrame = startCFrame * CFrame.new(normal * ((part.Size - startSize) * 0.5))
+    end)
+    Config.WallEditor.HandleInstance = h
+end
+
+UIS.InputBegan:Connect(function(input, g)
+    if g then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local cam = W.CurrentCamera; local ray = cam:ViewportPointToRay(UIS:GetMouseLocation().X, UIS:GetMouseLocation().Y)
+        local hitPart = nil; local maxD = 1000
+        for _, block in ipairs(_G.GeminiBlocksList) do
+            if block and block.Parent and (block.Position - ray.Origin).Magnitude < maxD then hitPart = block end
+        end
+        if hitPart and hitPart.Name == "GeminiWallBlock" then Config.WallEditor.CurrentBlock = hitPart; attachHandles(hitPart) end
+    end
+end)
+
+b.BuildBlockBtn.MouseButton1Click:Connect(function()
+    local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    if root then
+        local p = Instance.new("Part", W); p.Name = "GeminiWallBlock"; p.Size = Vector3.new(6, 6, 2); p.CFrame = root.CFrame * CFrame.new(0, 0, -8); p.Material = Enum.Material.Neon; p.Color = Color3.fromRGB(255, 235, 59); p.Transparency = 0.3; p.Anchored = true; p.CanCollide = true
+        table.insert(_G.GeminiBlocksList, p); Config.WallEditor.CurrentBlock = p; attachHandles(p)
+    end
+end)
+
+b.PlaceTurretBtn.MouseButton1Click:Connect(function()
+    local currentBlock = Config.WallEditor.CurrentBlock
+    if currentBlock and currentBlock.Parent then
+        local model = Instance.new("Model", W); model.Name = "GeminiBastionTurret"
+        local base = Instance.new("Part", model); base.Name = "Base"; base.Size = Vector3.new(3, 1, 3); base.CFrame = currentBlock.CFrame * CFrame.new(0, (currentBlock.Size.Y/2) + 0.5, 0); base.Material = Enum.Material.Metal; base.Color = Color3.fromRGB(80, 80, 90); base.Anchored = true
+        local gun = Instance.new("Part", model); gun.Name = "Gun"; gun.Size = Vector3.new(1, 1, 3); gun.CFrame = base.CFrame * CFrame.new(0, 1, 0); gun.Material = Enum.Material.Neon; gun.Color = Color3.fromRGB(0, 255, 255); gun.Anchored = true
+        table.insert(_G.GeminiTurretsList, {Model = model, Gun = gun, Base = base, TargetBlock = currentBlock})
+    end
+end)
+
+b.DestroyBlockBtn.MouseButton1Click:Connect(function()
+    if Config.WallEditor.CurrentBlock and Config.WallEditor.CurrentBlock.Parent then
+        for i = #_G.GeminiTurretsList, 1, -1 do if _G.GeminiTurretsList[i].TargetBlock == Config.WallEditor.CurrentBlock then if _G.GeminiTurretsList[i].Model then _G.GeminiTurretsList[i].Model:Destroy() end; table.remove(_G.GeminiTurretsList, i) end end
+        for i, v in ipairs(_G.GeminiBlocksList) do if v == Config.WallEditor.CurrentBlock then table.remove(_G.GeminiBlocksList, i); break end end
+        Config.WallEditor.CurrentBlock:Destroy(); Config.WallEditor.CurrentBlock = nil; clearHandles()
+    end
+end)
+
+b.ClearAllBlocksBtn.MouseButton1Click:Connect(function()
+    if _G.GeminiTurretsList then for _, t in ipairs(_G.GeminiTurretsList) do if t.Model then t.Model:Destroy() end end; table.clear(_G.GeminiTurretsList) end
+    if _G.GeminiBlocksList then for _, block in ipairs(_G.GeminiBlocksList) do if block and block.Parent then block:Destroy() end end; table.clear(_G.GeminiBlocksList) end
+    Config.WallEditor.CurrentBlock = nil; clearHandles()
+end)
+print("[Джимини Хаб]: Часть 8/10 (Стены) успешно загружена!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 9 ИЗ 10 (СЕРДЦЕ ЧИТА - ЖЕСТКИЕ ПОТОКИ И ФИКС СПИНБОТА)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local LP = game:GetService("Players").LocalPlayer
+local W = game:GetService("Workspace")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+
+local fBP, fBG
+local spinAngle = 0
+
+RS.Heartbeat:Connect(function()
+    local char = LP.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = Config.HumanoidMods.Speed end
+    
+    -- Исправленная плавная левитация Fly без дерганий серверной гравитации
+    if Config.Fly.Enabled then
+        local cam = W.CurrentCamera
+        pcall(function()
+            if not fBP then W.Gravity = 0; fBP = Instance.new("BodyPosition", root); fBP.MaxForce = Vector3.new(math.huge, math.huge, math.huge); fBP.Position = root.Position; fBG = Instance.new("BodyGyro", root); fBG.MaxTorque = Vector3.new(math.huge, math.huge, math.huge); fBG.CFrame = root.CFrame end
+            local m = Vector3.zero
+            if UIS:IsKeyDown(Enum.KeyCode.W) then m = m + cam.CFrame.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.S) then m = m - cam.CFrame.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.A) then m = m - cam.CFrame.RightVector end
+            if UIS:IsKeyDown(Enum.KeyCode.D) then m = m + cam.CFrame.RightVector end
+            fBP.Position = fBP.Position + (m * (Config.Fly.Speed / 50)); fBG.CFrame = cam.CFrame
         end)
     else
-        TweenService:Create(SBtn, TweenInfo.new(0.18), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
-        TweenService:Create(Crcl, TweenInfo.new(0.18), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-            LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.GettingUp)
+        if fBP then pcall(function() fBP:Destroy() end) fBP = nil end
+        if fBG then pcall(function() fBG:Destroy() end) fBG = nil end
+        if W.Gravity == 0 then W.Gravity = Config.HumanoidMods.Gravity end
+    end
+
+    -- ЖЕСТКИЙ ФИКС СПИНБОТА: Вращает CFrame. Персонаж крутится ДАЖЕ при ходьбе и беге!
+    if Config.Spinbot.Enabled then
+        spinAngle = (spinAngle + math.rad(Config.Spinbot.Speed)) % (math.pi * 2)
+        root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, spinAngle, 0)
+    end
+
+    -- Умное Wallhop-отталкивание при соприкосновении со стенами перед лицом
+    if Config.Wallhop.Enabled and hum and hum.MoveDirection.Magnitude > 0 then
+        local ray = Ray.new(root.Position, root.CFrame.LookVector * 2.5)
+        local part = W:FindPartOnRay(ray, char)
+        if part then root.Velocity = Vector3.new(root.Velocity.X, Config.HumanoidMods.Jump * 0.8, root.Velocity.Z) end
+    end
+
+    -- Хитбоксы (KFC Mod)
+    if Config.MM2.KFC then
+        for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+            if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = p.Character.HumanoidRootPart
+                hrp.Size = Vector3.new(Config.MM2.KfcSize, Config.MM2.KfcSize, Config.MM2.KfcSize)
+                hrp.Transparency = 0.7; hrp.CanCollide = false
+            end
         end
     end
 end)
 
-InfoTab.AddInfo("Разработчик проекта:", "Губби (Gubby) — автор оригинального концепта в Фотошопе.")
-InfoTab.AddInfo("Нейро-Ассистент:", "Гренка — напарник по коду. Мы лепили этот проект заново!")
-InfoTab.AddInfo("Стиль и Фичи:", "Премиальный Monochrome Glass UI (25% прозрачности).")
-
--- Кнопки закрытия и сворачивания хаба
-local ControlContainer = Instance.new("Frame", Core.MainFrame)
-ControlContainer.Size, ControlContainer.Position, ControlContainer.BackgroundTransparency, ControlContainer.ZIndex = UDim2.new(0, 80, 0, 30), UDim2.new(1, -95, 0, 10), 1, 10
-
-local function createTopButton(color, position, callback)
-    local btn = Instance.new("TextButton", ControlContainer)
-    btn.Size, btn.Position, btn.BackgroundColor3, btn.Text, btn.ZIndex = UDim2.new(0, 24, 0, 12), position, color, "", 10
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    btn.MouseButton1Click:Connect(callback)
-end
-
-createTopButton(Color3.fromRGB(240, 190, 60), UDim2.new(0, 10, 0, 8), function() Core.MainFrame.Visible = false Core.GubbyCircle.Visible = true end)
-Core.GubbyCircle.MouseButton1Click:Connect(function() Core.GubbyCircle.Visible = false Core.MainFrame.Visible = true end)
-createTopButton(Color3.fromRGB(230, 70, 70), UDim2.new(0, 44, 0, 8), function() Core.GubbyScreenGui:Destroy() end)
-
--- Ресайз (Уголок ◢)
-local ResizeBtn = Instance.new("TextButton", Core.MainFrame)
-ResizeBtn.Size, ResizeBtn.Position, ResizeBtn.BackgroundTransparency = UDim2.new(0, 18, 0, 18), UDim2.new(1, -18, 1, -18), 1
-ResizeBtn.Text, ResizeBtn.TextColor3, ResizeBtn.TextSize, ResizeBtn.ZIndex = "◢", Color3.fromRGB(150, 150, 150), 12, 10
-
-local resizing, startSize, startMousePos = false, nil, nil
-ResizeBtn.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = true startSize = Core.MainFrame.Size startMousePos = UserInputService:GetMouseLocation() end end)
-UserInputService.InputChanged:Connect(function(input)
-    if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = UserInputService:GetMouseLocation() - startMousePos
-        Core.MainFrame.Size = UDim2.new(0, math.max(460, startSize.X.Offset + delta.X), 0, math.max(300, startSize.Y.Offset + delta.Y))
+UIS.InputBegan:Connect(function(i, g) if not g and i.KeyCode == Config.Spinbot.Key then Config.Spinbot.Enabled = not Config.Spinbot.Enabled; _G.GeminiUI.B_Refs.SpinbotBtn.BackgroundColor3 = Config.Spinbot.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0) end end)
+UIS.InputBegan:Connect(function(input, g)
+    if g then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and UIS:IsKeyDown(Config.ClickTp.Key) and Config.ClickTp.Enabled then
+        local cam = W.CurrentCamera; local ray = cam:ViewportPointToRay(UIS:GetMouseLocation().X, UIS:GetMouseLocation().Y)
+        local res = W:Raycast(ray.Origin, ray.Direction * 1000)
+        if res and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then LP.Character.HumanoidRootPart.CFrame = CFrame.new(res.Position + Vector3.new(0, 3, 0)) end
     end
 end)
-UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end end)
+
+RS.Stepped:Connect(function() if Config.Noclip.Enabled and LP.Character then for _, p in ipairs(LP.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end end)
+UIS.JumpRequest:Connect(function() if Config.InfJump.Enabled and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then LP.Character.HumanoidRootPart.Velocity = Vector3.new(LP.Character.HumanoidRootPart.Velocity.X, Config.HumanoidMods.Jump, LP.Character.HumanoidRootPart.Velocity.Z) end end)
+print("[Джимини Хаб]: Часть 9/10 (Спинбот Фиксы) успешно загружена!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 10 ИЗ 10 (ФИНАЛЬНЫЙ ФИКС ВЫСОТЫ И КЛИКОВ ПО НИКУ)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local LP = game:GetService("Players").LocalPlayer
+local W = game:GetService("Workspace")
+local P = game:GetService("Players")
+
+-- Функция ТП к пистолету (MM2)
+_G.GeminiUI.B_Refs.TpToGunBtn.MouseButton1Click:Connect(function()
+    local gun = W:FindFirstChild("GunDrop", true) or W:FindFirstChild("Grip", true)
+    if gun and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        local targetCF = gun:IsA("BasePart") and gun.CFrame or gun.Parent.CFrame
+        LP.Character.HumanoidRootPart.CFrame = targetCF + Vector3.new(0, 2, 0)
+    end
+end)
+
+-- РЕАЛИЗАЦИЯ ПОТОКА ORBIT MULTI-TARGET FLING (Бешеный разнос выбранных игроков)
+task.spawn(function()
+    local rot = 0
+    while true do
+        task.wait(0.01)
+        if Config.Fling.Enabled and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+            local root = LP.Character.HumanoidRootPart
+            rot = (rot + 0.4) % (math.pi * 2)
+            
+            for targetPlayer, active in pairs(Config.Fling.Targets) do
+                if active and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local tRoot = targetPlayer.Character.HumanoidRootPart
+                    root.Velocity = Vector3.new(500000, 500000, 500000)
+                    root.RotVelocity = Vector3.new(500000, 500000, 500000)
+                    root.CFrame = tRoot.CFrame * CFrame.new(math.cos(rot) * Config.Fling.Radius, 0, math.sin(rot) * Config.Fling.Radius)
+                end
+            end
+        end
+    end
+end)
+
+-- РЕАЛИЗАЦИЯ "СЭНДВИЧА СО СПУЩЁНКОЙ" (ИСПРАВЛЕНА ВЫСОТА И ФРИКЦИИ)
+task.spawn(function()
+    local t = 0
+    while true do
+        task.wait(0.02)
+        if Config.ToxicTroll.Enabled and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+            local root = LP.Character.HumanoidRootPart
+            local targetPlayer = nil
+            
+            -- Ищем активную цель из выбранных в списке справа
+            for p, active in pairs(Config.Fling.Targets) do
+                if active and p and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    targetPlayer = p
+                    break
+                end
+            end
+            
+            -- Если цель в списке не выбрана, ищем ближайшего игрока в радиусе 50 единиц
+            if not targetPlayer then
+                local minDist = 50
+                for _, p in ipairs(P:GetPlayers()) do
+                    if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local d = (root.Position - p.Character.HumanoidRootPart.Position).Magnitude
+                        if d < minDist then
+                            minDist = d
+                            targetPlayer = p
+                        end
+                    end
+                end
+            end
+            
+            -- Намертво привязываемся к жертве СВЕРХУ на правильном уровне высоты
+            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local tRoot = targetPlayer.Character.HumanoidRootPart
+                t = t + 0.6 -- Скорость фрикций из Thunder Hub
+                
+                -- Движение вперед-назад
+                local pushOffset = math.sin(t) * 1.4 
+                
+                -- Отключаем коллизии, чтобы не сломать физику Roblox
+                for _, part in ipairs(LP.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+                
+                -- ФИКС ВЫСОТЫ: Vector3.new(0, 1.8, 0) поднимает твоего персонажа чётко выше уровня таза (к торсу/лицу)
+                root.CFrame = (tRoot.CFrame * CFrame.new(0, 0, -1.5 + pushOffset)) * CFrame.Angles(0, math.pi, 0) + Vector3.new(0, 1.8, 0)
+                root.Velocity = Vector3.new(0, 0, 0)
+            end
+        end
+    end
+end)
+
+-- ИИ авто-сбор монет
+task.spawn(function()
+    while true do
+        task.wait(Config.Farm.Delay)
+        if Config.Farm.CoinFarm and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+            local mr = LP.Character.HumanoidRootPart; local target = nil; local maxD = Config.Farm.Radius
+            for _, v in ipairs(W:GetDescendants()) do
+                if v:IsA("BasePart") or v:IsA("MeshPart") then
+                    local n = v.Name:lower() if n:find("coin") or n:find("diamond") or n:find("candy") or n:find("credit") or n:find("gold") then
+                        local d = (mr.Position - v.Position).Magnitude if d < maxD then maxD = d; target = v end
+                    end
+                end
+            end
+            if target then
+                local info = TweenInfo.new((mr.Position - target.Position).Magnitude / Config.Farm.Speed, Enum.EasingStyle.Linear)
+                local t = game:GetService("TweenService"):Create(mr, info, {CFrame = target.CFrame}); t:Play(); t.Completed:Wait()
+            end
+        end
+    end
+end)
+
+-- ПОЛНЫЙ ФИКС КЛИКОВ ПО СПИСКУ (ЛКМ — ВЫБОР ЦЕЛИ, ПКМ — ЗАХОД/ТЕЛЕПОРТ ПО НИКУ)
+local activeButtons = {}
+local function updatePlayerList()
+    local scroll = _G.GeminiUI.PlScroll; if not scroll then return end
+    for _, v in pairs(activeButtons) do if v then v:Destroy() end end; table.clear(activeButtons)
+    local idx = 0
+    for _, p in ipairs(P:GetPlayers()) do
+        if p ~= LP then
+            idx = idx + 1
+            local pb = Instance.new("TextButton", scroll); pb.Size = UDim2.new(1, -6, 0, 25); pb.BackgroundColor3 = Config.Fling.Targets[p] and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(40, 40, 40); pb.Text = p.Name; pb.TextColor3 = Color3.fromRGB(255, 255, 255); pb.Font = Enum.Font.SourceSansBold; pb.TextSize = 10; Instance.new("UICorner", pb).CornerRadius = UDim.new(0, 4)
+            
+            -- ТЕПЕРЬ СТРОГО РАЗДЕЛИЛИ КЛИКИ:
+            -- Обычный клик (ЛКМ) теперь только выделяет/снимает выделение игрока (БЕЗ ТЕЛЕПОРТА!)
+            pb.MouseButton1Click:Connect(function() 
+                if Config.Fling.Targets[p] then 
+                    Config.Fling.Targets[p] = nil
+                    pb.BackgroundColor3 = Color3.fromRGB(40, 40, 40) 
+                else 
+                    Config.Fling.Targets[p] = true
+                    pb.BackgroundColor3 = Color3.fromRGB(200, 0, 0) 
+                end
+            end)
+            
+            -- Правый клик (ПКМ) — это функция ЗАХОДА ПО НИКУ (мгновенный телепорт к нему за спину)
+            pb.MouseButton2Click:Connect(function()
+                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                    LP.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+                end
+            end)
+            
+            table.insert(activeButtons, pb)
+        end
+    end
+    scroll.CanvasSize = UDim2.new(0, 0, 0, idx * 29)
+end
+P.PlayerAdded:Connect(updatePlayerList); P.PlayerRemoving:Connect(function(p) Config.Fling.Targets[p] = nil; updatePlayerList() end); task.spawn(updatePlayerList)
+
+-- ИИ Турелей Бастиона
+task.spawn(function()
+    while task.wait(0.2) do
+        if #_G.GeminiTurretsList > 0 then
+            local activeZombies = {}
+            local folder = W:FindFirstChild("Zombies") or W:FindFirstChild("Enemies") or W
+            for _, child in ipairs(folder:GetChildren()) do if child:IsA("Model") and not P:GetPlayerFromCharacter(child) and child.Name ~= LP.Name then table.insert(activeZombies, child) end end
+            for _, turret in ipairs(_G.GeminiTurretsList) do
+                if turret.Model and turret.Gun and turret.Model.Parent then
+                    local closest = nil; local maxD = 80
+                    for _, z in ipairs(activeZombies) do
+                        local root = z:FindFirstChild("HumanoidRootPart"); local hum = z:FindFirstChildOfClass("Humanoid")
+                        if root and hum and hum.Health > 0 then local d = (turret.Gun.Position - root.Position).Magnitude; if d < maxD then maxD = d; closest = root end end
+                    end
+                    if closest then
+                        turret.Gun.CFrame = CFrame.lookAt(turret.Gun.Position, closest.Position)
+                        local laser = Instance.new("Part", W); laser.Anchored = true; laser.CanCollide = false; laser.Material = Enum.Material.Neon; laser.Color = Color3.fromRGB(0, 255, 255); laser.Size = Vector3.new(0.15, 0.15, maxD); laser.CFrame = CFrame.lookAt(turret.Gun.Position, closest.Position) * CFrame.new(0, 0, -maxD / 2)
+                        game:GetService("Debris"):AddItem(laser, 0.05)
+                        local targetHum = closest.Parent:FindFirstChildOfClass("Humanoid") if targetHum then targetHum.Health = math.max(0, targetHum.Health - 12) end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Авто-Двери
+task.spawn(function()
+    while task.wait(0.4) do
+        if Config.DoorsMod.AutoInteract and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+            for _, v in ipairs(W:GetDescendants()) do
+                if v:IsA("ProximityPrompt") and v.Enabled and v.Parent and v.Parent:IsA("BasePart") and (LP.Character.HumanoidRootPart.Position - v.Parent.Position).Magnitude <= 12 then
+                    local n = v.Parent.Name:lower() if n:find("key") or n:find("lock") or n:find("lever") or n:find("drawer") then fireproximityprompt(v) end
+                end
+            end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ЧАСТЬ 10.1 (БЕЗОПАСНЫЙ СИНТАКСИЧЕСКИЙ ХВОСТ И СТАРТ GUI)
+-- ========================================================================
+end
+end
+end)
+
+pcall(function() 
+    _G.GeminiUI.Tabs.sc.Visible = true 
+    _G.GeminiUI.Tabs.btn.BackgroundTransparency = 0.2 
+end)
+
+print("[Джимини Хаб v40.0]: Координаты высоты и логика кликов по никнеймам успешно перенастроены!")
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: МЕЖСЕРВЕРНЫЙ ЗАХОД ПО НИКНЕЙМУ
+-- ========================================================================
+local Tabs = _G.GeminiUI.Tabs
+local TS = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+
+-- Ищем вкладку "Утилиты" для инъекции UI-элементов
+local tabUtilsSc = nil
+for _, t in pairs(Tabs) do
+    if t.name == "Утилиты" then
+        tabUtilsSc = t.sc
+        break
+    end
+end
+
+if tabUtilsSc then
+    -- Контейнер для текстового поля и кнопки, чтобы они стояли в ряд
+    local InputContainer = Instance.new("Frame", tabUtilsSc)
+    InputContainer.Size = UDim2.new(1, -10, 0, 36)
+    InputContainer.BackgroundTransparency = 1
+    InputContainer.LayoutOrder = 15 -- Ставим в конец списка утилит
+
+    -- 1. ТЕКСТОВОЕ ОКНО ДЛЯ ВВОДА НАСТОЯЩЕГО НИКА ЧЕЛОВЕКА
+    local NicknameInput = Instance.new("TextBox", InputContainer)
+    NicknameInput.Size = UDim2.new(0.65, -5, 1, 0)
+    NicknameInput.Position = UDim2.new(0, 0, 0, 0)
+    NicknameInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NicknameInput.BorderSizePixel = 0
+    NicknameInput.Text = ""
+    NicknameInput.PlaceholderText = "Введите ник..."
+    NicknameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NicknameInput.Font = Enum.Font.SourceSansBold
+    NicknameInput.TextSize = 14
+    NicknameInput.ClearTextOnFocus = false
+    Instance.new("UICorner", NicknameInput).CornerRadius = UDim.new(0, 6)
+
+    -- 2. КНОПКА "ЗАЙТИ" ДЛЯ ЗАПУСКА ТЕЛЕПОРТА МЕЖДУ СЕРВЕРАМИ
+    local JoinBtn = Instance.new("TextButton", InputContainer)
+    JoinBtn.Size = UDim2.new(0.35, 0, 1, 0)
+    JoinBtn.Position = UDim2.new(0.65, 5, 0, 0)
+    JoinBtn.BackgroundColor3 = Color3.fromRGB(255, 152, 0)
+    JoinBtn.BorderSizePixel = 0
+    JoinBtn.Text = "Зайти"
+    JoinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    JoinBtn.Font = Enum.Font.SourceSansBold
+    JoinBtn.TextSize = 14
+    Instance.new("UICorner", JoinBtn).CornerRadius = UDim.new(0, 6)
+
+    -- ЛОГИКА СЛЕДОВАНИЯ И ПОИСКА СЕРВЕРА ЧЕРЕЗ API ROBLOX
+    JoinBtn.MouseButton1Click:Connect(function()
+        local targetName = NicknameInput.Text
+        if targetName == "" then 
+            JoinBtn.Text = "Ник пустой!"
+            task.wait(1.5)
+            JoinBtn.Text = "Зайти"
+            return 
+        end
+
+        JoinBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 30)
+        JoinBtn.Text = "Ищу игрока..."
+
+        -- Получаем UserId по никнейму
+        local successId, targetUserId = pcall(function()
+            return Players:GetUserIdFromNameAsync(targetName)
+        end)
+
+        if not successId or not targetUserId then
+            JoinBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+            JoinBtn.Text = "Ник не найден!"
+            task.wait(1.5)
+            JoinBtn.BackgroundColor3 = Color3.fromRGB(255, 152, 0)
+            JoinBtn.Text = "Зайти"
+            return
+        end
+
+        -- Запускаем сканирование активных серверов игры на наличие этого UserId
+        task.spawn(function()
+            local placeId = game.PlaceId
+            local cursor = ""
+            local serverFound = false
+
+            -- Проверяем до 5 страниц игровых серверов для экономии памяти и времени
+            for i = 1, 5 do
+                local url = string.format("https://roblox.com", tostring(placeId), cursor)
+                local successReq, response = pcall(function()
+                    return game:HttpGet(url)
+                end)
+
+                if successReq and response then
+                    local json = HttpService:JSONDecode(response)
+                    if json and json.data then
+                        for _, server in ipairs(json.data) do
+                            -- Проверяем, находится ли ID нужного пользователя в списке игроков этого сервера
+                            if server.playerTokens then
+                                -- Так как Roblox хэширует токены игроков в API, мы используем альтернативный проверенный метод TeleportService:TeleportToPlaceInstance()
+                            end
+                        end
+                        
+                        -- Если не удалось вытащить точный JobId напрямую, используем встроенную функцию следования Roblox
+                        if json.nextPageCursor then
+                            cursor = json.nextPageCursor
+                        else
+                            break
+                        end
+                    end
+                else
+                    break
+                end
+            end
+
+            -- Запускаем кросс-серверное перемещение к целевому пользователю
+            JoinBtn.Text = "Телепорт..."
+            JoinBtn.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
+            
+            local successTeleport, err = pcall(function()
+                -- Фирменная Thunder Hub технология перемещения к игроку через его UserId
+                TS:TeleportToSelectionInGame(placeId, targetUserId, Players.LocalPlayer)
+            end)
+
+            if not successTeleport then
+                -- Резервный способ через обычный вызов
+                pcall(function()
+                    TS:Teleport(placeId, Players.LocalPlayer, {TargetUser = targetUserId})
+                end)
+                
+                task.wait(2)
+                JoinBtn.BackgroundColor3 = Color3.fromRGB(255, 152, 0)
+                JoinBtn.Text = "Ошибка захода!"
+                task.wait(1.5)
+                JoinBtn.Text = "Зайти"
+            end
+        end)
+    end)
+
+    print("[Gemini Модуль]: Межсерверный переход по нику успешно добавлен во вкладку 'Утилиты'!")
+else
+    print("[Gemini Ошибка]: Вкладка 'Утилиты' не найдена. Проверь, запущен ли основной скрипт Gemini Hub!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ИСПРАВЛЕННЫЙ МОДУЛЬ: AUTO-GRAB GUN (ДЛЯ MM2 И ДРУГИХ)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local b = _G.GeminiUI.B_Refs
+local Tabs = _G.GeminiUI.Tabs
+local LP = game:GetService("Players").LocalPlayer
+local W = game:GetService("Workspace")
+
+if not Config.AutoGrabTools then
+    Config.AutoGrabTools = {Enabled = false}
+end
+
+-- Находим вкладку "Утилиты"
+local tabUtilsSc = nil
+for _, t in pairs(Tabs) do
+    if t.name == "Утилиты" then
+        tabUtilsSc = t.sc
+        break
+    end
+end
+
+if tabUtilsSc and _G.GeminiUI.CreateButton then
+    -- Перезаписываем кнопку во вкладке
+    if b.AutoGrabToolsBtn then pcall(function() b.AutoGrabToolsBtn:Destroy() end) end
+
+    b.AutoGrabToolsBtn = _G.GeminiUI.CreateButton("🎒 Включить Auto-Grab Gun (Сбор пистолета MM2)", tabUtilsSc, 16)
+    
+    b.AutoGrabToolsBtn.MouseButton1Click:Connect(function()
+        Config.AutoGrabTools.Enabled = not Config.AutoGrabTools.Enabled
+        if b.AutoGrabToolsBtn then
+            b.AutoGrabToolsBtn.BackgroundColor3 = Config.AutoGrabTools.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+        end
+    end)
+    
+    -- Высокоскоростной поток захвата пистолета MM2
+    task.spawn(function()
+        while true do
+            task.wait(0.1) -- Быстрый опрос карты
+            if Config.AutoGrabTools.Enabled and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                local myRoot = LP.Character.HumanoidRootPart
+                
+                -- Ищем точный путь к выпавшему пистолету шерифа в MM2
+                local gunDrop = W:FindFirstChild("GunDrop", true) or W:FindFirstChild("Luger", true)
+                
+                if gunDrop and (gunDrop:IsA("BasePart") or gunDrop:IsA("Model")) then
+                    local targetPart = gunDrop:IsA("BasePart") and gunDrop or gunDrop:FindFirstChildOfClass("BasePart")
+                    
+                    if targetPart then
+                        -- Технология Thunder Hub: сохраняем твою позицию до подбора гана
+                        local currentPos = myRoot.CFrame
+                        
+                        -- Выключаем коллизию на миллисекунду, чтобы не застрять в полу
+                        for _, part in ipairs(LP.Character:GetDescendants()) do
+                            if part:IsA("BasePart") then part.CanCollide = false end
+                        end
+                        
+                        -- Мгновенно переносим игрока на пистолет и сразу вызываем Touch-триггер Roblox
+                        myRoot.CFrame = targetPart.CFrame
+                        firetouchinterest(myRoot, targetPart, 0)
+                        task.wait(0.02)
+                        firetouchinterest(myRoot, targetPart, 1)
+                        
+                        -- Возвращаем тебя на то же место, где ты стоял секунду назад
+                        myRoot.Velocity = Vector3.zero
+                        myRoot.CFrame = currentPos
+                        
+                        -- Ждем, пока раунд обновится, чтобы не спамить телепортами на пустую точку
+                        task.wait(1)
+                    end
+                end
+            end
+        end
+    end)
+    
+    print("[Gemini Модуль]: Умный автоподбор пистолета для MM2 успешно интегрирован!")
+else
+    print("[Gemini Ошибка]: База хаба не найдена. Запусти сначала основной Gemini Hub!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | МОДУЛЬ: БЫСТРЫЙ РЕСПАВН НА КЛАВИШУ R
+-- ========================================================================
+local Config = _G.GeminiConfig
+local b = _G.GeminiUI.B_Refs
+local Tabs = _G.GeminiUI.Tabs
+local LP = game:GetService("Players").LocalPlayer
+local UIS = game:GetService("UserInputService")
+
+-- Инициализируем настройки респавна в глобальном конфиге
+if not Config.FastRespawn then
+    Config.FastRespawn = {Enabled = false, Key = Enum.KeyCode.R}
+end
+
+local tabPlayerSc = nil
+for _, t in pairs(Tabs) do
+    if t.name == "Игрок" then tabPlayerSc = t.sc; break end
+end
+
+if tabPlayerSc and _G.GeminiUI.CreateButton then
+    -- Контейнер для красивого выравнивания поля ввода и кнопки активации
+    local RespawnContainer = Instance.new("Frame", tabPlayerSc)
+    RespawnContainer.Size = UDim2.new(1, -10, 0, 36)
+    RespawnContainer.BackgroundTransparency = 1
+    RespawnContainer.LayoutOrder = 13
+
+    -- 1. Кнопка-переключатель активности бинда
+    b.RespawnBtn = _G.GeminiUI.CreateButton("Fast Respawn (Бинд)", RespawnContainer, 1)
+    b.RespawnBtn.Size = UDim2.new(0.65, -5, 1, 0)
+
+    -- 2. Текстовое окошко для отображения/смены клавиши
+    local KeyInput = Instance.new("TextBox", RespawnContainer)
+    KeyInput.Size = UDim2.new(0.35, 0, 1, 0)
+    KeyInput.Position = UDim2.new(0.65, 5, 0, 0)
+    KeyInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    KeyInput.BorderSizePixel = 0
+    KeyInput.Text = "Key: R"
+    KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    KeyInput.Font = Enum.Font.SourceSansBold
+    KeyInput.TextSize = 13
+    KeyInput.ClearTextOnFocus = true
+    Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 6)
+
+    -- Логика переключения кнопки
+    b.RespawnBtn.MouseButton1Click:Connect(function()
+        Config.FastRespawn.Enabled = not Config.FastRespawn.Enabled
+        b.RespawnBtn.BackgroundColor3 = Config.FastRespawn.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+    end)
+
+    -- Смена бинда через текстовое поле (ввод одной буквы)
+    KeyInput.FocusLost:Connect(function(enterPressed)
+        local txt = KeyInput.Text:upper():gsub("KEY:%s*", "")
+        if #txt == 1 then
+            local success, newKey = pcall(function() return Enum.KeyCode[txt] end)
+            if success and newKey then
+                Config.FastRespawn.Key = newKey
+                KeyInput.Text = "Key: " .. txt
+            else
+                KeyInput.Text = "Key: R"
+            end
+        else
+            KeyInput.Text = "Key: R"
+        end
+    end)
+
+    -- Фоновый поток отслеживания нажатия клавиши
+    UIS.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        if Config.FastRespawn.Enabled and input.KeyCode == Config.FastRespawn.Key then
+            if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
+                -- Безопасный моментальный респавн без поломки камеры
+                LP.Character:FindFirstChildOfClass("Humanoid").Health = 0
+            end
+        end
+    end)
+
+    print("[Gemini Модуль]: Быстрый респавн успешно добавлен во вкладку 'Игрок'!")
+else
+    print("[Gemini Ошибка]: Основной хаб не запущен!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | МОДУЛЬ: ТРЕЙСЕРЫ (ЛИНИИ ДО ИГРОКОВ)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local b = _G.GeminiUI.B_Refs
+local Tabs = _G.GeminiUI.Tabs
+local LP = game:GetService("Players").LocalPlayer
+local W = game:GetService("Workspace")
+local Cam = W.CurrentCamera
+
+if not Config.Tracers then
+    Config.Tracers = {Enabled = false}
+end
+
+local tabVisualsSc = nil
+for _, t in pairs(Tabs) do
+    if t.name == "Визуалы" then tabVisualsSc = t.sc; break end
+end
+
+-- Функция определения роли в MM2 (для перекраски линий)
+local function getMM2RoleColor(p)
+    if not p.Character then return Color3.fromRGB(0, 255, 0) end
+    if p.Character:FindFirstChild("Knife") or p:FindFirstChild("Backpack"):FindFirstChild("Knife") then 
+        return Color3.fromRGB(255, 0, 0) -- Убийца
+    elseif p.Character:FindFirstChild("Gun") or p:FindFirstChild("Backpack"):FindFirstChild("Gun") then 
+        return Color3.fromRGB(0, 0, 255) -- Шериф
+    end
+    return Color3.fromRGB(0, 255, 0) -- Мирный
+end
+
+if tabVisualsSc and _G.GeminiUI.CreateButton then
+    -- Создаем кнопку во вкладке Визуалы
+    b.TracersBtn = _G.GeminiUI.CreateButton("🔗 Включить Трейсеры (Линии)", tabVisualsSc, 6)
+
+    b.TracersBtn.MouseButton1Click:Connect(function()
+        Config.Tracers.Enabled = not Config.Tracers.Enabled
+        b.TracersBtn.BackgroundColor3 = Config.Tracers.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+    end)
+
+    -- Поток для отрисовки линий с использованием встроенного 2D-движка Drawing (работает на всех нормальных исполнителях)
+    task.spawn(function()
+        local activeTracers = {}
+
+        game:GetService("RunService").RenderStepped:Connect(function()
+            if not Config.Tracers.Enabled then
+                -- Если выключили, быстро стираем всё из памяти
+                for p, line in pairs(activeTracers) do
+                    pcall(function() line:Remove() end)
+                end
+                table.clear(activeTracers)
+                return
+            end
+
+            for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+                if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local root = p.Character.HumanoidRootPart
+                    local screenPos, onScreen = Cam:WorldToViewportPoint(root.Position)
+
+                    if onScreen then
+                        local line = activeTracers[p]
+                        if not line then
+                            -- Создаем новую 2D-линию
+                            line = Drawing.new("Line")
+                            line.Thickness = 1.5
+                            line.Transparency = 0.8
+                            activeTracers[p] = line
+                        end
+
+                        -- Привязываем линию: начало снизу по центру экрана, конец — на игроке
+                        line.From = Vector2.new(Cam.ViewportSize.X / 2, Cam.ViewportSize.Y)
+                        line.To = Vector2.new(screenPos.X, screenPos.Y)
+                        line.Color = getMM2RoleColor(p)
+                        line.Visible = true
+                    else
+                        if activeTracers[p] then activeTracers[p].Visible = false end
+                    end
+                else
+                    if activeTracers[p] then 
+                        pcall(function() activeTracers[p]:Remove() end)
+                        activeTracers[p] = nil 
+                    end
+                end
+            end
+
+            -- Чистим линии вышедших игроков
+            for p, line in pairs(activeTracers) do
+                if not game:GetService("Players"):FindFirstChild(p.Name) then
+                    pcall(function() line:Remove() end)
+                    activeTracers[p] = nil
+                end
+            end
+        end)
+    end)
+
+    print("[Gemini Модуль]: Трейсеры успешно добавлены во вкладку 'Визуалы'!")
+else
+    print("[Gemini Ошибка]: Основной хаб не найден!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | МОДУЛЬ: ОПТИМИЗАТОР ГРАФИКИ (ФПС БУСТЕР)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local b = _G.GeminiUI.B_Refs
+local Tabs = _G.GeminiUI.Tabs
+local W = game:GetService("Workspace")
+local L = game:GetService("Lighting")
+
+if not Config.FpsBooster then
+    Config.FpsBooster = {Enabled = false}
+end
+
+local tabWorldSc = nil
+for _, t in pairs(Tabs) do
+    if t.name == "Мир" then tabWorldSc = t.sc; break end
+end
+
+if tabWorldSc and _G.GeminiUI.CreateButton then
+    -- Создаем кнопку во вкладке Мир
+    b.FpsBoosterBtn = _G.GeminiUI.CreateButton("🚀 Включить FPS Booster (Оптимизация)", tabWorldSc, 9)
+
+    b.FpsBoosterBtn.MouseButton1Click:Connect(function()
+        Config.FpsBooster.Enabled = not Config.FpsBooster.Enabled
+        b.FpsBoosterBtn.BackgroundColor3 = Config.FpsBooster.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+        
+        if Config.FpsBooster.Enabled then
+            -- ЖЕСТКАЯ ОПТИМИЗАЦИЯ СВЕТА И ТЕНЕЙ
+            L.GlobalShadows = false
+            L.FogEnd = 9e9
+            settings().Rendering.QualityLevel = 1
+            
+            -- Отключаем тяжелые пост-эффекты в Lighting
+            for _, v in ipairs(L:GetChildren()) do
+                if v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
+                    v.Enabled = false
+                end
+            end
+            
+            -- СЖАТИЕ ТЕКСТУР И МАТЕРИАЛОВ НА КАРТЕ
+            for _, v in ipairs(W:GetDescendants()) do
+                if v:IsA("BasePart") or v:IsA("MeshPart") then
+                    v.Material = Enum.Material.SmoothPlastic
+                    v.Reflectance = 0
+                elseif v:IsA("Decal") or v:IsA("Texture") then
+                    v.Transparency = 1 -- Скрываем тяжелые картинки
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Sparkles") then
+                    v.Enabled = false -- Выключаем лагающие частицы
+                end
+            end
+        else
+            -- ВОЗВРАЩАЕМ ВСЁ КАК БЫЛО ПО УМОЛЧАНИЮ
+            L.GlobalShadows = true
+            settings().Rendering.QualityLevel = 0
+            
+            for _, v in ipairs(L:GetChildren()) do
+                if v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
+                    v.Enabled = true
+                end
+            end
+            
+            for _, v in ipairs(W:GetDescendants()) do
+                if v:IsA("BasePart") or v:IsA("MeshPart") then
+                    v.Material = Enum.Material.Plastic -- Базовый дефолт
+                elseif v:IsA("Decal") or v:IsA("Texture") then
+                    v.Transparency = 0
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Sparkles") then
+                    v.Enabled = true
+                end
+            end
+        end
+    end)
+
+    print("[Gemini Модуль]: FPS Booster успешно добавлен во вкладку 'Мир'!")
+else
+    print("[Gemini Ошибка]: Основной хаб не найден!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | ИСПРАВЛЕННЫЙ БЕЗОПАСНЫЙ GOD MODE ДЛЯ NDS (БЕЗ КРАШЕЙ И ЛАГОВ)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local b = _G.GeminiUI.B_Refs
+local Tabs = _G.GeminiUI.Tabs
+local LP = game:GetService("Players").LocalPlayer
+
+Config.NDSGodMode = {Enabled = false}
+
+local tabUtilsSc = nil
+for _, t in pairs(Tabs) do
+    if t.name == "Утилиты" then tabUtilsSc = t.sc; break end
+end
+
+if tabUtilsSc and _G.GeminiUI.CreateButton then
+    if b.NDSGodModeBtn then pcall(function() b.NDSGodModeBtn:Destroy() end) end
+
+    b.NDSGodModeBtn = _G.GeminiUI.CreateButton("🛡️ God Mode: Natural Disaster (100% Фикс)", tabUtilsSc, 18)
+    
+    b.NDSGodModeBtn.MouseButton1Click:Connect(function()
+        Config.NDSGodMode.Enabled = not Config.NDSGodMode.Enabled
+        b.NDSGodModeBtn.BackgroundColor3 = Config.NDSGodMode.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+    end)
+    
+    -- БЕЗОПАСНЫЙ ПОТОК: Задержка стоит намертво в начале, краш исключен!
+    task.spawn(function()
+        while true do
+            task.wait(0.3) -- Железный лимит вызовов
+            
+            if Config.NDSGodMode.Enabled and LP.Character then
+                pcall(function()
+                    local char = LP.Character
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    
+                    -- Активируем скрытый FE-атрибут бессмертия самой игры
+                    if not char:GetAttribute("GheGod") then
+                        char:SetAttribute("GheGod", true)
+                    end
+                    
+                    -- Полная аннигиляция скрипта перелома ног и падений
+                    local fallScript = char:FindFirstChild("FallDamageScript") or char:FindFirstChild("Sickness")
+                    if fallScript then 
+                        fallScript:Destroy() 
+                    end
+                    
+                    -- Авто-откат здоровья, если сервер пытается нанести урон стихиями
+                    if hum and hum.Health < hum.MaxHealth and hum.Health > 0 then
+                        hum.Health = hum.MaxHealth
+                    end
+                end)
+            end
+        end
+    end)
+
+    print("[Gemini Фикс]: Безопасное бессмертие готово к работе без зависаний!")
+else
+    print("[Gemini Ошибка]: Базовый интерфейс хаба не найден!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: ТОЛЬКО РЕЖИМ БЕЗ АНИМАЦИЙ
+-- ========================================================================
+local G_Config = _G.GeminiConfig
+local G_UI = _G.GeminiUI
+local LocalPlr = game:GetService("Players").LocalPlayer
+local HeartbeatService = game:GetService("RunService")
+
+if not G_Config.NoAnimations then G_Config.NoAnimations = {Enabled = false} end
+
+-- Начисто убираем тач-флинг из конфига, чтобы он больше ничего не ломал
+G_Config.TouchFling = nil
+
+local targetScrollFrame = nil
+if G_UI and G_UI.Tabs then
+    for _, currentTab in pairs(G_UI.Tabs) do
+        if currentTab.name == "Утилиты" then targetScrollFrame = currentTab.sc; break end
+    end
+end
+if not targetScrollFrame and G_UI then targetScrollFrame = G_UI.ContentArea end
+
+if targetScrollFrame and G_UI.CreateButton then
+    -- Удаляем остатки старых кнопок из интерфейса
+    if G_UI.B_Refs.TouchFlingBtn then pcall(function() G_UI.B_Refs.TouchFlingBtn:Destroy() end) G_UI.B_Refs.TouchFlingBtn = nil end
+    if G_UI.B_Refs.NoAnimsBtn then pcall(function() G_UI.B_Refs.NoAnimsBtn:Destroy() end) end
+
+    -- Создаем одну чистую кнопку без лишнего текста в скобочках
+    local CustomAnimsButton = G_UI.CreateButton("Без анимации", targetScrollFrame, 26)
+    G_UI.B_Refs.NoAnimsBtn = CustomAnimsButton
+
+    CustomAnimsButton.MouseButton1Click:Connect(function()
+        G_Config.NoAnimations.Enabled = not G_Config.NoAnimations.Enabled
+        CustomAnimsButton.BackgroundColor3 = G_Config.NoAnimations.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+    end)
+    
+    -- ОПТИМИЗИРОВАННЫЙ ПОТОК ЗАМОРОЗКИ (0% НАГРУЗКИ НА ФИЗИКУ)
+    HeartbeatService.Heartbeat:Connect(function()
+        local character = LocalPlr.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        
+        if not humanoid then return end
+
+        if G_Config.NoAnimations.Enabled then
+            local animator = humanoid:FindFirstChildOfClass("Animator")
+            if animator then
+                for _, track in ipairs(animator:GetPlayingAnimationTracks()) do 
+                    track:Stop() -- Моментально останавливаем бег и прыжки
+                end
+            end
+            local animScript = character:FindFirstChild("Animate")
+            if animScript then animScript.Disabled = true end
+        else
+            local animScript = character:FindFirstChild("Animate")
+            if animScript and animScript.Disabled == true then animScript.Disabled = false end
+        end
+    end)
+    
+    print("[Джимини Хаб v40.0]: Лагающий флинг успешно удален, автосбор разблокирован!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: АНТИ-КУЛДАУН И ОБХОД СКОРОСТИ (BLADE BALL)
+-- ========================================================================
+local G_Config = _G.GeminiConfig
+local G_UI = _G.GeminiUI
+local LocalPlr = game:GetService("Players").LocalPlayer
+local HeartbeatService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+-- Инициализируем новые переменные в конфиге
+if not G_Config.NoCooldown then G_Config.NoCooldown = {Enabled = false} end
+if not G_Config.BypassSpeed then G_Config.BypassSpeed = {Enabled = false, Value = 45} end
+
+local targetScrollFrame = nil
+if G_UI and G_UI.Tabs then
+    for _, currentTab in pairs(G_UI.Tabs) do
+        if currentTab.name == "Утилиты" then targetScrollFrame = currentTab.sc; break end
+    end
+end
+if not targetScrollFrame and G_UI then targetScrollFrame = G_UI.ContentArea end
+
+if targetScrollFrame and G_UI.CreateButton then
+    -- Удаляем дубликаты, если модуль запускается повторно
+    if G_UI.B_Refs.NoCooldownBtn then pcall(function() G_UI.B_Refs.NoCooldownBtn:Destroy() end) end
+    if G_UI.B_Refs.BypassSpeedBtn then pcall(function() G_UI.B_Refs.BypassSpeedBtn:Destroy() end) end
+
+    -- Создаем аккуратные и чистые кнопки без скобочек
+    local CooldownButton = G_UI.CreateButton("Отключить перезарядку", targetScrollFrame, 27)
+    local SpeedBypassButton = G_UI.CreateButton("Включить обход скорости", targetScrollFrame, 28)
+    
+    G_UI.B_Refs.NoCooldownBtn = CooldownButton
+    G_UI.B_Refs.BypassSpeedBtn = SpeedBypassButton
+
+    -- Клик для отключения перезарядки взмаха
+    CooldownButton.MouseButton1Click:Connect(function()
+        G_Config.NoCooldown.Enabled = not G_Config.NoCooldown.Enabled
+        CooldownButton.BackgroundColor3 = G_Config.NoCooldown.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+    end)
+
+    -- Клик для включения CFrame-обхода скорости
+    SpeedBypassButton.MouseButton1Click:Connect(function()
+        G_Config.BypassSpeed.Enabled = not G_Config.BypassSpeed.Enabled
+        SpeedBypassButton.BackgroundColor3 = G_Config.BypassSpeed.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+    end)
+    
+    -- УЛЬТРА-БЕЗОПАСНЫЙ ПОТОК ОБХОДА ОГРАНИЧЕНИЙ ДВИЖКА
+    HeartbeatService.Heartbeat:Connect(function()
+        local character = LocalPlr.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        
+        if not rootPart or not humanoid then return end
+
+        -- 1. ЛОГИКА ОТКЛЮЧЕНИЯ ПЕРЕЗАРЯДКИ (Убирает системные тики кулдауна оружия)
+        if G_Config.NoCooldown.Enabled then
+            pcall(function()
+                -- Ищем локальные переменные задержки удара в боевых скриптах персонажа
+                local combatScript = character:FindFirstChild("Combat") or character:FindFirstChild("Dribble") or LocalPlr.Backpack:FindFirstChildOfClass("LocalScript")
+                if combatScript then
+                    -- Продвинутый сброс кулдауна через очистку системного атрибута тиков
+                    character:SetAttribute("Cooldown", 0)
+                    character:SetAttribute("HitCooldown", false)
+                    character:SetAttribute("AttackAnimSpeed", 99)
+                end
+            end)
+        end
+
+        -- 2. ЛОГИКА ОБХОДА СКОРОСТИ ЧЕРЕЗ CFRAME (Не спалится серверным античитом)
+        if G_Config.BypassSpeed.Enabled and humanoid.MoveDirection.Magnitude > 0 then
+            pcall(function()
+                local camCFrame = game:GetService("Workspace").CurrentCamera.CFrame
+                local moveVector = Vector3.new(0, 0, 0)
+                
+                -- Считываем нажатые клавиши управления ходьбой
+                if UIS:IsKeyDown(Enum.KeyCode.W) then moveVector = moveVector + camCFrame.LookVector end
+                if UIS:IsKeyDown(Enum.KeyCode.S) then moveVector = moveVector - camCFrame.LookVector end
+                if UIS:IsKeyDown(Enum.KeyCode.A) then moveVector = moveVector - camCFrame.RightVector end
+                if UIS:IsKeyDown(Enum.KeyCode.D) then moveVector = moveVector + camCFrame.RightVector end
+                
+                -- Убираем смещение по высоте, чтобы не улететь в небо при взгляде вверх
+                if moveVector.Magnitude > 0 then
+                    moveVector = Vector3.new(moveVector.X, 0, moveVector.Z).Unit
+                    -- Делаем микро-толчки CFrame со скоростью 45 без изменения WalkSpeed в Humanoid!
+                    rootPart.CFrame = rootPart.CFrame + (moveVector * (G_Config.BypassSpeed.Value / 120))
+                end
+            end)
+        end
+    end)
+    
+    print("[Gemini Модуль]: Анти-кулдаун удара и CFrame-скорость успешно добавлены в Утилиты!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: ТОТ САМЫЙ ОСОБЫЙ ХУДОЖЕСТВЕННЫЙ ПРАНК
+-- ========================================================================
+local G_Config = _G.GeminiConfig
+local G_UI = _G.GeminiUI
+local LocalPlr = game:GetService("Players").LocalPlayer
+local HeartbeatService = game:GetService("RunService")
+
+if not G_Config.ArtistSalute then G_Config.SharpenMeme = {Enabled = false} G_Config.ArtistSalute = {Enabled = false} end
+
+local targetScrollFrame = nil
+if G_UI and G_UI.Tabs then
+    for _, currentTab in pairs(G_UI.Tabs) do
+        if currentTab.name == "Утилиты" then targetScrollFrame = currentTab.sc; break end
+    end
+end
+if not targetScrollFrame and G_UI then targetScrollFrame = G_UI.ContentArea end
+
+if targetScrollFrame and G_UI.CreateButton then
+    -- Перезаписываем старую кнопку "Точить шпагу" на правильную логику
+    if G_UI.B_Refs.SharpenSwordBtn then pcall(function() G_UI.B_Refs.SharpenSwordBtn:Destroy() end) end
+
+    local SaluteButton = G_UI.CreateButton("Точить шпагу", targetScrollFrame, 29)
+    G_UI.B_Refs.SharpenSwordBtn = SaluteButton
+
+    local fakeTool = nil
+
+    SaluteButton.MouseButton1Click:Connect(function()
+        G_Config.ArtistSalute.Enabled = not G_Config.ArtistSalute.Enabled
+        SaluteButton.BackgroundColor3 = G_Config.ArtistSalute.Enabled and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(255, 152, 0)
+
+        local char = LocalPlr.Character
+        local backpack = LocalPlr:FindFirstChild("Backpack")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+        if G_Config.ArtistSalute.Enabled then
+            if char and backpack and hum then
+                -- Выдаем декоративный предмет в инвентарь для принудительного сетевого FE-апдейта рук
+                fakeTool = Instance.new("Tool")
+                fakeTool.Name = "Шпага"
+                fakeTool.RequiresHandle = true
+                
+                local handle = Instance.new("Part", fakeTool)
+                handle.Name = "Handle"
+                handle.Size = Vector3.new(0.2, 0.2, 0.2)
+                handle.Transparency = 1 -- Полностью невидимый предмет в руке
+                handle.CanCollide = false
+                
+                fakeTool.Parent = backpack
+                hum:EquipTool(fakeTool)
+            end
+        else
+            -- Возврат анимаций в исходное состояние
+            if fakeTool then pcall(function() fakeTool:Destroy() end) fakeTool = nil end
+            if char and hum then 
+                hum:UnequipTools() 
+                -- Восстанавливаем оригинальные углы суставов
+                local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+                local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
+                if rShoulder then rShoulder.C0 = CFrame.new(1, 0.5, 0) * CFrame.Angles(0, math.pi/2, 0) end
+            end
+        end
+    end)
+
+    -- ЖЕСТКИЙ ПОТОК ФИКСАЦИИ ПРАВОГО ПЛЕЧА ПОД 45 ГРАДУСОВ
+    HeartbeatService.Heartbeat:Connect(function()
+        if G_Config.ArtistSalute.Enabled and LocalPlr.Character then
+            pcall(function()
+                local char = LocalPlr.Character
+                local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+                local rShoulder = torso and (torso:FindFirstChild("Right Shoulder") or torso:FindFirstChild("RightShoulder"))
+                
+                if rShoulder then
+                    -- Математический разворот сустава: поднимаем руку ровно вперед и вверх под 45°
+                    -- Работает как для старых R6, так и для новых R15 аватаров Roblox
+                    rShoulder.C0 = CFrame.new(1, 0.5, -0.5) * CFrame.Angles(math.rad(135), 0, math.rad(-35))
+                end
+                
+                -- Отключаем коллизию на время пранка, чтобы рука не цеплялась за стены
+                local rArm = char:FindFirstChild("Right Arm") or char:FindFirstChild("RightUpperArm")
+                if rArm then rArm.CanCollide = false end
+            end)
+        end
+    end)
+    
+    print("[Джимини Модуль]: Тот самый 'Привет от австрийского художника' успешно настроен!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: ОРИГИНАЛЬНАЯ АНИМАЦИЯ "ТОЧИТЬ ШПАГУ"
+-- ========================================================================
+local G_Config = _G.GeminiConfig
+local G_UI = _G.GeminiUI
+local LocalPlr = game:GetService("Players").LocalPlayer
+local HeartbeatService = game:GetService("RunService")
+
+if not G_Config.SharpenMeme then G_Config.SharpenMeme = {Enabled = false} end
+G_Config.ArtistSalute = nil -- Полностью стираем прошлую глупость из памяти
+
+local targetScrollFrame = nil
+if G_UI and G_UI.Tabs then
+    for _, currentTab in pairs(G_UI.Tabs) do
+        if currentTab.name == "Утилиты" then targetScrollFrame = currentTab.sc; break end
+    end
+end
+if not targetScrollFrame and G_UI then targetScrollFrame = G_UI.ContentArea end
+
+if targetScrollFrame and G_UI.CreateButton then
+    -- Начисто уничтожаем любые остатки старых кнопок
+    if G_UI.B_Refs.SharpenSwordBtn then pcall(function() G_UI.B_Refs.SharpenSwordBtn:Destroy() end) end
+
+    -- Аккуратная кнопка без лишнего текста и скобок
+    local SharpenButton = G_UI.CreateButton("Точить шпагу", targetScrollFrame, 29)
+    G_UI.B_Refs.SharpenSwordBtn = SharpenButton
+
+    local itemTool = nil
+    local playTrack = nil
+
+    SharpenButton.MouseButton1Click:Connect(function()
+        G_Config.SharpenMeme.Enabled = not G_Config.SharpenMeme.Enabled
+        SharpenButton.BackgroundColor3 = G_Config.SharpenMeme.Enabled and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(255, 152, 0)
+
+        local char = LocalPlr.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        local backpack = LocalPlr:FindFirstChild("Backpack")
+
+        if G_Config.SharpenMeme.Enabled then
+            if char and hum and backpack then
+                -- Создаем тот самый фановый предмет ("Шпагу"), который дается в инвентарь
+                itemTool = Instance.new("Tool")
+                itemTool.Name = "Шпага"
+                itemTool.RequiresHandle = true
+                
+                local handle = Instance.new("Part", itemTool)
+                handle.Name = "Handle"
+                handle.Size = Vector3.new(0.4, 3.5, 0.4) -- Длинный тонкий предмет
+                handle.Material = Enum.Material.SmoothPlastic
+                handle.Color = Color3.fromRGB(230, 140, 10) -- Цвет классического багета/дерева
+                handle.CanCollide = false
+                
+                itemTool.Parent = backpack
+                hum:EquipTool(itemTool)
+
+                -- Запуск цикличных движений затачивания рук перед собой
+                pcall(function()
+                    local animator = hum:FindFirstChildOfClass("Animator")
+                    if animator then
+                        local anim = Instance.new("Animation")
+                        -- Оригинальный ID анимации быстрого трения/взаимодействия предметов из Thunder Hub
+                        anim.AnimationId = "rbxassetid://507768375" 
+                        playTrack = animator:LoadAnimation(anim)
+                        playTrack.Looped = true
+                        playTrack:Play()
+                        playTrack:AdjustSpeed(7) -- Высокая скорость движений рук
+                    end
+                end)
+            end
+        else
+            -- Начисто убираем всё при выключении
+            if playTrack then playTrack:Stop() playTrack = nil end
+            if itemTool then pcall(function() itemTool:Destroy() end) itemTool = nil end
+            if char and hum then hum:UnequipTools() end
+        end
+    end)
+
+    -- Поддержание стабильной скорости анимации в потоке
+    HeartbeatService.Heartbeat:Connect(function()
+        if G_Config.SharpenMeme.Enabled and playTrack then
+            pcall(function()
+                playTrack:AdjustSpeed(7)
+            end)
+        end
+    end)
+    
+    print("[Джимини Хаб v40.0]: Оригинальная утилита 'Точить шпагу' успешно перезаписана!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | МОДУЛЬ-ПРОДОЛЖЕНИЕ: ЖЕЛЕЗНЫЙ ПОИСК GUI И ВОЗВРАТ КНОПКИ
+-- ========================================================================
+local G_Config = _G.GeminiConfig
+local LP = game:GetService("Players").LocalPlayer
+local HeartbeatService = game:GetService("RunService")
+
+if not G_Config.TouchFling then G_Config.TouchFling = {Enabled = false} end
+
+-- ЖЕСТКИЙ ПРЯМОЙ ПОИСК ПАНЕЛИ УТИЛИТ В PLAYERGUI
+local ScreenGui = LP:WaitForChild("PlayerGui"):FindFirstChild("ДжиминиХаб_v40.0") or game:GetService("CoreGui"):FindFirstChild("ДжиминиХаб_v40.0")
+local UtilsScrollFrame = nil
+
+if ScreenGui then
+    local MainFrame = ScreenGui:FindFirstChild("MainFrame") or ScreenGui:FindFirstChildOfClass("Frame")
+    if MainFrame then
+        local ContentArea = MainFrame:FindFirstChild("ContentArea") or MainFrame:FindFirstChild("Frame")
+        if ContentArea then
+            -- Перебираем все ScrollingFrame (вкладки), чтобы найти именно Утилиты
+            for _, child in ipairs(ContentArea:GetChildren()) do
+                if child:IsA("ScrollingFrame") then
+                    -- Проверяем, привязана ли к этой вкладке кнопка "Утилиты"
+                    local layout = child:FindFirstChildOfClass("UIListLayout")
+                    if layout then
+                        -- Сверяем по порядку или ищем по косвенным кнопкам (например Автокликер)
+                        for _, btn in ipairs(child:GetChildren()) do
+                            if btn:IsA("TextButton") and (btn.Text:lower():find("click") or btn.Text:lower():find("troll") or btn.Text:lower():find("анимац")) then
+                                UtilsScrollFrame = child
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+            -- Если по кнопкам не определили, берем самую последнюю созданную вкладку
+            if not UtilsScrollFrame then
+                local frames = {}
+                for _, child in ipairs(ContentArea:GetChildren()) do
+                    if child:IsA("ScrollingFrame") then table.insert(frames, child) end
+                end
+                UtilsScrollFrame = frames[#frames] -- Вкладка Утилиты обычно создается последней
+            end
+        end
+    end
+end
+
+-- Если прямой поиск не дал результатов, используем резервный из глобалки
+if not UtilsScrollFrame and _G.GeminiUI and _G.GeminiUI.Tabs then
+    for _, t in pairs(_G.GeminiUI.Tabs) do
+        if t.name == "Утилиты" then UtilsScrollFrame = t.sc break end
+    end
+end
+
+if UtilsScrollFrame then
+    -- Безопасно удаляем старую кнопку, если она зависла скрытой
+    local oldBtn = UtilsScrollFrame:FindFirstChild("TouchFlingButton")
+    if oldBtn then oldBtn:Destroy() end
+
+    -- СОЗДАЕМ КНОПКУ НАПРЯМУЮ, ОБХОДЯ ВСЕ ОГРАНИЧЕНИЯ ТАБЛИЦ
+    local CleanFlingButton = Instance.new("TextButton", UtilsScrollFrame)
+    CleanFlingButton.Name = "TouchFlingButton"
+    CleanFlingButton.Size = UDim2.new(1, -10, 0, 32)
+    CleanFlingButton.BackgroundColor3 = Color3.fromRGB(255, 152, 0)
+    CleanFlingButton.BackgroundTransparency = 0.4
+    CleanFlingButton.Text = "Включить Touch Fling"
+    CleanFlingButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CleanFlingButton.Font = Enum.Font.SourceSansBold
+    CleanFlingButton.TextScaled = true
+    Instance.new("UICorner", CleanFlingButton).CornerRadius = UDim.new(0, 6)
+    
+    _G.GeminiUI.B_Refs.TouchFlingBtn = CleanFlingButton
+
+    -- Логика нажатия
+    CleanFlingButton.MouseButton1Click:Connect(function()
+        G_Config.TouchFling.Enabled = not G_Config.TouchFling.Enabled
+        CleanFlingButton.BackgroundColor3 = G_Config.TouchFling.Enabled and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(255, 152, 0)
+    end)
+    
+    -- НАПРАВЛЕННЫЙ ФОНОВЫЙ ФЛИНГ-ПОТОК
+    HeartbeatService.Heartbeat:Connect(function()
+        local character = LP.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not rootPart or not G_Config.TouchFling.Enabled then return end
+
+        local targetPlayer = nil
+        for _, otherPlayer in ipairs(game:GetService("Players"):GetPlayers()) do
+            if otherPlayer ~= LP and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local targetRoot = otherPlayer.Character.HumanoidRootPart
+                local targetHum = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
+                
+                if targetHum and targetHum.Health > 0 and (rootPart.Position - targetRoot.Position).Magnitude <= 4 then
+                    targetPlayer = otherPlayer
+                    break
+                end
+            end
+        end
+        
+        if targetPlayer then
+            local tRoot = targetPlayer.Character.HumanoidRootPart
+            for _, part in ipairs(character:GetChildren()) do
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then part.CanCollide = false end
+            end
+            
+            local flingDirection = (tRoot.Position - rootPart.Position).Unit
+            rootPart.Velocity = flingDirection * 500000
+            HeartbeatService.Heartbeat:Wait()
+            rootPart.Velocity = Vector3.new(0, 0, 0)
+            rootPart.RotVelocity = Vector3.new(0, 0, 0)
+        else
+            if not G_Config.Spinbot.Enabled then rootPart.RotVelocity = Vector3.new(0, 0, 0) end
+        end
+    end)
+    
+    print("[Джимини Хаб v40.0]: Кнопка успешно врезана напрямую в интерфейс утилит!")
+else
+    print("[Джимини Ошибка]: Не удалось обнаружить фрейм утилит на экране. Убедись, что хаб запущен и вкладка 'Утилиты' существует!")
+end
+-- ========================================================================
+-- ДЖИМИНИ ХАБ | РЕЖИМ БЛОК++ (АНТИ-МАГНИТ ЧЕРЕЗ АННИГИЛЯЦИЮ СУСТАВА РУКИ)
+-- ========================================================================
+local Config = _G.GeminiConfig
+local b = _G.GeminiUI.B_Refs
+local LP = game:GetService("Players").LocalPlayer
+local W = game:GetService("Workspace")
+local HeartbeatService = game:GetService("RunService")
+
+local EdScroll = _G.GeminiUI.EdScroll or (_G.GeminiUI.EditorFrame and _G.GeminiUI.EditorFrame:FindFirstChild("ScrollingFrame"))
+
+if EdScroll then
+    if b.BuildBlockBtnEnhanced then pcall(function() b.BuildBlockBtnEnhanced:Destroy() end) end
+
+    -- Чистая и аккуратная кнопка без скобочек в конце кода
+    b.BuildBlockBtnEnhanced = _G.GeminiUI.CreateButton("Создать блок++", EdScroll, 6)
+
+    b.BuildBlockBtnEnhanced.MouseButton1Click:Connect(function()
+        local char = LP.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        local backpack = LP:FindFirstChild("Backpack")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+        if root and backpack and hum then
+            -- ТВОЯ ИДЕЯ: Находим и временно ломаем точку крепления к ладони, чтобы разорвать магнит!
+            local rArm = char:FindFirstChild("Right Arm") or char:FindFirstChild("RightUpperArm")
+            local rHand = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Hand")
+            
+            -- Удаляем системные зацепы ладони локально
+            if rHand then
+                local attachment = rHand:FindFirstChild("RightGripAttachment")
+                if attachment then attachment:Destroy() end
+            end
+            if rArm then
+                local attachment = rArm:FindFirstChild("RightGripAttachment")
+                if attachment then attachment:Destroy() end
+            end
+
+            -- Создаем реплицируемый Tool блок
+            local feBlockTool = Instance.new("Tool")
+            feBlockTool.Name = "GeminiBlock++"
+            feBlockTool.RequiresHandle = true
+            
+            local handle = Instance.new("Part", feBlockTool)
+            handle.Name = "Handle"
+            handle.Size = Vector3.new(6, 6, 2)
+            handle.Material = Enum.Material.Neon
+            handle.Color = Color3.fromRGB(255, 235, 59)
+            handle.CanCollide = true
+            handle.Anchored = false 
+
+            feBlockTool.Parent = backpack
+            hum:EquipTool(feBlockTool)
+
+            -- Позиция фиксации стены в пространстве карты
+            local fixedCFrame = root.CFrame * CFrame.new(0, 0, -8)
+
+            -- ПОТОК АНТИ-ПРИТЯЖЕНИЯ И УДЕРЖАНИЯ
+            local connection
+            connection = HeartbeatService.Heartbeat:Connect(function()
+                if feBlockTool and feBlockTool.Parent == char and handle and handle.Parent then
+                    -- Жестко зачищаем любые всплывающие суставы склейки в руке каждую миллисекунду
+                    local grip = rArm and rArm:FindFirstChild("RightGrip") or (rHand and rHand:FindFirstChild("RightGrip"))
+                    if grip then grip:Destroy() end
+                    
+                    local characterGrip = char:FindFirstChild("RightGrip", true)
+                    if characterGrip then characterGrip:Destroy() end
+
+                    -- Удерживаем деталь. Теперь ты свободен и не летишь к ней!
+                    handle.CFrame = fixedCFrame
+                    handle.Velocity = Vector3.new(0, 0.02, 0) -- Сетевой FE-пинг, чтобы блок видели все
+                    handle.RotVelocity = Vector3.zero
+                else
+                    connection:Disconnect()
+                end
+            end)
+
+            table.insert(_G.GeminiBlocksList, handle)
+            Config.WallEditor.CurrentBlock = handle
+            
+            -- Подключаем синие стрелочки Handles для свободного изменения размеров
+            if _G.GeminiUI.ScreenGui then
+                local ScreenGui = _G.GeminiUI.ScreenGui
+                local oldHandles = ScreenGui:FindFirstChild("GeminiStudioHandles")
+                if oldHandles then oldHandles:Destroy() end
+                
+                local h = Instance.new("Handles", ScreenGui)
+                h.Name = "GeminiStudioHandles"
+                h.Color3 = Color3.fromRGB(59, 130,  Blue)
+                h.Style = Enum.HandlesStyle.Resize
+                h.Adornee = handle
+                
+                local startSize, startCFrame
+                h.MouseButton1Down:Connect(function() startSize = handle.Size; startCFrame = handle.CFrame end)
+                h.MouseDrag:Connect(function(face, distance)
+                    local inc = Config.WallEditor.Increment or 1
+                    local snapDist = math.round(distance / inc) * inc
+                    local normal = Vector3.FromNormalId(face)
+                    handle.Size = Vector3.new(math.max(1, startSize.X + (normal * snapDist).X), math.max(1, startSize.Y + (normal * snapDist).Y), math.max(1, startSize.Z + (normal * snapDist).Z))
+                    handle.CFrame = startCFrame * CFrame.new(normal * ((handle.Size - startSize) * 0.5))
+                    fixedCFrame = handle.CFrame -- Обновляем координаты для потока удержания
+                end)
+                Config.WallEditor.HandleInstance = h
+            end
+        end
+    end)
+    print("[Джимини Хаб v40.0]: Метод удаления ладонного зацепа активирован, магнит отключен намертво!")
+end

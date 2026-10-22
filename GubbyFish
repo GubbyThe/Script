@@ -449,7 +449,7 @@ task.spawn(function()
     task.spawn(updateFlingList)
     print("[Gubby Модуль]: Новый Orbit-Флинг по твоей тактике успешно загружен!");
 end)
--- [[ GubbyHUB — УМНАЯ АВТО-МЕТЛА С КОНФИГОМ ПО НИКАМ (ЧАСТЬ 10) ]] --
+-- [[ GubbyHUB — ФИКС АВТО-СОЗДАНИЯ КОНФИГА ДЛЯ ДРУГА (ЧАСТЬ 11) ]] --
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
@@ -458,24 +458,35 @@ local LocalPlayer = Players.LocalPlayer
 local username = LocalPlayer.Name
 local configFile = "GubbyHub_Broom_" .. username .. ".txt"
 
+-- 1. ЛОГИКА АВТО-СОЗДАНИЯ И ПРОВЕРКИ ФАЙЛА
+if writefile and isfile and readfile then
+    if not isfile(configFile) then
+        writefile(configFile, "true") -- Если файла нет (как у Андрона), скрипт сам создаст его и запишет "true"
+        print("[GubbyHUB]: Создан стартовый конфиг для " .. username)
+    end
+end
+
 -- АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ СЛОТА ПО НИКНЕЙМУ
-local targetSlot = Enum.KeyCode.Eight -- По умолчанию 8 слот (для REDIT_41 и твинков)
+local targetSlot = Enum.KeyCode.Eight -- По умолчанию 8 слот (для тебя)
 
 if username == "Andronn_1000" then
     targetSlot = Enum.KeyCode.Three   -- Для твоего друга Andronn_1000 ставим 3 слот
-    print("[GubbyHUB]: Загружен конфиг для Andronn_1000. Выбран 3 слот.")
+    print("[GubbyHUB]: Загружен конфиг для Andronn_1000. Авто-выбор: 3 слот.")
 elseif username == "REDIT_41" then
-    targetSlot = Enum.KeyCode.Eight   -- Для тебя железно оставляем 8 слот
-    print("[GubbyHUB]: Загружен конфиг для REDIT_41. Выбран 8 слот.")
+    targetSlot = Enum.KeyCode.Eight   -- Для тебя железно 8 слот
+    print("[GubbyHUB]: Загружен конфиг для REDIT_41. Авто-выбор: 8 слот.")
 else
-    print("[GubbyHUB]: Неизвестный ник ("..username.."). Применен стандартный 8 слот.")
+    print("[GubbyHUB]: Сторонний ник. Применен стандартный 8 слот.")
 end
 
--- 1. ФУНКЦИЯ ВЗЛЕТА (Т + АВТО-СЛОТ)
+-- 2. ФУНКЦИЯ ВЗЛЕТА (Т + АВТО-СЛОТ)
 local function activeBroomBySlot()
     task.wait(2.5) -- Ждем загрузки раунда
     
-    if isfile and readfile and readfile(configFile) ~= "true" then return end
+    -- Безопасная проверка: если файл существует и там написано "false" (ты сам выключил) — тогда стопаем
+    if isfile and readfile and isfile(configFile) and readfile(configFile) == "false" then 
+        return 
+    end
     
     -- НАЖИМАЕМ "T" (Открываем радиальное меню)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
@@ -519,7 +530,7 @@ local function activeBroomBySlot()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
 end
 
--- 2. УМНЫЙ РАЗВОРОТ НА ЦЕЛИ (ГИРОСКОП)
+-- 3. УМНЫЙ РАЗВОРОТ НА ЦЕЛИ (ГИРОСКОП)
 local function startPerfectTracking()
     task.spawn(function()
         while true do

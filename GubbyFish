@@ -449,7 +449,7 @@ task.spawn(function()
     task.spawn(updateFlingList)
     print("[Gubby Модуль]: Новый Orbit-Флинг по твоей тактике успешно загружен!");
 end)
--- [[ GubbyHUB — ИСПРАВЛЕННЫЙ РАЗВОРОТ БЕЗ КОЛЛИЗИИ (ЧАСТЬ 9) ]] --
+-- [[ GubbyHUB — УМНАЯ АВТО-МЕТЛА С КОНФИГОМ ПО НИКАМ (ЧАСТЬ 10) ]] --
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
@@ -458,21 +458,40 @@ local LocalPlayer = Players.LocalPlayer
 local username = LocalPlayer.Name
 local configFile = "GubbyHub_Broom_" .. username .. ".txt"
 
--- 1. ФУНКЦИЯ ВЗЛЕТА (Т + 8)
+-- АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ СЛОТА ПО НИКНЕЙМУ
+local targetSlot = Enum.KeyCode.Eight -- По умолчанию 8 слот (для REDIT_41 и твинков)
+
+if username == "Andronn_1000" then
+    targetSlot = Enum.KeyCode.Three   -- Для твоего друга Andronn_1000 ставим 3 слот
+    print("[GubbyHUB]: Загружен конфиг для Andronn_1000. Выбран 3 слот.")
+elseif username == "REDIT_41" then
+    targetSlot = Enum.KeyCode.Eight   -- Для тебя железно оставляем 8 слот
+    print("[GubbyHUB]: Загружен конфиг для REDIT_41. Выбран 8 слот.")
+else
+    print("[GubbyHUB]: Неизвестный ник ("..username.."). Применен стандартный 8 слот.")
+end
+
+-- 1. ФУНКЦИЯ ВЗЛЕТА (Т + АВТО-СЛОТ)
 local function activeBroomBySlot()
-    task.wait(2.5)
+    task.wait(2.5) -- Ждем загрузки раунда
+    
     if isfile and readfile and readfile(configFile) ~= "true" then return end
     
+    -- НАЖИМАЕМ "T" (Открываем радиальное меню)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
     task.wait(0.05)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
-    task.wait(0.4)
     
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Eight, false, game)
+    task.wait(0.4) -- Ждем открытия меню
+    
+    -- НАЖИМАЕМ ВЫБРАННЫЙ СЛОТ (3 или 8 в зависимости от ника)
+    VirtualInputManager:SendKeyEvent(true, targetSlot, false, game)
     task.wait(0.05)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Eight, false, game)
-    task.wait(0.5)
+    VirtualInputManager:SendKeyEvent(false, targetSlot, false, game)
     
+    task.wait(0.5) -- Ждем выдачи предмета в Backpack
+    
+    -- БЕРЕМ В РУКИ И КЛИКАЕМ ДЛЯ ПОЛЕТА
     local character = LocalPlayer.Character
     if character then
         local broomTool = nil
@@ -488,22 +507,23 @@ local function activeBroomBySlot()
                 character:FindFirstChildOfClass("Humanoid"):EquipTool(broomTool)
             end
             task.wait(0.2)
-            broomTool:Activate()
+            broomTool:Activate() -- Виртуальный клик для полета
+            print("[GubbyHUB]: Метла успешно активирована для " .. username)
         end
     end
     
+    -- ЗАКРЫВАЕМ МЕНЮ "T"
     task.wait(0.3)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
     task.wait(0.05)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
 end
 
--- 2. УМНЫЙ РАЗВОРОТ (БЕЗ CANCOLLIDE)
+-- 2. УМНЫЙ РАЗВОРОТ НА ЦЕЛИ (ГИРОСКОП)
 local function startPerfectTracking()
     task.spawn(function()
         while true do
             task.wait(0.05)
-            
             local character = LocalPlayer.Character
             local rootPart = character and character:FindFirstChild("HumanoidRootPart")
             
@@ -520,10 +540,8 @@ local function startPerfectTracking()
                 local closestCandy = nil
                 local shortestDistance = math.huge
                 
-                -- Ищем конфеты только по видимости
                 for _, obj in pairs(Workspace:GetDescendants()) do
                     if (string.find(obj.Name, "Candy") or string.find(obj.Name, "Coin")) and obj:IsA("BasePart") then
-                        -- Условие: конфета видимая (значит еще не подобрана)
                         if obj.Transparency < 0.5 then
                             local distance = (rootPart.Position - obj.Position).Magnitude
                             if distance < shortestDistance then
@@ -534,7 +552,6 @@ local function startPerfectTracking()
                     end
                 end
                 
-                -- Разворачиваем гироскоп
                 if closestCandy then
                     local targetPos = closestCandy.Position
                     bg.CFrame = CFrame.lookAt(rootPart.Position, Vector3.new(targetPos.X, rootPart.Position.Y, targetPos.Z))

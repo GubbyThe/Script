@@ -511,8 +511,7 @@ end)
 -- ПРИМЕР: Если ты когда-нибудь захочешь переключать этот режим, 
 -- достаточно вызвать функцию saveConfig(true) или saveConfig(false)
 -- Скрипт сразу перезапишет файл на диске под твоим ником!
--- ========================================================
--- [[ GubbyHUB — БЕЗОПАСНЫЙ РАЗВОРВОТ МЕТЛЫ ЧЕРЕЗ ГИРОСКОП (ЧАСТЬ 7) ]] --
+-- [[ GubbyHUB — ИДЕАЛЬНЫЙ РАЗВОРОТ НА НЕПОДОБРАННЫЕ КОНФЕТЫ (ЧАСТЬ 8) ]] --
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
@@ -561,46 +560,48 @@ local function activeBroomBySlot()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
 end
 
--- 2. БЕЗОПАСНЫЙ РАЗВОРOT ЧЕРЕЗ ТЕЛО (BODYGYRO)
-local function startSafeTracking()
+-- 2. УМНЫЙ РАЗВОРОТ ТОЛЬКО НА ЦЕЛЫЕ КОНФЕТЫ
+local function startPerfectTracking()
     task.spawn(function()
         while true do
-            task.wait(0.1) -- Проверка каждые 0.1 сек для стабильности фарма
+            task.wait(0.05) -- Увеличили частоту до 0.05с для более резкого и точного взгляда
             
             local character = LocalPlayer.Character
             local rootPart = character and character:FindFirstChild("HumanoidRootPart")
             
             if rootPart then
-                -- Создаем или находим гироскоп, который плавно вращает персонажа
                 local bg = rootPart:FindFirstChild("GubbyGyro")
                 if not bg then
                     bg = Instance.new("BodyGyro")
                     bg.Name = "GubbyGyro"
-                    bg.maxTorque = Vector3.new(0, 400000, 0) -- Крутим ТОЛЬКО влево-вправо
-                    bg.P = 10000 -- Скорость и плавность поворота
+                    bg.maxTorque = Vector3.new(0, 400000, 0)
+                    bg.P = 15000 -- Чуть прибавили скорости поворота
                     bg.Parent = rootPart
                 end
                 
                 local closestCandy = nil
                 local shortestDistance = math.huge
                 
-                -- Ищем ближайшую конфету
+                -- Перебираем конфеты на карте
                 for _, obj in pairs(Workspace:GetDescendants()) do
                     if (string.find(obj.Name, "Candy") or string.find(obj.Name, "Coin")) and obj:IsA("BasePart") then
-                        local distance = (rootPart.Position - obj.Position).Magnitude
-                        if distance < shortestDistance then
-                            shortestDistance = distance
-                            closestCandy = obj
+                        -- Условие: конфета должна быть ВИДИМОЙ (Transparency меньше 1), значит она еще не подобрана!
+                        if obj.Transparency < 0.9 and obj.CanCollide == true then
+                            local distance = (rootPart.Position - obj.Position).Magnitude
+                            if distance < shortestDistance then
+                                shortestDistance = distance
+                                closestCandy = obj
+                            end
                         end
                     end
                 end
                 
-                -- Плавно направляем гироскоп в сторону конфеты
+                -- Направляем взгляд
                 if closestCandy then
                     local targetPos = closestCandy.Position
                     bg.CFrame = CFrame.lookAt(rootPart.Position, Vector3.new(targetPos.X, rootPart.Position.Y, targetPos.Z))
                 else
-                    bg.CFrame = rootPart.CFrame -- Если конфет нет, смотрим прямо
+                    bg.CFrame = rootPart.CFrame
                 end
             end
         end
@@ -612,4 +613,4 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 if LocalPlayer.Character then activeBroomBySlot() end
-startSafeTracking()
+startPerfectTracking()

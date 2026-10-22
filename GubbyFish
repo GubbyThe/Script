@@ -512,17 +512,16 @@ end)
 -- достаточно вызвать функцию saveConfig(true) или saveConfig(false)
 -- Скрипт сразу перезапишет файл на диске под твоим ником!
 -- ========================================================
--- [[ GubbyHUB — МЕТЛА С АВТО-РАЗВОРОТОМ НА КОНФЕТЫ (ЧАСТЬ 6) ]] --
+-- [[ GubbyHUB — БЕЗОПАСНЫЙ РАЗВОРВОТ МЕТЛЫ ЧЕРЕЗ ГИРОСКОП (ЧАСТЬ 7) ]] --
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local username = LocalPlayer.Name
 local configFile = "GubbyHub_Broom_" .. username .. ".txt"
 
--- 1. ОСНОВНАЯ ФУНКЦИЯ ВЗЛЕТА (Т + 8)
+-- 1. ФУНКЦИЯ ВЗЛЕТА (Т + 8)
 local function activeBroomBySlot()
     task.wait(2.5)
     if isfile and readfile and readfile(configFile) ~= "true" then return end
@@ -562,22 +561,30 @@ local function activeBroomBySlot()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
 end
 
--- 2. НОВАЯ ЛОГИКА: ВЗГЛЯД НА БЛИЖАЙШУЮ КОНФЕТУ
-local function startCandyEyeTracking()
-    -- Каждые несколько долей секунды обновляем направление взгляда
+-- 2. БЕЗОПАСНЫЙ РАЗВОРOT ЧЕРЕЗ ТЕЛО (BODYGYRO)
+local function startSafeTracking()
     task.spawn(function()
         while true do
-            task.wait(0.05) -- Частая проверка для плавности
+            task.wait(0.1) -- Проверка каждые 0.1 сек для стабильности фарма
             
             local character = LocalPlayer.Character
             local rootPart = character and character:FindFirstChild("HumanoidRootPart")
             
             if rootPart then
+                -- Создаем или находим гироскоп, который плавно вращает персонажа
+                local bg = rootPart:FindFirstChild("GubbyGyro")
+                if not bg then
+                    bg = Instance.new("BodyGyro")
+                    bg.Name = "GubbyGyro"
+                    bg.maxTorque = Vector3.new(0, 400000, 0) -- Крутим ТОЛЬКО влево-вправо
+                    bg.P = 10000 -- Скорость и плавность поворота
+                    bg.Parent = rootPart
+                end
+                
                 local closestCandy = nil
                 local shortestDistance = math.huge
                 
-                -- Перебираем всё на карте в поиске конфет MM2
-                -- Никилис обычно спавнит их в Workspace под именами Candy, CandyCorn или CoinКонтейнерах
+                -- Ищем ближайшую конфету
                 for _, obj in pairs(Workspace:GetDescendants()) do
                     if (string.find(obj.Name, "Candy") or string.find(obj.Name, "Coin")) and obj:IsA("BasePart") then
                         local distance = (rootPart.Position - obj.Position).Magnitude
@@ -588,25 +595,21 @@ local function startCandyEyeTracking()
                     end
                 end
                 
-                -- Если нашли конфету, к которой скрипт сейчас движется — разворачиваем метлу к ней!
+                -- Плавно направляем гироскоп в сторону конфеты
                 if closestCandy then
                     local targetPos = closestCandy.Position
-                    -- Поворачиваем только по горизонтали (по осям X и Z), чтобы Gubby не заваливался на бок
-                    rootPart.CFrame = CFrame.lookAt(rootPart.Position, Vector3.new(targetPos.X, rootPart.Position.Y, targetPos.Z))
+                    bg.CFrame = CFrame.lookAt(rootPart.Position, Vector3.new(targetPos.X, rootPart.Position.Y, targetPos.Z))
+                else
+                    bg.CFrame = rootPart.CFrame -- Если конфет нет, смотрим прямо
                 end
             end
         end
     end)
 end
 
--- Запуск систем
 LocalPlayer.CharacterAdded:Connect(function(char)
     activeBroomBySlot()
 end)
 
-if LocalPlayer.Character then 
-    activeBroomBySlot() 
-end
-
--- Запускаем слежение за взглядом
-startCandyEyeTracking()
+if LocalPlayer.Character then activeBroomBySlot() end
+startSafeTracking()

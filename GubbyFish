@@ -512,3 +512,101 @@ end)
 -- достаточно вызвать функцию saveConfig(true) или saveConfig(false)
 -- Скрипт сразу перезапишет файл на диске под твоим ником!
 -- ========================================================
+-- [[ GubbyHUB — МЕТЛА С АВТО-РАЗВОРОТОМ НА КОНФЕТЫ (ЧАСТЬ 6) ]] --
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local username = LocalPlayer.Name
+local configFile = "GubbyHub_Broom_" .. username .. ".txt"
+
+-- 1. ОСНОВНАЯ ФУНКЦИЯ ВЗЛЕТА (Т + 8)
+local function activeBroomBySlot()
+    task.wait(2.5)
+    if isfile and readfile and readfile(configFile) ~= "true" then return end
+    
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
+    task.wait(0.4)
+    
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Eight, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Eight, false, game)
+    task.wait(0.5)
+    
+    local character = LocalPlayer.Character
+    if character then
+        local broomTool = nil
+        for _, item in pairs(LocalPlayer.Backpack:GetChildren()) do
+            if string.find(item.Name, "Broom") then broomTool = item break end
+        end
+        for _, item in pairs(character:GetChildren()) do
+            if string.find(item.Name, "Broom") then broomTool = item break end
+        end
+        
+        if broomTool and broomTool:IsA("Tool") then
+            if character:FindFirstChild(broomTool.Name) == nil then
+                character:FindFirstChildOfClass("Humanoid"):EquipTool(broomTool)
+            end
+            task.wait(0.2)
+            broomTool:Activate()
+        end
+    end
+    
+    task.wait(0.3)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
+end
+
+-- 2. НОВАЯ ЛОГИКА: ВЗГЛЯД НА БЛИЖАЙШУЮ КОНФЕТУ
+local function startCandyEyeTracking()
+    -- Каждые несколько долей секунды обновляем направление взгляда
+    task.spawn(function()
+        while true do
+            task.wait(0.05) -- Частая проверка для плавности
+            
+            local character = LocalPlayer.Character
+            local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+            
+            if rootPart then
+                local closestCandy = nil
+                local shortestDistance = math.huge
+                
+                -- Перебираем всё на карте в поиске конфет MM2
+                -- Никилис обычно спавнит их в Workspace под именами Candy, CandyCorn или CoinКонтейнерах
+                for _, obj in pairs(Workspace:GetDescendants()) do
+                    if (string.find(obj.Name, "Candy") or string.find(obj.Name, "Coin")) and obj:IsA("BasePart") then
+                        local distance = (rootPart.Position - obj.Position).Magnitude
+                        if distance < shortestDistance then
+                            shortestDistance = distance
+                            closestCandy = obj
+                        end
+                    end
+                end
+                
+                -- Если нашли конфету, к которой скрипт сейчас движется — разворачиваем метлу к ней!
+                if closestCandy then
+                    local targetPos = closestCandy.Position
+                    -- Поворачиваем только по горизонтали (по осям X и Z), чтобы Gubby не заваливался на бок
+                    rootPart.CFrame = CFrame.lookAt(rootPart.Position, Vector3.new(targetPos.X, rootPart.Position.Y, targetPos.Z))
+                end
+            end
+        end
+    end)
+end
+
+-- Запуск систем
+LocalPlayer.CharacterAdded:Connect(function(char)
+    activeBroomBySlot()
+end)
+
+if LocalPlayer.Character then 
+    activeBroomBySlot() 
+end
+
+-- Запускаем слежение за взглядом
+startCandyEyeTracking()

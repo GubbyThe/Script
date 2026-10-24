@@ -449,7 +449,7 @@ task.spawn(function()
     task.spawn(updateFlingList)
     print("[Gubby Модуль]: Новый Orbit-Флинг по твоей тактике успешно загружен!");
 end)
--- [[ GubbyHUB — ФИКС АВТО-СОЗДАНИЯ КОНФИГА ДЛЯ ДРУГА (ЧАСТЬ 11) ]] --
+-- [[ GubbyHUB — АВТО-МЕТЛА С КОНФИГОМ ДЛЯ ТРЕХ ИГРОКОВ (ЧАСТЬ 12) ]] --
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
@@ -461,29 +461,31 @@ local configFile = "GubbyHub_Broom_" .. username .. ".txt"
 -- 1. ЛОГИКА АВТО-СОЗДАНИЯ И ПРОВЕРКИ ФАЙЛА
 if writefile and isfile and readfile then
     if not isfile(configFile) then
-        writefile(configFile, "true") -- Если файла нет (как у Андрона), скрипт сам создаст его и запишет "true"
+        writefile(configFile, "true")
         print("[GubbyHUB]: Создан стартовый конфиг для " .. username)
     end
 end
 
 -- АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ СЛОТА ПО НИКНЕЙМУ
-local targetSlot = Enum.KeyCode.Eight -- По умолчанию 8 слот (для тебя)
+local targetSlot = Enum.KeyCode.Eight -- Стандартный 8 слот по умолчанию
 
 if username == "Andronn_1000" then
-    targetSlot = Enum.KeyCode.Three   -- Для твоего друга Andronn_1000 ставим 3 слот
+    targetSlot = Enum.KeyCode.Three   -- Для Andronn_1000 ставим 3 слот
     print("[GubbyHUB]: Загружен конфиг для Andronn_1000. Авто-выбор: 3 слот.")
+elseif username == "MILA_48203" then
+    targetSlot = Enum.KeyCode.Five    -- Для хелперши MILA_48203 ставим 5 слот
+    print("[GubbyHUB]: Загружен конфиг для MILA_48203. Авто-выбор: 5 слот.")
 elseif username == "REDIT_41" then
     targetSlot = Enum.KeyCode.Eight   -- Для тебя железно 8 слот
     print("[GubbyHUB]: Загружен конфиг для REDIT_41. Авто-выбор: 8 слот.")
 else
-    print("[GubbyHUB]: Сторонний ник. Применен стандартный 8 слот.")
+    print("[GubbyHUB]: Неизвестный ник. Применен стандартный 8 слот.")
 end
 
 -- 2. ФУНКЦИЯ ВЗЛЕТА (Т + АВТО-СЛОТ)
 local function activeBroomBySlot()
     task.wait(2.5) -- Ждем загрузки раунда
     
-    -- Безопасная проверка: если файл существует и там написано "false" (ты сам выключил) — тогда стопаем
     if isfile and readfile and isfile(configFile) and readfile(configFile) == "false" then 
         return 
     end
@@ -495,7 +497,7 @@ local function activeBroomBySlot()
     
     task.wait(0.4) -- Ждем открытия меню
     
-    -- НАЖИМАЕМ ВЫБРАННЫЙ СЛОТ (3 или 8 в зависимости от ника)
+    -- НАЖИМАЕМ ВЫБРАННЫЙ СЛОТ (3, 5 или 8 в зависимости от ника)
     VirtualInputManager:SendKeyEvent(true, targetSlot, false, game)
     task.wait(0.05)
     VirtualInputManager:SendKeyEvent(false, targetSlot, false, game)

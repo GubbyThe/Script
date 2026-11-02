@@ -582,3 +582,88 @@ end)
 
 if LocalPlayer.Character then activeBroomBySlot() end
 startPerfectTracking()
+-- ==============================================================================
+-- СИСТЕМА УСКОРЕНИЯ ДЛЯ MM2 КОПИИ (Без Лидерборда, по триггеру деспавна предметов)
+-- Просто закинь этот код в самый конец своего файла GubbyFish на GitHub
+-- ==============================================================================
+
+task.spawn(function()
+    local TELEPORT_DELAY = 3 -- Через сколько секунд простоя включать ТП
+    local lastPickupTime = os.time()
+    local lastItemCount = 0
+    
+    local player = game:GetService("Players").LocalPlayer
+
+    -- Фильтр: игнорируем листву Никилиса, чтобы не улетать на деревья-морковки
+    local function isRealItem(object)
+        local nameLower = string.lower(object.Name)
+        if string.find(nameLower, "carrot") or string.find(nameLower, "морков") then
+            return false
+        end
+        return true
+    end
+
+    -- Поиск предметов и подсчет их количества на карте
+    local function scanMapItems()
+        local items = {}
+        local keywords = {"candy", "конфет", "coin", "монет", "ball", "мяч", "ice", "лед", "лёд"}
+        
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and isRealItem(obj) then
+                local objName = string.lower(obj.Name)
+                for _, kw in ipairs(keywords) do
+                    if string.find(objName, kw) then
+                        table.insert(items, obj)
+                        break
+                    end
+                end
+            end
+        end
+        return items
+    end
+
+    -- Поиск ближайшего предмета из найденных
+    local function getClosestEmergencyTarget(items)
+        local character = player.Character
+        if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
+        local hrp = character.HumanoidRootPart
+        
+        local closestItem = nil
+        local shortestDistance = math.huge
+        
+        for _, item in ipairs(items) do
+            local dist = (hrp.Position - item.Position).Magnitude
+            if dist < shortestDistance then
+                shortestDistance = dist
+                closestItem = item
+            end
+        end
+        return closestItem
+    end
+
+    -- Основной цикл проверки скорости фарма
+    while task.wait(0.5) do
+        local character = player.Character
+        local hrp = character and character:FindFirstChild("HumanoidRootPart")
+        
+        if hrp then
+            local currentItems = scanMapItems()
+            local currentCount = #currentItems
+            
+            -- Если количество предметов уменьшилось, значит кто-то (или твой фарм) успешно что-то подобрал
+            if currentCount < lastItemCount then
+                lastPickupTime = os.time() -- Сбрасываем таймер
+            end
+            lastItemCount = currentCount
+            
+            -- Если прошло больше 3 секунд без подборов, а предметы на карте ещё есть — включаем ТП-геймпас
+            if (os.time() - lastPickupTime) >= TELEPORT_DELAY and currentCount > 0 then
+                local targetItem = getClosestEmergencyTarget(currentItems)
+                if targetItem then
+                    hrp.CFrame = targetItem.CFrame + Vector3.new(0, 1.5, 0) -- ТП прямо на предмет
+                    lastPickupTime = os.time() -- Даем 3 секунды на то, чтобы хитбокс сработал
+                end
+            end
+        end
+    end
+end)

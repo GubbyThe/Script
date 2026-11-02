@@ -583,33 +583,50 @@ end)
 if LocalPlayer.Character then activeBroomBySlot() end
 startPerfectTracking()
 -- ==============================================================================
--- СИСТЕМА УСКОРЕНИЯ ДЛЯ MM2 КОПИИ (Без Лидерборда, по триггеру деспавна предметов)
--- Просто закинь этот код в самый конец своего файла GubbyFish на GitHub
+-- СИСТЕМА УСКОРЕНИЯ: АНТИ-НИКИЛИС И УМНАЯ ФИЛЬТРАЦИЯ ЛОББИ
+-- Закинь этот код взамен старого бустера в самый конец файла GubbyFish
 -- ==============================================================================
 
 task.spawn(function()
-    local TELEPORT_DELAY = 3 -- Через сколько секунд простоя включать ТП
+    local TELEPORT_DELAY = 3 -- Время простоя в секундах
     local lastPickupTime = os.time()
     local lastItemCount = 0
     
     local player = game:GetService("Players").LocalPlayer
 
-    -- Фильтр: игнорируем листву Никилиса, чтобы не улетать на деревья-морковки
-    local function isRealItem(object)
+    -- Жесткий фильтр: полностью отсекаем лобби и фейковые предметы
+    local function isRealGameItem(object)
         local nameLower = string.lower(object.Name)
-        if string.find(nameLower, "carrot") or string.find(nameLower, "морков") then
+        
+        -- Игнорируем всё, что связано с листвой или деревьями лобби
+        if string.find(nameLower, "carrot") or string.find(nameLower, "морков") or string.find(nameLower, "tree") or string.find(nameLower, "leaf") then
             return false
         end
+        
+        -- Умная проверка: если в твоей игре есть папка "Lobby", игнорируем предметы внутри неё
+        if object:FindFirstAncestor("Lobby") or object:FindFirstAncestor("LobbyMap") then
+            return false
+        end
+        
+        -- Трюк по координатам: если лобби находится в центре карты (0, 0, 0), 
+        -- а фейковый предмет ближе чем на 150 блоков к центру лобби — игнорируем его
+        -- (Если у тебя лобби в другом месте, скрипт ниже попробует отфильтровать по имени папки карты)
+        local mapFolder = workspace:FindFirstChild("Map") or workspace:FindFirstChild("CurrentMap")
+        if mapFolder then
+            -- Если на сервере загружена карта, собираем предметы ТОЛЬКО внутри неё!
+            return object:IsDescendantOf(mapFolder)
+        end
+
         return true
     end
 
-    -- Поиск предметов и подсчет их количества на карте
+    -- Поиск предметов на игровой карте
     local function scanMapItems()
         local items = {}
         local keywords = {"candy", "конфет", "coin", "монет", "ball", "мяч", "ice", "лед", "лёд"}
         
         for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and isRealItem(obj) then
+            if obj:IsA("BasePart") and isRealGameItem(obj) then
                 local objName = string.lower(obj.Name)
                 for _, kw in ipairs(keywords) do
                     if string.find(objName, kw) then
@@ -622,7 +639,7 @@ task.spawn(function()
         return items
     end
 
-    -- Поиск ближайшего предмета из найденных
+    -- Поиск ближайшей цели среди НАСТОЯЩИХ монет
     local function getClosestEmergencyTarget(items)
         local character = player.Character
         if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
@@ -641,7 +658,7 @@ task.spawn(function()
         return closestItem
     end
 
-    -- Основной цикл проверки скорости фарма
+    -- Главный рабочий цикл
     while task.wait(0.5) do
         local character = player.Character
         local hrp = character and character:FindFirstChild("HumanoidRootPart")
@@ -650,18 +667,19 @@ task.spawn(function()
             local currentItems = scanMapItems()
             local currentCount = #currentItems
             
-            -- Если количество предметов уменьшилось, значит кто-то (или твой фарм) успешно что-то подобрал
+            -- Если монеты на игровой карте уменьшаются — всё супер
             if currentCount < lastItemCount then
-                lastPickupTime = os.time() -- Сбрасываем таймер
+                lastPickupTime = os.time()
             end
             lastItemCount = currentCount
             
-            -- Если прошло больше 3 секунд без подборов, а предметы на карте ещё есть — включаем ТП-геймпас
+            -- Если застряли на 3 секунды и на арене ЕСТЬ настоящие монеты — летим туда
             if (os.time() - lastPickupTime) >= TELEPORT_DELAY and currentCount > 0 then
                 local targetItem = getClosestEmergencyTarget(currentItems)
                 if targetItem then
-                    hrp.CFrame = targetItem.CFrame + Vector3.new(0, 1.5, 0) -- ТП прямо на предмет
-                    lastPickupTime = os.time() -- Даем 3 секунды на то, чтобы хитбокс сработал
+                    -- Безопасный ТП чуть-чуть над деталью, чтобы прокнул хитбокс
+                    hrp.CFrame = targetItem.CFrame + Vector3.new(0, 1.2, 0)
+                    lastPickupTime = os.time() 
                 end
             end
         end

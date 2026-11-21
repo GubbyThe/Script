@@ -432,3 +432,23 @@ end
 addConn(Players.PlayerAdded:Connect(updateFlingList))
 addConn(Players.PlayerRemoving:Connect(updateFlingList))
 task.spawn(updateFlingList)
+-- ================= 8. ANTI-SIT & AUTO-JUMP (ЧАСТЬ 4) =================
+task.spawn(function()
+    local RunService = game:GetService("RunService")
+    local LP = game:GetService("Players").LocalPlayer
+
+    while true do
+        RunService.Heartbeat:Wait()
+        local char = LP.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        
+        if hum and hum.Health > 0 then
+            -- Если персонаж случайно сел на стул/лавку/ивентовый объект при пролёте
+            if hum.Sit then
+                hum.Sit = false
+                hum.Jump = true
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end
+end)

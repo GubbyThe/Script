@@ -147,14 +147,12 @@ FarmBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ================= 2. УМНЫЙ ПОИСК ЯИЦ (GROW A GARDEN) =================
+-- ================= 2. УМНЫЙ ПОИСК ЯИЦ ОТ EASTER BUNNY / MIMIC =================
 local function isInvalidTarget(item)
-    -- Игнорируем питомцев, магазины и ивентовые декорации
     local fullName = item:GetFullName()
     if fullName:find("PetsPhysical") or fullName:find("Shop") or fullName:find("Interaction") then
         return true
     end
-    
     local current = item.Parent
     while current and current ~= Workspace do
         if current:FindFirstChildOfClass("Humanoid") then
@@ -162,28 +160,51 @@ local function isInvalidTarget(item)
         end
         current = current.Parent
     end
-    
     return false
 end
 
--- Получаем координату и основную деталь яйца EasterEggReward
 local function getEggPart(eggObj)
     if eggObj:IsA("BasePart") then
         return eggObj
     elseif eggObj:IsA("Model") then
-        return eggObj.PrimaryPart or eggObj:FindFirstChildWhichIsA("BasePart", true)
+        if eggObj.PrimaryPart then return eggObj.PrimaryPart end
+        -- Ищем любую деталь с ненулевыми координатами
+        for _, d in ipairs(eggObj:GetDescendants()) do
+            if d:IsA("BasePart") and d.Position.Magnitude > 1 then
+                return d
+            end
+        end
+        return eggObj:FindFirstChildWhichIsA("BasePart", true)
     end
     return nil
 end
 
--- ================= 3. АВТО-СБРОС (ОТКЛЮЧЕН ДЛЯ GROW A GARDEN) =================
--- В Grow a Garden мешок раунда не переполняется как в MM2, поэтому ресет не нужен,
--- но оставляем заглушку на случай если ты вернёшься в MM2
-local function checkBagFull(hum)
-    -- Автосброс отключён для режима свободного сбора яиц
+-- Функция полного прожима всех триггеров сбора внутри яйца
+local function collectEgg(eggObj, root)
+    for _, d in ipairs(eggObj:GetDescendants()) do
+        if d:IsA("ProximityPrompt") and fireproximityprompt then
+            pcall(fireproximityprompt, d)
+        elseif d:IsA("ClickDetector") and fireclickdetector then
+            pcall(fireclickdetector, d)
+        elseif d:IsA("BasePart") and firetouchinterest then
+            pcall(function()
+                firetouchinterest(root, d, 0)
+                firetouchinterest(root, d, 1)
+            end)
+        end
+    end
+    if eggObj:IsA("BasePart") and firetouchinterest then
+        pcall(function()
+            firetouchinterest(root, eggObj, 0)
+            firetouchinterest(root, eggObj, 1)
+        end)
+    end
 end
 
--- ================= 4. NOCLIP И ОСНОВНОЙ ЦИКЛ ФАРМА =================
+-- ================= 3. ЗАГЛУШКА АВТО-СБРОСА =================
+local function checkBagFull(hum) end
+
+-- ================= 4. NOCLIP И ЦИКЛ СБОРА ЯИЦ ОТ ПЕТОВ =================
 addConn(RunService.Stepped:Connect(function()
     if not farmActive and not isFlinging then return end
     if LP.Character then
@@ -209,11 +230,11 @@ task.spawn(function()
                 local targetPart = nil
                 local minDistance = math.huge
                 
-                -- Ищем все EasterEggReward в Workspace
-                for _, obj in ipairs(Workspace:GetChildren()) do
+                -- Ищем все EasterEggReward от зайца и мимиков (без проверки Transparency!)
+                for _, obj in ipairs(Workspace:GetDescendants()) do
                     if obj.Name == "EasterEggReward" and not isInvalidTarget(obj) then
                         local part = getEggPart(obj)
-                        if part and part.Transparency < 0.9 then
+                        if part then
                             local dist = (part.Position - root.Position).Magnitude
                             if dist < minDistance then
                                 minDistance = dist
@@ -225,7 +246,7 @@ task.spawn(function()
                 end
                 
                 if targetPart and hum.Health > 0 then
-                    StatusLabel.Text = "🥚 Лечу к EasterEggReward (" .. math.floor(minDistance) .. "м)..."
+                    StatusLabel.Text = "🐰 Лечу к яйцу от пета (" .. math.floor(minDistance) .. "м)..."
                     StatusLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
                     
                     pcall(function()
@@ -236,8 +257,8 @@ task.spawn(function()
                         local direction = (targetPos - root.Position)
                         local distance = direction.Magnitude
                         
-                        if distance > 2.5 then
-                            local speed = 35 -- В Grow a Garden можно летать чуть быстрее
+                        if distance > 2.0 then
+                            local speed = 40
                             local step = direction.Unit * (speed * deltaTime)
                             
                             if step.Magnitude > distance then
@@ -246,23 +267,15 @@ task.spawn(function()
                                 root.CFrame = root.CFrame + step
                             end
                         else
-                            -- Подлетели вплотную: триггерим ProximityPrompt (если есть) и касание
+                            -- Встаём прямо в яйцо и прожимаем все возможные триггеры подбора
                             root.CFrame = CFrame.new(targetPos)
-                            local prompt = targetEggObj:FindFirstChildWhichIsA("ProximityPrompt", true)
-                            if prompt and fireproximityprompt then
-                                fireproximityprompt(prompt)
-                            end
-                            if firetouchinterest then
-                                firetouchinterest(root, targetPart, 0)
-                                task.wait(0.05)
-                                firetouchinterest(root, targetPart, 1)
-                            end
-                            task.wait(0.15)
+                            collectEgg(targetEggObj, root)
+                            task.wait(0.1)
                         end
                     end)
                 else
                     root.AssemblyLinearVelocity = Vector3.zero
-                    StatusLabel.Text = "⏳ Статус: Жду спавн EasterEggReward..."
+                    StatusLabel.Text = "🐰 Жду спавн яиц от Easter Bunny / Mimic..."
                     StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 100)
                 end
             end

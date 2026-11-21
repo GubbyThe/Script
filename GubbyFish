@@ -147,22 +147,17 @@ FarmBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ================= 2. УМНЫЙ ПОИСК ЯИЦ/МОНЕТ И ПРОВЕРКА РАУНДА =================
-local LobbyFolder = Workspace:FindFirstChild("Lobby")
-
--- Проверка: находится ли объект внутри модели NPC или в Лобби
+-- ================= 2. УМНЫЙ ПОИСК ЯИЦ (GROW A GARDEN) =================
 local function isInvalidTarget(item)
-    if LobbyFolder and item:IsDescendantOf(LobbyFolder) then
+    -- Игнорируем питомцев, магазины и ивентовые декорации
+    local fullName = item:GetFullName()
+    if fullName:find("PetsPhysical") or fullName:find("Shop") or fullName:find("Interaction") then
         return true
     end
     
-    -- Проверяем всю иерархию вверх на наличие Humanoid (защита от аксессуаров NPC и игроков)
     local current = item.Parent
     while current and current ~= Workspace do
         if current:FindFirstChildOfClass("Humanoid") then
-            return true
-        end
-        if current.Name == "Lobby" or current.Name == "Shop" or current.Name == "NPCs" then
             return true
         end
         current = current.Parent
@@ -171,61 +166,21 @@ local function isInvalidTarget(item)
     return false
 end
 
--- Поиск контейнера с монетами/яйцами на активной карте раунда
-local function getActiveCoinContainer()
-    -- В MM2 текущая загруженная карта содержит CoinContainer (или EggContainer)
-    for _, child in ipairs(Workspace:GetChildren()) do
-        if child:IsA("Model") or child:IsA("Folder") then
-            local container = child:FindFirstChild("CoinContainer") or child:FindFirstChild("EggContainer")
-            if container then
-                return container
-            end
-        end
+-- Получаем координату и основную деталь яйца EasterEggReward
+local function getEggPart(eggObj)
+    if eggObj:IsA("BasePart") then
+        return eggObj
+    elseif eggObj:IsA("Model") then
+        return eggObj.PrimaryPart or eggObj:FindFirstChildWhichIsA("BasePart", true)
     end
-    return Workspace:FindFirstChild("CoinContainer", true) or Workspace:FindFirstChild("EggContainer", true)
+    return nil
 end
 
--- ================= 3. АВТО-СБРОС ПРИ ПОЛНОМ МЕШКЕ =================
-local resetCooldown = false
+-- ================= 3. АВТО-СБРОС (ОТКЛЮЧЕН ДЛЯ GROW A GARDEN) =================
+-- В Grow a Garden мешок раунда не переполняется как в MM2, поэтому ресет не нужен,
+-- но оставляем заглушку на случай если ты вернёшься в MM2
 local function checkBagFull(hum)
-    if resetCooldown then return end
-    
-    local currentCoins = 0
-    local maxCoins = 40
-    local foundBagUI = false
-
-    pcall(function()
-        local mainGui = LP.PlayerGui:FindFirstChild("MainGui")
-        if not mainGui then return end
-        
-        -- Ищем любой TextLabel в интерфейсе раунда, где отображается счетчик вида "40/40" или "50/50"
-        local gameFrame = mainGui:FindFirstChild("Game")
-        if gameFrame then
-            for _, lbl in ipairs(gameFrame:GetDescendants()) do
-                if lbl:IsA("TextLabel") and lbl.Visible and lbl.Text:match("^%s*%d+%s*/%s*%d+%s*$") then
-                    local split = lbl.Text:split("/")
-                    local cur = tonumber(split[1]:match("%d+"))
-                    local max = tonumber(split[2]:match("%d+"))
-                    if cur and max and max > 0 then
-                        currentCoins = cur
-                        maxCoins = max
-                        foundBagUI = true
-                        break
-                    end
-                end
-            end
-        end
-    end)
-
-    if foundBagUI and currentCoins >= maxCoins then
-        resetCooldown = true
-        StatusLabel.Text = "🚨 Мешок полный (" .. currentCoins .. "/" .. maxCoins .. ")! Авторесет..."
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
-        hum.Health = 0
-        task.delay(4, function()
-            resetCooldown = false
-        end)
-    end
+    -- Автосброс отключён для режима свободного сбора яиц
 end
 
 -- ================= 4. NOCLIP И ОСНОВНОЙ ЦИКЛ ФАРМА =================
@@ -250,73 +205,72 @@ task.spawn(function()
             local hum = char and char:FindFirstChildOfClass("Humanoid")
             
             if root and hum and hum.Health > 0 then
-                -- 1. Проверяем мешок
-                checkBagFull(hum)
+                local targetEggObj = nil
+                local targetPart = nil
+                local minDistance = math.huge
                 
-                -- 2. Ищем контейнер активного раунда (игнорируем лобби, если раунд не идёт)
-                local container = getActiveCoinContainer()
-                
-                if container then
-                    local targetTrigger = nil
-                    local minDistance = math.huge
-                    
-                    for _, obj in ipairs(container:GetDescendants()) do
-                        if obj:IsA("TouchTransmitter") and obj.Parent and obj.Parent:IsA("BasePart") then
-                            local item = obj.Parent
-                            -- Пропускаем уже собранные (прозрачные) яйца/монеты и любые части NPC
-                            if item.Transparency < 0.9 and not isInvalidTarget(item) then
-                                local dist = (item.Position - root.Position).Magnitude
-                                if math.abs(item.Position.Y - root.Position.Y) < 18 then
-                                    if dist < minDistance then
-                                        minDistance = dist
-                                        targetTrigger = item
-                                    end
-                                end
+                -- Ищем все EasterEggReward в Workspace
+                for _, obj in ipairs(Workspace:GetChildren()) do
+                    if obj.Name == "EasterEggReward" and not isInvalidTarget(obj) then
+                        local part = getEggPart(obj)
+                        if part and part.Transparency < 0.9 then
+                            local dist = (part.Position - root.Position).Magnitude
+                            if dist < minDistance then
+                                minDistance = dist
+                                targetEggObj = obj
+                                targetPart = part
                             end
                         end
                     end
+                end
+                
+                if targetPart and hum.Health > 0 then
+                    StatusLabel.Text = "🥚 Лечу к EasterEggReward (" .. math.floor(minDistance) .. "м)..."
+                    StatusLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
                     
-                    if targetTrigger and hum.Health > 0 then
-                        StatusLabel.Text = "🥚 Статус: В раунде. Собираю яйца/монеты..."
-                        StatusLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
-                        
-                        pcall(function()
-                            root.AssemblyLinearVelocity = Vector3.zero
-                            root.AssemblyAngularVelocity = Vector3.zero
-                            
-                            local targetPos = targetTrigger.Position
-                            local direction = (targetPos - root.Position)
-                            local distance = direction.Magnitude
-                            
-                            if distance > 1.0 then
-                                local speed = 22
-                                local step = direction.Unit * (speed * deltaTime)
-                                
-                                if step.Magnitude > distance then
-                                    root.CFrame = CFrame.new(targetPos)
-                                else
-                                    root.CFrame = root.CFrame + step
-                                end
-                            else
-                                task.wait(0.04)
-                            end
-                        end)
-                    else
+                    pcall(function()
                         root.AssemblyLinearVelocity = Vector3.zero
-                        StatusLabel.Text = "⏳ Статус: Жду спавн новых яиц..."
-                        StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 100)
-                    end
+                        root.AssemblyAngularVelocity = Vector3.zero
+                        
+                        local targetPos = targetPart.Position
+                        local direction = (targetPos - root.Position)
+                        local distance = direction.Magnitude
+                        
+                        if distance > 2.5 then
+                            local speed = 35 -- В Grow a Garden можно летать чуть быстрее
+                            local step = direction.Unit * (speed * deltaTime)
+                            
+                            if step.Magnitude > distance then
+                                root.CFrame = CFrame.new(targetPos)
+                            else
+                                root.CFrame = root.CFrame + step
+                            end
+                        else
+                            -- Подлетели вплотную: триггерим ProximityPrompt (если есть) и касание
+                            root.CFrame = CFrame.new(targetPos)
+                            local prompt = targetEggObj:FindFirstChildWhichIsA("ProximityPrompt", true)
+                            if prompt and fireproximityprompt then
+                                fireproximityprompt(prompt)
+                            end
+                            if firetouchinterest then
+                                firetouchinterest(root, targetPart, 0)
+                                task.wait(0.05)
+                                firetouchinterest(root, targetPart, 1)
+                            end
+                            task.wait(0.15)
+                        end
+                    end)
                 else
                     root.AssemblyLinearVelocity = Vector3.zero
-                    StatusLabel.Text = "💤 Статус: В лобби / Ожидание раунда."
-                    StatusLabel.TextColor3 = Color3.fromRGB(180, 130, 50)
+                    StatusLabel.Text = "⏳ Статус: Жду спавн EasterEggReward..."
+                    StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 100)
                 end
             end
         end
     end
 end)
 
--- ================= 5. SMART MURDERER AVOID (АНТИ-МАРДЕР) =================
+-- ================= 5. SMART MURDERER AVOID (ТОЛЬКО ДЛЯ MM2) =================
 addConn(RunService.Heartbeat:Connect(function(dt)
     if isFlinging or not farmActive then
         isEscaping = false
@@ -327,11 +281,6 @@ addConn(RunService.Heartbeat:Connect(function(dt)
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not root or not hum or hum.Health <= 0 then
-        isEscaping = false
-        return
-    end
-
-    if not getActiveCoinContainer() then
         isEscaping = false
         return
     end
@@ -382,7 +331,7 @@ addConn(GuiService.ErrorMessageChanged:Connect(function()
         StatusLabel.Text = "🚨 Ошибка сервера! Прыгаю в другое лобби..."
         StatusLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
         task.wait(1)
-        TeleportService:Teleport(142823291, LP)
+        TeleportService:Teleport(game.PlaceId, LP) -- Перезаход в текущую игру, а не в MM2
     end)
 end))
 

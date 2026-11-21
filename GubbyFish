@@ -1,4 +1,4 @@
--- [[ GubbyHUB — FULL UNIFIED EDITION (MM2 EGG/COIN FARM + ANTI-NPC + FLING) ]] --
+-- [[ GubbyHUB — AUTO-DETECT EDITION (ЧАСТЬ 1 ИЗ 2) ]] --
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local Workspace = game:GetService("Workspace")
@@ -6,10 +6,30 @@ local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local TeleportService = game:GetService("TeleportService")
 local GuiService = game:GetService("GuiService")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local LP = Players.LocalPlayer
 
--- Очистка старой версии хаба и всех старых циклов при перезапуске
+-- Определение режима по PlaceId:
+-- 126884695634066 = Grow a Garden (GAG)
+-- 142823291 = Murder Mystery 2 (MM2)
+local GAG_PLACE_ID = 126884695634066
+local MM2_PLACE_ID = 142823291
+
+local isGAG = (game.PlaceId == GAG_PLACE_ID)
+if not isGAG and game.PlaceId ~= MM2_PLACE_ID then
+    pcall(function()
+        local info = MarketplaceService:GetProductInfo(game.PlaceId)
+        if info and info.Name and info.Name:lower():find("grow a garden") then
+            isGAG = true
+        end
+    end)
+end
+
+local CURRENT_MODE = isGAG and "GAG" or "MM2"
+local FARM_SPEED = isGAG and 40 or 22
+
+-- Очистка старой версии хаба и циклов
 if getgenv().GubbyCleanup then
     pcall(getgenv().GubbyCleanup)
 end
@@ -23,10 +43,17 @@ local function addConn(conn)
     return conn
 end
 
--- Состояния приоритетов (чтобы модули не конфликтовали)
 local farmActive = false
 local isFlinging = false
 local isEscaping = false
+
+-- Функция зажатия / отпускания клавиши Пробел
+local function setSpaceHeld(hold)
+    pcall(function()
+        local VIM = game:GetService("VirtualInputManager")
+        VIM:SendKeyEvent(hold, Enum.KeyCode.Space, false, game)
+    end)
+end
 
 -- ================= 1. ИНТЕРФЕЙС (UI) =================
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
@@ -51,7 +78,7 @@ local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.Position = UDim2.new(0, 0, 0, 4)
 Title.BackgroundTransparency = 1
-Title.Text = "GubbyHUB | Egg & Coin Farm 🥚"
+Title.Text = "GubbyHUB | Режим: " .. CURRENT_MODE .. (isGAG and " 🐰" or " 🔪")
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 15
@@ -60,7 +87,7 @@ local StatusLabel = Instance.new("TextLabel", MainFrame)
 StatusLabel.Size = UDim2.new(0.9, 0, 0, 20)
 StatusLabel.Position = UDim2.new(0.05, 0, 0, 32)
 StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "Проверка статуса игры..."
+StatusLabel.Text = "Режим " .. CURRENT_MODE .. " готов к работе"
 StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 155)
 StatusLabel.Font = Enum.Font.SourceSansItalic
 StatusLabel.TextSize = 13
@@ -70,10 +97,10 @@ FarmBtn.Size = UDim2.new(0.9, 0, 0, 40)
 FarmBtn.Position = UDim2.new(0.05, 0, 0, 55)
 FarmBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 FarmBtn.BackgroundTransparency = 0.4
-FarmBtn.Text = "✈️ FLY FARM (СКОРОСТЬ 22): ВЫКЛ"
+FarmBtn.Text = "✈️ FLY FARM [" .. CURRENT_MODE .. "] (СКОРОСТЬ " .. FARM_SPEED .. "): ВЫКЛ"
 FarmBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
 FarmBtn.Font = Enum.Font.SourceSansBold
-FarmBtn.TextSize = 14
+FarmBtn.TextSize = 13
 Instance.new("UICorner", FarmBtn).CornerRadius = UDim.new(0, 8)
 
 local BtnStroke = Instance.new("UIStroke", FarmBtn)
@@ -119,6 +146,7 @@ CloseBtn.TextSize = 16
 
 getgenv().GubbyCleanup = function()
     farmActive = false
+    setSpaceHeld(false)
     for _, c in ipairs(connections) do
         pcall(function() c:Disconnect() end)
     end
@@ -131,31 +159,54 @@ CloseBtn.MouseButton1Click:Connect(getgenv().GubbyCleanup)
 FarmBtn.MouseButton1Click:Connect(function()
     farmActive = not farmActive
     if farmActive then
+        setSpaceHeld(true) -- Зажимаем пробел
         FarmBtn.BackgroundTransparency = 0.1
         BtnStroke.Transparency = 0.1
-        FarmBtn.Text = "🟢 SAFE DELTA FARM: АКТИВЕН (СКОРОСТЬ 22)"
+        FarmBtn.Text = "🟢 FARM [" .. CURRENT_MODE .. "]: АКТИВЕН (СКОРОСТЬ " .. FARM_SPEED .. ")"
         FarmBtn.TextColor3 = Color3.fromRGB(50, 255, 50)
         BtnStroke.Color = Color3.fromRGB(50, 255, 50)
     else
+        setSpaceHeld(false) -- Отпускаем пробел
         FarmBtn.BackgroundTransparency = 0.4
         BtnStroke.Transparency = 0.5
-        FarmBtn.Text = "✈️ FLY FARM (СКОРОСТЬ 22): ВЫКЛ"
+        FarmBtn.Text = "✈️ FLY FARM [" .. CURRENT_MODE .. "] (СКОРОСТЬ " .. FARM_SPEED .. "): ВЫКЛ"
         FarmBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
         BtnStroke.Color = Color3.fromRGB(240, 240, 240)
-        StatusLabel.Text = "Проверка статуса игры..."
+        StatusLabel.Text = "Фарм остановлен (" .. CURRENT_MODE .. ")"
         StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 155)
     end
 end)
 
--- ================= 2. УМНЫЙ ПОИСК ЯИЦ ОТ EASTER BUNNY / MIMIC =================
-local function isInvalidTarget(item)
-    local fullName = item:GetFullName()
-    if fullName:find("PetsPhysical") or fullName:find("Shop") or fullName:find("Interaction") then
-        return true
+-- Повторно зажимаем пробел после респавна персонажа, если фарм активен
+addConn(LP.CharacterAdded:Connect(function()
+    if farmActive then
+        task.wait(0.5)
+        setSpaceHeld(true)
     end
+end))
+-- [[ GubbyHUB — AUTO-DETECT EDITION (ЧАСТЬ 2 ИЗ 2) ]] --
+
+-- ================= 2. ОБЩИЕ ФИЛЬТРЫ И ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =================
+local LobbyFolder = Workspace:FindFirstChild("Lobby")
+
+local function isInvalidTarget(item)
+    if CURRENT_MODE == "GAG" then
+        local fullName = item:GetFullName()
+        if fullName:find("PetsPhysical") or fullName:find("Shop") or fullName:find("Interaction") then
+            return true
+        end
+    else
+        if LobbyFolder and item:IsDescendantOf(LobbyFolder) then
+            return true
+        end
+    end
+
     local current = item.Parent
     while current and current ~= Workspace do
         if current:FindFirstChildOfClass("Humanoid") then
+            return true
+        end
+        if CURRENT_MODE == "MM2" and (current.Name == "Lobby" or current.Name == "Shop" or current.Name == "NPCs") then
             return true
         end
         current = current.Parent
@@ -163,55 +214,72 @@ local function isInvalidTarget(item)
     return false
 end
 
-local function getEggPart(eggObj)
-    if eggObj:IsA("BasePart") then
-        return eggObj
-    elseif eggObj:IsA("Model") then
-        if eggObj.PrimaryPart then return eggObj.PrimaryPart end
-        -- Ищем любую деталь с ненулевыми координатами
-        for _, d in ipairs(eggObj:GetDescendants()) do
+local function getPartFromObj(obj)
+    if obj:IsA("BasePart") then
+        return obj
+    elseif obj:IsA("Model") then
+        if obj.PrimaryPart then return obj.PrimaryPart end
+        for _, d in ipairs(obj:GetDescendants()) do
             if d:IsA("BasePart") and d.Position.Magnitude > 1 then
                 return d
             end
         end
-        return eggObj:FindFirstChildWhichIsA("BasePart", true)
+        return obj:FindFirstChildWhichIsA("BasePart", true)
     end
     return nil
 end
 
--- Функция полного прожима всех триггеров сбора внутри яйца
-local function collectEgg(eggObj, root)
-    for _, d in ipairs(eggObj:GetDescendants()) do
-        if d:IsA("ProximityPrompt") and fireproximityprompt then
-            pcall(fireproximityprompt, d)
-        elseif d:IsA("ClickDetector") and fireclickdetector then
-            pcall(fireclickdetector, d)
-        elseif d:IsA("BasePart") and firetouchinterest then
-            pcall(function()
-                firetouchinterest(root, d, 0)
-                firetouchinterest(root, d, 1)
-            end)
+local function getMM2Container()
+    for _, child in ipairs(Workspace:GetChildren()) do
+        if child:IsA("Model") or child:IsA("Folder") then
+            local container = child:FindFirstChild("CoinContainer") or child:FindFirstChild("EggContainer")
+            if container then return container end
         end
     end
-    if eggObj:IsA("BasePart") and firetouchinterest then
-        pcall(function()
-            firetouchinterest(root, eggObj, 0)
-            firetouchinterest(root, eggObj, 1)
-        end)
+    return Workspace:FindFirstChild("CoinContainer", true) or Workspace:FindFirstChild("EggContainer", true)
+end
+
+-- ================= 3. АВТО-СБРОС МЕШКА (ДЛЯ РЕЖИМА MM2) =================
+local resetCooldown = false
+local function checkMM2BagFull(hum)
+    if CURRENT_MODE ~= "MM2" or resetCooldown then return end
+    
+    local currentCoins, maxCoins = 0, 40
+    local foundBagUI = false
+
+    pcall(function()
+        local mainGui = LP.PlayerGui:FindFirstChild("MainGui")
+        local gameFrame = mainGui and mainGui:FindFirstChild("Game")
+        if gameFrame then
+            for _, lbl in ipairs(gameFrame:GetDescendants()) do
+                if lbl:IsA("TextLabel") and lbl.Visible and lbl.Text:match("^%s*%d+%s*/%s*%d+%s*$") then
+                    local split = lbl.Text:split("/")
+                    local cur = tonumber(split:match("%d+"))
+                    local max = tonumber(split:match("%d+"))
+                    if cur and max and max > 0 then
+                        currentCoins, maxCoins, foundBagUI = cur, max, true
+                        break
+                    end
+                end
+            end
+        end
+    end)
+
+    if foundBagUI and currentCoins >= maxCoins then
+        resetCooldown = true
+        StatusLabel.Text = "🚨 Мешок полный (" .. currentCoins .. "/" .. maxCoins .. ")! Авторесет..."
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
+        hum.Health = 0
+        task.delay(4, function() resetCooldown = false end)
     end
 end
 
--- ================= 3. ЗАГЛУШКА АВТО-СБРОСА =================
-local function checkBagFull(hum) end
-
--- ================= 4. NOCLIP И ЦИКЛ СБОРА ЯИЦ ОТ ПЕТОВ =================
+-- ================= 4. NOCLIP И ГЛАВНЫЙ ЦИКЛ ФАРМА =================
 addConn(RunService.Stepped:Connect(function()
     if not farmActive and not isFlinging then return end
     if LP.Character then
         for _, part in ipairs(LP.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
+            if part:IsA("BasePart") then part.CanCollide = false end
         end
     end
 end))
@@ -226,27 +294,43 @@ task.spawn(function()
             local hum = char and char:FindFirstChildOfClass("Humanoid")
             
             if root and hum and hum.Health > 0 then
-                local targetEggObj = nil
-                local targetPart = nil
+                local targetObj, targetPart = nil, nil
                 local minDistance = math.huge
-                
-                -- Ищем все EasterEggReward от зайца и мимиков (без проверки Transparency!)
-                for _, obj in ipairs(Workspace:GetDescendants()) do
-                    if obj.Name == "EasterEggReward" and not isInvalidTarget(obj) then
-                        local part = getEggPart(obj)
-                        if part then
-                            local dist = (part.Position - root.Position).Magnitude
-                            if dist < minDistance then
-                                minDistance = dist
-                                targetEggObj = obj
-                                targetPart = part
+
+                if CURRENT_MODE == "GAG" then
+                    -- РЕЖИМ GROW A GARDEN: Ищем EasterEggReward от петов
+                    for _, obj in ipairs(Workspace:GetDescendants()) do
+                        if obj.Name == "EasterEggReward" and not isInvalidTarget(obj) then
+                            local part = getPartFromObj(obj)
+                            if part then
+                                local dist = (part.Position - root.Position).Magnitude
+                                if dist < minDistance then
+                                    minDistance, targetObj, targetPart = dist, obj, part
+                                end
+                            end
+                        end
+                    end
+                else
+                    -- РЕЖИМ MM2 (И ПО УМОЛЧАНИЮ): Ищем монеты/яйца внутри карты раунда
+                    checkMM2BagFull(hum)
+                    local container = getMM2Container()
+                    if container then
+                        for _, obj in ipairs(container:GetDescendants()) do
+                            if obj:IsA("TouchTransmitter") and obj.Parent and obj.Parent:IsA("BasePart") then
+                                local item = obj.Parent
+                                if item.Transparency < 0.9 and not isInvalidTarget(item) then
+                                    local dist = (item.Position - root.Position).Magnitude
+                                    if math.abs(item.Position.Y - root.Position.Y) < 18 and dist < minDistance then
+                                        minDistance, targetObj, targetPart = dist, item, item
+                                    end
+                                end
                             end
                         end
                     end
                 end
-                
+
                 if targetPart and hum.Health > 0 then
-                    StatusLabel.Text = "🐰 Лечу к яйцу от пета (" .. math.floor(minDistance) .. "м)..."
+                    StatusLabel.Text = (isGAG and "🐰 Лечу к яйцу (" or "🔪 Собираю лут (") .. math.floor(minDistance) .. "м)..."
                     StatusLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
                     
                     pcall(function()
@@ -257,35 +341,36 @@ task.spawn(function()
                         local direction = (targetPos - root.Position)
                         local distance = direction.Magnitude
                         
-                        if distance > 2.0 then
-                            local speed = 40
-                            local step = direction.Unit * (speed * deltaTime)
-                            
-                            if step.Magnitude > distance then
-                                root.CFrame = CFrame.new(targetPos)
-                            else
-                                root.CFrame = root.CFrame + step
-                            end
+                        if distance > 1.8 then
+                            local step = direction.Unit * (FARM_SPEED * deltaTime)
+                            root.CFrame = (step.Magnitude > distance) and CFrame.new(targetPos) or (root.CFrame + step)
                         else
-                            -- Встаём прямо в яйцо и прожимаем все возможные триггеры подбора
                             root.CFrame = CFrame.new(targetPos)
-                            collectEgg(targetEggObj, root)
-                            task.wait(0.1)
+                            if firetouchinterest then
+                                firetouchinterest(root, targetPart, 0)
+                                firetouchinterest(root, targetPart, 1)
+                            end
+                            task.wait(0.06)
                         end
                     end)
                 else
                     root.AssemblyLinearVelocity = Vector3.zero
-                    StatusLabel.Text = "🐰 Жду спавн яиц от Easter Bunny / Mimic..."
-                    StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 100)
+                    if isGAG then
+                        StatusLabel.Text = "🐰 Жду спавн EasterEggReward от петов..."
+                        StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 100)
+                    else
+                        StatusLabel.Text = "💤 В лобби / Ожидание раунда MM2..."
+                        StatusLabel.TextColor3 = Color3.fromRGB(180, 130, 50)
+                    end
                 end
             end
         end
     end
 end)
 
--- ================= 5. SMART MURDERER AVOID (ТОЛЬКО ДЛЯ MM2) =================
+-- ================= 5. АНТИ-МАРДЕР (ТОЛЬКО ДЛЯ РЕЖИМА MM2) =================
 addConn(RunService.Heartbeat:Connect(function(dt)
-    if isFlinging or not farmActive then
+    if CURRENT_MODE ~= "MM2" or isFlinging or not farmActive then
         isEscaping = false
         return
     end
@@ -293,44 +378,34 @@ addConn(RunService.Heartbeat:Connect(function(dt)
     local char = LP.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not root or not hum or hum.Health <= 0 then
+    if not root or not hum or hum.Health <= 0 or not getMM2Container() then
         isEscaping = false
         return
     end
 
-    local dangerMurdererRoot = nil
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local enemyChar = player.Character
             local hasKnife = enemyChar:FindFirstChild("Knife") or (player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("Knife"))
-            if hasKnife then
-                local enemyRoot = enemyChar.HumanoidRootPart
-                if (enemyRoot.Position - root.Position).Magnitude < 25 then
-                    dangerMurdererRoot = enemyRoot
-                    break
-                end
+            if hasKnife and (enemyChar.HumanoidRootPart.Position - root.Position).Magnitude < 25 then
+                isEscaping = true
+                StatusLabel.Text = "⚠️ УГРОЗА: Мардер рядом! Сбегаю..."
+                StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                pcall(function()
+                    root.AssemblyLinearVelocity = Vector3.zero
+                    local flatDiff = Vector3.new(root.Position.X - enemyChar.HumanoidRootPart.Position.X, 0, root.Position.Z - enemyChar.HumanoidRootPart.Position.Z)
+                    if flatDiff.Magnitude > 0.1 then
+                        root.CFrame = root.CFrame + (flatDiff.Unit * (FARM_SPEED * dt))
+                    end
+                end)
+                return
             end
         end
     end
-
-    if dangerMurdererRoot then
-        isEscaping = true
-        StatusLabel.Text = "⚠️ УГРОЗА: Мардер рядом! Сбегаю..."
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-        
-        pcall(function()
-            root.AssemblyLinearVelocity = Vector3.zero
-            local flatDiff = Vector3.new(root.Position.X - dangerMurdererRoot.Position.X, 0, root.Position.Z - dangerMurdererRoot.Position.Z)
-            if flatDiff.Magnitude > 0.1 then
-                root.CFrame = root.CFrame + (flatDiff.Unit * (22 * dt))
-            end
-        end)
-    else
-        isEscaping = false
-    end
+    isEscaping = false
 end))
 
--- ================= 6. ANTI-AFK & SOFT REJOIN =================
+-- ================= 6. ANTI-AFK, SOFT REJOIN & ORBIT FLING =================
 addConn(LP.Idled:Connect(function()
     pcall(function()
         VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
@@ -339,22 +414,19 @@ addConn(LP.Idled:Connect(function()
     end)
 end))
 
+-- [[ GubbyHUB — AUTO-DETECT EDITION (ЧАСТЬ 3 ИЗ 3) ]] --
 addConn(GuiService.ErrorMessageChanged:Connect(function()
     pcall(function()
         StatusLabel.Text = "🚨 Ошибка сервера! Прыгаю в другое лобби..."
         StatusLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
         task.wait(1)
-        TeleportService:Teleport(game.PlaceId, LP) -- Перезаход в текущую игру, а не в MM2
+        TeleportService:Teleport(game.PlaceId, LP)
     end)
 end))
 
--- ================= 7. ATTACH ORBIT FLING =================
 local activeButtons = {}
-
 local function updateFlingList()
-    for _, b in pairs(activeButtons) do
-        pcall(function() b:Destroy() end)
-    end
+    for _, b in pairs(activeButtons) do pcall(function() b:Destroy() end) end
     table.clear(activeButtons)
 
     for _, player in ipairs(Players:GetPlayers()) do
@@ -369,7 +441,6 @@ local function updateFlingList()
             pBtn.TextSize = 12
             pBtn.TextScaled = true
             Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
-            
             local pStroke = Instance.new("UIStroke", pBtn)
             pStroke.Color = Color3.fromRGB(200, 60, 60)
             pStroke.Thickness = 0.8
@@ -379,47 +450,34 @@ local function updateFlingList()
                 local myChar = LP.Character
                 local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
                 local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
-                local enemyChar = player.Character
-                local enemyRoot = enemyChar and enemyChar:FindFirstChild("HumanoidRootPart")
+                local enemyRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                 
                 if myRoot and myHum and enemyRoot then
                     isFlinging = true
                     pBtn.Text = "💥 ПРИВЯЗКА И НАКРУТКА..."
-                    
                     local oldCFrame = myRoot.CFrame
                     local originalSpeed = myHum.WalkSpeed
                     myHum.WalkSpeed = 250
                     
-                    local angle = 0
-                    local attackTime = 0
-                    local targetSentToSpace = false
-                    
-                    while attackTime < 3.0 and not targetSentToSpace do
+                    local angle, attackTime, targetSent = 0, 0, false
+                    while attackTime < 3.0 and not targetSent do
                         local dt = RunService.Heartbeat:Wait()
                         attackTime = attackTime + dt
-                        
                         if not player or not player.Character or not enemyRoot.Parent then break end
-                        
                         angle = angle + 45
                         local offset = Vector3.new(math.sin(angle) * 0.5, 0, math.cos(angle) * 0.5)
-                        
                         myRoot.CFrame = CFrame.new(enemyRoot.Position + offset)
                         myRoot.AssemblyLinearVelocity = Vector3.new(500000, 500000, 500000)
                         myRoot.AssemblyAngularVelocity = Vector3.new(500000, 500000, 500000)
-                        
-                        if (enemyRoot.Position - oldCFrame.Position).Magnitude > 70 then
-                            targetSentToSpace = true
-                        end
+                        if (enemyRoot.Position - oldCFrame.Position).Magnitude > 70 then targetSent = true end
                     end
 
                     myRoot.AssemblyLinearVelocity = Vector3.zero
                     myRoot.AssemblyAngularVelocity = Vector3.zero
                     myHum.WalkSpeed = originalSpeed
                     myRoot.CFrame = oldCFrame
-                    
                     pBtn.Text = "🛡️ СБРОС СКОРОСТИ (1 сек)..."
                     task.wait(1.0)
-                    
                     pBtn.Text = "🚀 Отправить: " .. player.Name
                     isFlinging = false
                 end
@@ -432,23 +490,3 @@ end
 addConn(Players.PlayerAdded:Connect(updateFlingList))
 addConn(Players.PlayerRemoving:Connect(updateFlingList))
 task.spawn(updateFlingList)
--- ================= 8. ANTI-SIT & AUTO-JUMP (ЧАСТЬ 4) =================
-task.spawn(function()
-    local RunService = game:GetService("RunService")
-    local LP = game:GetService("Players").LocalPlayer
-
-    while true do
-        RunService.Heartbeat:Wait()
-        local char = LP.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        
-        if hum and hum.Health > 0 then
-            -- Если персонаж случайно сел на стул/лавку/ивентовый объект при пролёте
-            if hum.Sit then
-                hum.Sit = false
-                hum.Jump = true
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end
-    end
-end)

@@ -1949,3 +1949,18 @@ if EdScroll then
     end)
     print("[Джимини Хаб v40.0]: Метод удаления ладонного зацепа активирован, магнит отключен намертво!")
 end
+-- [[ GubbyHUB — ПРОВЕРКА ДОСТУПА (WHITELIST) ]] --
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Белый список разрешённых ников (без учёта регистра)
+local AllowedUsers = {
+    ["gubby_12463"] = true,
+    ["xxkayleepixelacexx"] = true,
+}
+
+if not AllowedUsers[LocalPlayer.Name:lower()] then
+    warn("[GubbyHUB]: Доступ запрещён! Этот скрипт предназначен только для автора.")
+    LocalPlayer:Kick("GubbyHUB: У вас нет доступа к этому скрипту (неавторизованный пользователь).")
+    return
+end
